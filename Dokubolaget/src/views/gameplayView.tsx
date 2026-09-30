@@ -86,6 +86,10 @@ export function GameView(props: Readonly<GameViewProps>) {
   const slipFeedback = theme.flags.feedbackPlacement === "slip";
   // Midsommar: cross-stitched headers and a faint flower in empty cells.
   const stitched = theme.id === "midsommar";
+  // Neon themes glow around headers and solved cells.
+  const glowBox = theme.glow
+    ? { shadowColor: theme.glow.color, shadowOpacity: 1, shadowRadius: theme.glow.radius, shadowOffset: { width: 0, height: 0 } }
+    : null;
   const { width: windowWidth, height: windowHeight } = useWindowDimensions();
   // Fit the board to whichever dimension is tighter. Laptops are wide but
   // short, so sizing from width alone pushed the bottom row off-screen.
@@ -406,6 +410,7 @@ export function GameView(props: Readonly<GameViewProps>) {
           board.category,
           { borderColor: axis === "col" ? colors.headerCol : colors.headerRow },
           stitched ? { borderColor: colors.cellBorder, backgroundColor: colors.headerLabelBg } : null,
+          glowBox ? { ...glowBox, shadowColor: axis === "col" ? colors.headerCol : colors.headerRow, shadowRadius: glowBox.shadowRadius * 0.8 } : null,
           ruled ? (axis === "col" ? { borderBottomWidth: borders.header } : { borderRightWidth: borders.header }) : null,
         ]}>
           {stitched ? (
@@ -419,7 +424,14 @@ export function GameView(props: Readonly<GameViewProps>) {
             />
           ) : null}
           {imageUrl ? (
-            <Image source={{ uri: imageUrl }} style={board.categoryImage} />
+            <Image
+              source={{ uri: imageUrl }}
+              style={[
+                board.categoryImage,
+                // Line-art header images are black; on dark themes draw them in the icon colour. Flags keep their colours.
+                theme.dark && !imageUrl.includes("flagcdn") ? { tintColor: colors.icon } : null,
+              ]}
+            />
           ) : iconName ? (
             <MaterialCommunityIcons name={iconName as any} size={28} color={colors.icon} style={board.categoryIcon} />
           ) : null}
@@ -446,7 +458,11 @@ export function GameView(props: Readonly<GameViewProps>) {
     return (
       <AnimatedCellSlot
         slotStyle={board.cellSlot}
-        cellStyle={[board.cell, selectedProduct && stitched ? { borderColor: colors.correct, borderWidth: 2.5 } : null]}
+        cellStyle={[
+          board.cell,
+          selectedProduct && stitched ? { borderColor: colors.correct, borderWidth: 2.5 } : null,
+          selectedProduct && glowBox ? { ...glowBox, borderColor: colors.correct, borderWidth: 1.5, backgroundColor: colors.correctBg } : null,
+        ]}
         filled={Boolean(selectedProduct)}
         flipNonce={flipNonceByCell[item] || 0}
         shakeNonce={shakeNonceByCell[item] || 0}

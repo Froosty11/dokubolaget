@@ -22,7 +22,8 @@ export function ThemeLogo({ height, fill = false }: { height: number; fill?: boo
         fontSize: height * 0.36,
         lineHeight: height * 0.42,
         textAlign: "center",
-        color: theme.colors.accent,
+        // Neon logos are light tubes with a coloured glow; others are printed in the accent.
+        color: theme.glow ? theme.colors.inkStrong : theme.colors.accent,
         // Neon glows; everything else gets a soft halo so the name stays
         // readable over backdrop artwork.
         ...(theme.glow

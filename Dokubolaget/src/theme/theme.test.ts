@@ -44,5 +44,5 @@ test("default theme is registered and always available", () => {
 });
 
 test("themes appear in picker order", () => {
-  expect(THEMES.map((t) => t.id)).toEqual(["prislista", "midsommar", "modern"]);
+  expect(THEMES.map((t) => t.id)).toEqual(["prislista", "midsommar", "cyberwave", "modern"]);
 });
