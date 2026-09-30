@@ -14,7 +14,9 @@ Approximate generation prompt used for this script family:
 - Output code-friendly JSON in data/ so app code can consume it directly.
 
 Run (step 2):
-- bun run generate:board --seed 2026-04-12 --min-cell 4 --attempts 5000 --boards 3
+- bun run generate:board --seed 2026-04-12 --attempts 5000 --boards 3
+- Defaults favour beatable boards: min 15 products per cell, at most one
+  hard header (alcohol / taste clock), easy headers (beverage, country) rewarded.
 
 Output:
 - data/generated-boards.json
@@ -36,6 +38,8 @@ type Board = {
   cols: Tag[];
   counts: number[][];
   score: number;
+  difficulty: number;
+  difficultyLabel: string;
 };
 
 type Args = {
@@ -55,9 +59,9 @@ const productsPath = path.resolve(projectRoot, "..", "products.json");
 function parseArgs(): Args {
   const defaults: Args = {
     seed: new Date().toISOString().slice(0, 10),
-    minCellMatches: 3,
-    targetLow: 8,
-    targetHigh: 120,
+    minCellMatches: 15,
+    targetLow: 40,
+    targetHigh: 400,
     attempts: 5000,
     boards: 3,
     outFile: path.resolve(projectRoot, "data", "generated-boards.json"),
@@ -378,50 +382,133 @@ function hasEnoughPairs(
   return false;
 }
 
-function scoreCell(
-  count: number,
-  minCellMatches: number,
-  targetLow: number,
-  targetHigh: number,
-) {
-  if (count < minCellMatches) {
-    return -60;
+// ---------------------------------------------------------------------------
+// Beatability scoring.
+//
+// A board is "beatable" when (a) every cell has plenty of matching products,
+// so a player who knows the category can name *something*, and (b) the
+// categories themselves are things ordinary people actually know about a
+// drink. Beverage type and country are easy; container and price are
+// medium; alcohol buckets and the taste-clock numbers are hard because most
+// players have never looked at them.
+//
+// The score is dominated by the *hardest* cell (the trap cell), not the
+// average, so one obscure intersection can't hide behind eight easy ones.
+// ---------------------------------------------------------------------------
+
+const FAMILY_DIFFICULTY: Record<string, number> = {
+  beverage: 1,
+  geography: 1,
+  container: 2,
+  containerType: 2,
+  containerMaterial: 2,
+  price: 2,
+  volume: 2,
+  alcohol: 3,
+  taste: 4,
+};
+
+const EASY_FAMILIES = new Set<string>(["beverage", "geography"]);
+const HARD_DIFFICULTY = 3;
+
+// Max total difficulty for a board. Six easy tags = 6; one hard tag plus
+// mostly easy ones lands around 10. Anything above this is rejected outright.
+const MAX_BOARD_DIFFICULTY = 12;
+
+// Tags that match more than this share of the whole catalog ("glass
+// bottle", "750-1000 ml") are not really categories, they're the default.
+// A cell built from them has thousands of answers and is boring to play.
+const MAX_TAG_SHARE = 0.45;
+
+function tagDifficulty(tag: Tag) {
+  return FAMILY_DIFFICULTY[tag.family] ?? 3;
+}
+
+function boardDifficulty(tags: Tag[]) {
+  let total = 0;
+  for (const tag of tags) {
+    total += tagDifficulty(tag);
   }
-  if (count >= targetLow && count <= targetHigh) {
-    return 20;
-  }
+  return total;
+}
+
+function difficultyLabel(difficulty: number) {
+  if (difficulty <= 8) return "easy";
+  if (difficulty <= 10) return "medium";
+  return "hard";
+}
+
+// log2-shaped credit for a cell, capped at targetHigh. Going from 15 to 30
+// matches is worth as much as going from 100 to 200: what matters is how
+// many *plausible* answers a player has, and that saturates.
+function cellCredit(count: number, targetHigh: number) {
+  const capped = Math.min(count, targetHigh);
+  let credit = Math.log2(Math.max(capped, 1));
   if (count > targetHigh) {
-    return 4;
+    // Above the sweet spot the cell is trivially solvable and the
+    // uniqueness scoring in-game stops being interesting. Bleed credit
+    // slowly: 4x targetHigh costs 2 points, 32x costs 5.
+    credit -= Math.log2(count / targetHigh);
   }
-  return 8;
+  return credit;
 }
 
 function scoreBoard(
   counts: number[][],
-  minCellMatches: number,
-  targetLow: number,
-  targetHigh: number,
-  families: Set<string>,
+  rows: Tag[],
+  cols: Tag[],
+  args: Args,
 ) {
+  const tags = [...rows, ...cols];
+  const flat = counts.flat();
+  const maxCredit = Math.log2(args.targetHigh);
+
+  // 1. Per-cell credit (up to ~9 x 6 = 54 for a board of fat cells).
   let score = 0;
-  for (const row of counts) {
-    for (const count of row) {
-      score += scoreCell(count, minCellMatches, targetLow, targetHigh);
-    }
-    if (Math.min(...row) >= minCellMatches) {
-      score += 14;
-    }
+  for (const count of flat) {
+    score += cellCredit(count, args.targetHigh) * 6;
   }
 
-  for (let col = 0; col < 3; col += 1) {
-    const colMin = Math.min(counts[0][col], counts[1][col], counts[2][col]);
-    if (colMin >= minCellMatches) {
-      score += 14;
-    }
+  // 2. Trap-cell weighting: the smallest cell counts triple on top. A board
+  //    whose worst cell is 15 products scores much lower than one whose
+  //    worst cell is 60, even if the other eight are identical.
+  const minCount = Math.min(...flat);
+  score += (cellCredit(minCount, args.targetHigh) / maxCredit) * 60;
+
+  // 3. Bonus when every cell clears the comfortable threshold.
+  if (minCount >= args.targetLow) {
+    score += 25;
   }
 
+  // 4. Difficulty penalty: every point of category difficulty above "all
+  //    easy" costs 12. Six easy tags = 0 penalty, one taste tag = -36.
+  score -= (boardDifficulty(tags) - tags.length) * 12;
+
+  // 5. Familiarity bonus: reward boards where most headers are things
+  //    people say out loud ("a Spanish red", "an Italian beer").
+  const easyCount = tags.filter((tag) => EASY_FAMILIES.has(tag.family)).length;
+  score += Math.min(easyCount, 4) * 6;
+  const hasBeverage = tags.some((tag) => tag.family === "beverage");
+  const hasCountry = tags.some((tag) => tag.family === "geography");
+  if (hasBeverage && hasCountry) {
+    score += 15;
+  }
+
+  // 6. Variety bonus: don't let the generator collapse into "three countries
+  //    vs three countries" every day.
+  const families = new Set(tags.map((tag) => tag.family));
   score += families.size * 10;
-  return score;
+
+  // 7. Small bonus for exactly one taste-clock tag. They're the most
+  //    interesting header when used sparingly, and the difficulty penalty
+  //    above already ensures they only survive on boards that are otherwise
+  //    easy.
+  const tasteCount = tags.filter((tag) => tag.family === "taste").length;
+  if (tasteCount === 1) {
+    score += 8;
+  }
+
+  return Math.round(score);
 }
 
 function boardKey(rows: Tag[], cols: Tag[]) {
@@ -450,6 +537,16 @@ const CONTAINER_FAMILIES = new Set<string>([
   "containerMaterial",
 ]);
 
+function countFamily(tags: Tag[], family: string) {
+  let count = 0;
+  for (const tag of tags) {
+    if (tag.family === family) {
+      count += 1;
+    }
+  }
+  return count;
+}
+
 function countContainerTags(tags: Tag[]) {
   let count = 0;
   for (const tag of tags) {
@@ -460,16 +557,14 @@ function countContainerTags(tags: Tag[]) {
   return count;
 }
 
-function hasTasteTag(tags: Tag[]) {
-  return tags.some((tag) => tag.family === "taste");
-}
-
 function findBoards(tags: Tag[], matrix: number[][], args: Args) {
   const random = mulberry32(hashSeed(args.seed));
   const candidates: Board[] = [];
   const seen = new Set<string>();
 
-  const usableTags = tags.filter((tag) => !BLACKLISTED_TAG_IDS.has(tag.id));
+  const usableTags = tags.filter(
+    (tag) => !BLACKLISTED_TAG_IDS.has(tag.id) && tag.share <= MAX_TAG_SHARE,
+  );
 
   const rowPool = usableTags.filter((tag) => tag.family !== "container");
   const colPool = usableTags.filter((tag) => tag.family !== "taste");
@@ -493,9 +588,25 @@ function findBoards(tags: Tag[], matrix: number[][], args: Args) {
       continue;
     }
 
-    // Require at least one taste-clock tag — they're the most interesting
-    // category and were appearing too rarely. Taste tags only live in rows.
-    if (!hasTasteTag(rows)) {
+    const allTags = [...rows, ...cols];
+
+    // At most one hard header (alcohol bucket or taste-clock number) per
+    // board, and never more than one taste tag. Two obscure axes crossing
+    // each other is what made boards unbeatable.
+    const hardCount = allTags.filter(
+      (tag) => tagDifficulty(tag) >= HARD_DIFFICULTY,
+    ).length;
+    if (hardCount > 1) {
+      continue;
+    }
+
+    if (boardDifficulty(allTags) > MAX_BOARD_DIFFICULTY) {
+      continue;
+    }
+
+    // Numeric bands are filler when doubled up ("< 100 SEK" next to
+    // "100-200 SEK" is one axis pretending to be two). One each per board.
+    if (countFamily(allTags, "price") > 1 || countFamily(allTags, "volume") > 1) {
       continue;
     }
 
@@ -537,15 +648,16 @@ function findBoards(tags: Tag[], matrix: number[][], args: Args) {
       continue;
     }
 
-    const families = new Set([...rows, ...cols].map((tag) => tag.family));
-    const score = scoreBoard(
+    const score = scoreBoard(counts, rows, cols, args);
+    const difficulty = boardDifficulty(allTags);
+    candidates.push({
+      rows,
+      cols,
       counts,
-      args.minCellMatches,
-      args.targetLow,
-      args.targetHigh,
-      families,
-    );
-    candidates.push({ rows, cols, counts, score });
+      score,
+      difficulty,
+      difficultyLabel: difficultyLabel(difficulty),
+    });
   }
 
   return candidates.sort((a, b) => b.score - a.score).slice(0, args.boards);
@@ -592,6 +704,8 @@ function printBoard(
 ) {
   console.log(`\nBoard option ${index + 1}`);
   console.log(`Score: ${board.score}`);
+  console.log(`Difficulty: ${board.difficultyLabel} (${board.difficulty})`);
+  console.log(`Smallest cell: ${Math.min(...board.counts.flat())} products`);
   console.log(`Rows: ${board.rows.map((tag) => tag.label).join(" | ")}`);
   console.log(`Cols: ${board.cols.map((tag) => tag.label).join(" | ")}`);
 
@@ -629,6 +743,8 @@ function boardToJson(board: Board) {
     })),
     counts: board.counts,
     score: board.score,
+    difficulty: board.difficulty,
+    difficultyLabel: board.difficultyLabel,
   };
 }
 

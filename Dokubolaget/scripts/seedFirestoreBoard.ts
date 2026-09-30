@@ -33,6 +33,8 @@ type GeneratedBoard = {
   cols: BoardTag[];
   counts: number[][];
   score: number;
+  difficulty?: number;
+  difficultyLabel?: string;
 };
 
 type GeneratedBoardFile = {
@@ -169,6 +171,8 @@ async function main() {
       counts: flatCounts,
       seed: date,
       generatedAt,
+      ...(board.difficulty != null && { difficulty: board.difficulty }),
+      ...(board.difficultyLabel && { difficultyLabel: board.difficultyLabel }),
     };
     writes.push(
       db
