@@ -9,6 +9,7 @@ import  Leaderboard  from "../reactjs/leaderboardPresenter";
 import { makeAppStyles } from "../AppStyles"
 import { useTheme, useThemedStyles } from "../theme/ThemeProvider";
 import { ThemeLogo } from "../theme/ThemeLogo";
+import { ThemeBackdrop } from "../theme/decorations/ThemeBackdrop";
 import type { Theme } from "../theme/types";
 import  AuthDialog from "./authDialogView";
 import DokubolagetLogo from "../../assets/Dokubolaget3.svg";
@@ -121,6 +122,7 @@ export function IndexView({ageGate}) {
 
   return (
     <View style={app.body}>
+      <ThemeBackdrop screen="home" />
 
       {/* Title */}
       <View style={{alignItems: "center"}}>

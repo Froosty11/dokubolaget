@@ -5,6 +5,7 @@ import { USE_NATIVE_DRIVER } from "../animation";
 import { Confetti } from "../components/Confetti";
 import { useTheme, useThemedStyles } from "../theme/ThemeProvider";
 import type { Theme } from "../theme/types";
+import { ThemeCelebrationArt } from "../theme/decorations/ThemeBackdrop";
 
 type BoardCompleteViewProps = {
   filledCount: number;
@@ -62,6 +63,7 @@ export function BoardCompleteView(props: Readonly<BoardCompleteViewProps>) {
         shape={theme.confetti.shape}
         colors={theme.confetti.colors}
       />
+      <ThemeCelebrationArt />
       <Animated.View
         style={[
           styles.card,

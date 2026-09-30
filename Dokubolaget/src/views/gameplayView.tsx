@@ -3,6 +3,7 @@ import { FlatList, Image, Pressable, ScrollView as RNScrollView, StyleSheet, Tex
 import { makeAppStyles } from "../AppStyles"
 import { useTheme, useThemedStyles } from "../theme/ThemeProvider";
 import { ThemeLogo } from "../theme/ThemeLogo";
+import { ThemeBackdrop } from "../theme/decorations/ThemeBackdrop";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics"
 import { formatTagLabel, getTagIconName, getTagImageUrl } from "../tagDisplay";
@@ -184,9 +185,11 @@ export function GameView(props: Readonly<GameViewProps>) {
   // console.log(gameCells)
 
   return (
+    <View style={{ flex: 1, backgroundColor: colors.page }}>
+    <ThemeBackdrop screen="board" />
     <RNScrollView
-      style={{ flex: 1, backgroundColor: colors.page }}
-      contentContainerStyle={[app.body, { height: undefined, flexGrow: 1 }]}
+      style={{ flex: 1 }}
+      contentContainerStyle={[app.body, { height: undefined, flexGrow: 1, backgroundColor: "transparent" }]}
     >
         <ThemeLogo height={logoHeight} />
 
@@ -264,6 +267,7 @@ export function GameView(props: Readonly<GameViewProps>) {
         )}
       </View>
     </RNScrollView>
+    </View>
   );
 
   // Tutorial
