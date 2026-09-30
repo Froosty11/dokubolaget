@@ -10,6 +10,8 @@ import { router } from "expo-router"
 import { BoardTag, GuessFeedback } from "../dokuModel"
 import { useEffect, useState, useRef } from "react"
 import * as Haptics from "expo-haptics"
+import { useTheme } from "../theme/ThemeProvider"
+import { composeFeedbackText } from "../theme/feedbackText"
 
 let tutorialShownForSession = false;
 
@@ -60,6 +62,7 @@ async function shareTextACB(text: string): Promise<"shared" | "copied" | "failed
 }
 
 const Gameplay = observer(function GameRender({ model }: GameplayProps) {
+    const { copy } = useTheme();
     const [feedback, setFeedback] = useState<GuessFeedback | null>(null);
     const fadeAnim = useRef(new Animated.Value(1)).current;
 
@@ -81,7 +84,7 @@ const Gameplay = observer(function GameRender({ model }: GameplayProps) {
       if (!next) return;
 
       fadeAnim.setValue(1);
-      setFeedback(next);
+      setFeedback({ ...next, message: composeFeedbackText(next, copy) });
       model.clearLastFeedback();
 
       if (next.kind === "correct") {

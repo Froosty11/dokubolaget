@@ -12,6 +12,8 @@ type AnimatedCellSlotProps = {
   shakeNonce: number;
   // Position on the board, used to stagger the idle shimmer.
   index: number;
+  shimmerColor: string;
+  radius: number;
   onPress: () => void;
   children: ReactNode;
 };
@@ -94,8 +96,8 @@ export function AnimatedCellSlot(props: AnimatedCellSlotProps) {
             style={[
               StyleSheet.absoluteFill,
               {
-                borderRadius: 3,
-                backgroundColor: "#dcefe3",
+                borderRadius: props.radius,
+                backgroundColor: props.shimmerColor,
                 opacity: shimmer.interpolate({ inputRange: [0, 1], outputRange: [0, 0.75] }),
               },
             ]}
@@ -113,8 +115,10 @@ type AnimatedHeaderProps = {
   slotStyle: StyleProp<ViewStyle>;
   reveal: HeaderRevealState;
   revealOrder: number;
-  // Increments when a near miss matched this header → green pulse.
+  // Increments when a near miss matched this header → pulse.
   pulseNonce: number;
+  pulseColor: string;
+  radius: number;
   children: ReactNode;
 };
 
@@ -165,14 +169,15 @@ export function AnimatedHeader(props: AnimatedHeaderProps) {
           StyleSheet.absoluteFill,
           {
             margin: 5,
-            borderRadius: 3,
+            borderRadius: props.radius,
             borderWidth: 3,
-            borderColor: "#1e9e55",
-            backgroundColor: "rgba(30, 158, 85, 0.12)",
+            borderColor: props.pulseColor,
             opacity: pulse,
           },
         ]}
-      />
+      >
+        <View style={[StyleSheet.absoluteFill, { backgroundColor: props.pulseColor, opacity: 0.12 }]} />
+      </Animated.View>
     </Animated.View>
   );
 }

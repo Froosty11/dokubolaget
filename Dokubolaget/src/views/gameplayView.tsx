@@ -1,11 +1,12 @@
 import { useEffect, useState } from "react";
 import { FlatList, Image, Pressable, ScrollView as RNScrollView, StyleSheet, Text, View, useWindowDimensions, Animated } from "react-native";
-import { Style } from "../AppStyles"
+import { makeAppStyles } from "../AppStyles"
+import { useTheme, useThemedStyles } from "../theme/ThemeProvider";
+import { ThemeLogo } from "../theme/ThemeLogo";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics"
 import { formatTagLabel, getTagIconName, getTagImageUrl } from "../tagDisplay";
 import { AlertDialog, ScrollView, XStack, YStack } from "tamagui";
-import DokubolagetLogo from "../../assets/Dokubolaget3.svg";
 import InfoIcon from "../../assets/info.svg";
 import { Confetti } from "../components/Confetti";
 import { AnimatedCellSlot, AnimatedHeader, type HeaderRevealState } from "./boardAnimations";
@@ -41,11 +42,6 @@ type GameViewProps = {
   closeTutorialACB: () => void;
 };
 
-const FEEDBACK_COLORS: Record<GuessFeedback["kind"], { background: string; text: string }> = {
-  correct: { background: "#d4edda", text: "#155724" },
-  near: { background: "#fff1c2", text: "#7a5a00" },
-  miss: { background: "#f8d7da", text: "#721c24" },
-};
 
 type CellContentProps = {
   item: number;
@@ -74,6 +70,15 @@ export function GameView(props: Readonly<GameViewProps>) {
     onBurstDone,
     onFilledCellPressed,
   } = props;
+  const { theme } = useTheme();
+  const app = useThemedStyles(makeAppStyles);
+  const { colors, fonts, radii, borders } = theme;
+  const FEEDBACK_COLORS: Record<GuessFeedback["kind"], { background: string; text: string }> = {
+    correct: { background: colors.correctBg, text: colors.correct },
+    near: { background: colors.nearMissBg, text: colors.nearMiss },
+    miss: { background: colors.missBg, text: colors.miss },
+  };
+  const glowText = theme.glow ? { textShadowColor: theme.glow.color, textShadowRadius: theme.glow.radius } : null;
   const { width: windowWidth, height: windowHeight } = useWindowDimensions();
   // Fit the board to whichever dimension is tighter. Laptops are wide but
   // short, so sizing from width alone pushed the bottom row off-screen.
@@ -100,11 +105,11 @@ export function GameView(props: Readonly<GameViewProps>) {
       flex: 1,
       flexDirection: "column",
       rowGap: 3,
-      borderRadius: 3,
-      borderBottomWidth: 1,
-      borderRightWidth: 1,
-  		borderColor: "#e0e0e0",
-      backgroundColor: "#ffffff",
+      borderRadius: radii.cell,
+      borderBottomWidth: borders.cell,
+      borderRightWidth: borders.cell,
+      borderColor: colors.cellBorder,
+      backgroundColor: colors.cellFill,
       padding: 5,
       width: "100%",
     },
@@ -114,15 +119,17 @@ export function GameView(props: Readonly<GameViewProps>) {
       alignItems: "center",
     },
     cellLabel: {
-      fontFamily: "InterVariable",
+      fontFamily: fonts.body,
+      color: colors.ink,
       textAlign: "center",
     },
     category: {
       flex: 1,
       padding: 5,
-      borderWidth: 1,
-      borderRadius: 3,
-  		borderColor: "#e0e0e0",
+      borderWidth: borders.header,
+      borderRadius: radii.cell,
+      borderColor: colors.headerCol,
+      backgroundColor: theme.dark ? colors.surface : undefined,
       overflow: "hidden",
       alignItems: "center",
       justifyContent: "center",
@@ -133,21 +140,23 @@ export function GameView(props: Readonly<GameViewProps>) {
       resizeMode: "contain",
     },
     categoryIcon: {
-      color: "#262626",
+      color: colors.icon,
     },
     categoryLabel: {
-      fontFamily: "BolagetMediumCondensed",
+      fontFamily: fonts.condensed,
+      color: colors.ink,
       marginTop: 4,
-      backgroundColor: "#fff",
+      backgroundColor: colors.headerLabelBg,
       paddingVertical: 4,
       paddingHorizontal: 6,
-      borderRadius: 10,
-      textAlign: "center"
+      borderRadius: radii.pill,
+      textAlign: "center",
+      ...(glowText ?? {}),
     },
     tutorialCloseButton: {
-      fontFamily: "InterVariable",
-      color: "#262626",
-      backgroundColor: "#d6e9df",
+      fontFamily: fonts.body,
+      color: colors.dialogButtonInk,
+      backgroundColor: colors.dialogButton,
       padding: 5,
       borderRadius: 5
     },
@@ -165,7 +174,7 @@ export function GameView(props: Readonly<GameViewProps>) {
       alignItems: "center",
     },
     feedbackText: {
-      fontFamily: "Monopol",
+      fontFamily: fonts.display,
       fontSize: 24,
       fontWeight: "600",
       textAlign: "center",
@@ -176,12 +185,10 @@ export function GameView(props: Readonly<GameViewProps>) {
 
   return (
     <RNScrollView
-      style={{ flex: 1, backgroundColor: Style.body.backgroundColor }}
-      contentContainerStyle={[Style.body, { height: undefined, flexGrow: 1 }]}
+      style={{ flex: 1, backgroundColor: colors.page }}
+      contentContainerStyle={[app.body, { height: undefined, flexGrow: 1 }]}
     >
-        <View style={{ height: logoHeight, width: (logoHeight * 496) / 283 }}>
-          <DokubolagetLogo width="100%" height="100%" />
-        </View>
+        <ThemeLogo height={logoHeight} />
 
       {/* game window */}
       <View style={{alignSelf: "center", width: boardSize, height: boardSize, position: "relative"}}>
@@ -197,7 +204,7 @@ export function GameView(props: Readonly<GameViewProps>) {
           {/* top categories */}
           <View style={{flexDirection: "row", width: cellSize * 3}}>
             {topCategories.map((category, index) =>
-              categoryRenderCB(category, index, index)
+              categoryRenderCB(category, index, index, "col")
             )}
           </View>
         </View>
@@ -206,7 +213,7 @@ export function GameView(props: Readonly<GameViewProps>) {
           {/* side categories */}
           <View style={{ width: cellSize }}>
             {sideCategories.map((category, index) =>
-              categoryRenderCB(category, index, 3 + index)
+              categoryRenderCB(category, index, 3 + index, "row")
             )}
           </View>
 
@@ -263,22 +270,23 @@ export function GameView(props: Readonly<GameViewProps>) {
       <AlertDialog open={tutorialOpen} onOpenChange={(open)=>{if(!open) closeTutorialACB()}}>
         <AlertDialog.Trigger asChild>
           <Pressable onPress={openTutorialACB} /*style={Style.tutorialButton}*/>
-            <InfoIcon width={24} height={24} fill={board.categoryIcon.color} />
+            <InfoIcon width={24} height={24} color={colors.icon} />
           </Pressable>
         </AlertDialog.Trigger>
         <AlertDialog.Portal>
           <AlertDialog.Overlay key="overlay" opacity={0.5} /*style={Style.tutorialOverlay}*//>
             <AlertDialog.Content
               bordered
-            elevate>
+              elevate
+              style={{ backgroundColor: colors.dialogSurface, borderColor: colors.divider }}>
             <YStack gap="$4" >
-              <AlertDialog.Title style={{fontFamily: "Monopol"}}>How to play!</AlertDialog.Title>
+              <AlertDialog.Title style={{fontFamily: fonts.display, color: colors.dialogInk}}>How to play!</AlertDialog.Title>
               <ScrollView key="scroll" style={{maxHeight: 300}} showsVerticalScrollIndicator>
-                <Text style={{fontFamily: "InterVariable", letterSpacing: -0.2}}>
+                <Text style={{fontFamily: fonts.body, color: colors.dialogInk, letterSpacing: -0.2}}>
                   The goal of this game is to fill in the 3x3 grid with products that match both of the categories on the top and the left side of the board.{"\n\n"}
                   You only have the 9 guesses total when answering so choose wisely. Only one product may be used per board. The uniqueness score is the sum of the total score on that board and that is the tallied up against other players.{"\n\n"}
                 </Text>
-                <Text style={{fontFamily: "InterVariable", fontSize: 12}}>New gameboards are genereated at 2 AM GST +1 </Text>
+                <Text style={{fontFamily: fonts.body, color: colors.dialogInk, fontSize: 12}}>New gameboards are genereated at 2 AM GST +1 </Text>
               </ScrollView>
 
             <XStack justifyContent="flex-end" gap="$2">
@@ -296,12 +304,9 @@ export function GameView(props: Readonly<GameViewProps>) {
   }
 
   // Render categories along top and side
-  function categoryRenderCB(category: BoardTag, index: number, revealOrder: number) {
+  function categoryRenderCB(category: BoardTag, index: number, revealOrder: number, axis: "col" | "row") {
     const imageUrl = getTagImageUrl(category);
     const iconName = imageUrl ? null : getTagIconName(category);
-    const icon = iconName ? (
-      <MaterialCommunityIcons name={iconName as any} size={28} color="#2D2926" style={board.categoryIcon} />
-    ) : null;
     return (
       <AnimatedHeader
         key={category.id + "-" + String(index)}
@@ -309,12 +314,14 @@ export function GameView(props: Readonly<GameViewProps>) {
         reveal={headerReveal}
         revealOrder={revealOrder}
         pulseNonce={pulseNonceByTag[category.id] || 0}
+        pulseColor={colors.pulse}
+        radius={radii.cell}
       >
-        <View style={board.category}>
+        <View style={[board.category, { borderColor: axis === "col" ? colors.headerCol : colors.headerRow }]}>
           {imageUrl ? (
             <Image source={{ uri: imageUrl }} style={board.categoryImage} />
           ) : iconName ? (
-            <MaterialCommunityIcons name={iconName as any} size={28} color="#2D2926" style={board.categoryIcon} />
+            <MaterialCommunityIcons name={iconName as any} size={28} color={colors.icon} style={board.categoryIcon} />
           ) : null}
           <Text numberOfLines={3} style={board.categoryLabel}>{formatTagLabel(category)}</Text>
         </View>
@@ -343,6 +350,8 @@ export function GameView(props: Readonly<GameViewProps>) {
         filled={Boolean(selectedProduct)}
         flipNonce={flipNonceByCell[item] || 0}
         shakeNonce={shakeNonceByCell[item] || 0}
+        shimmerColor={colors.cellShimmer}
+        radius={radii.cell}
         index={item - 1}
         onPress={onCellPressedACB}
       >
@@ -367,7 +376,7 @@ function CellContent({
     return (
       <Image
         source={{ uri: selectedProduct.image }}
-        style={Style.cellImage}
+        style={app.cellImage}
         onError={() => setImageFailed(true)}
       />
     );

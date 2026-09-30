@@ -1,4 +1,5 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { Platform } from "react-native";
 import type { ThemeId } from "./types";
 import { parseThemeId, parseUnlocked } from "./unlocks";
 
@@ -6,6 +7,8 @@ export const THEME_KEY = "dokubolaget.theme";
 export const UNLOCKS_KEY = "dokubolaget.unlockedThemes";
 
 export async function loadDeviceThemePrefs(): Promise<{ themeId: ThemeId | null; unlocked: ThemeId[] }> {
+  // The static web export renders once in Node, where there is no storage.
+  if (Platform.OS === "web" && typeof window === "undefined") return { themeId: null, unlocked: [] };
   try {
     const [themeRaw, unlockedRaw] = await Promise.all([
       AsyncStorage.getItem(THEME_KEY),

@@ -106,8 +106,6 @@ export type GuessFeedback = {
   matchedTagId?: string;
 };
 
-const CORRECT_MESSAGES = ["Skål!", "Spot on!", "Nice pick!", "Great!", "Nailed it!"];
-
 function doesProductMatchTag(product: any, tag: BoardTag | undefined) {
   if (!tag || !product) {
     return false;
@@ -229,7 +227,7 @@ const modelBody = {
         isValid: false,
         kind: "near" as const,
         matchedTagId: String(matched.id),
-        reason: `So close! ${formatTagLabel(matched)}, but not ${formatTagLabel(missing)}.`,
+        reason: `${formatTagLabel(matched)}, but not ${formatTagLabel(missing)}.`,
       };
     }
 
@@ -287,7 +285,8 @@ const modelBody = {
     this.lastFeedback = {
       kind: "correct",
       isCorrect: true,
-      message: CORRECT_MESSAGES[Math.floor(Math.random() * CORRECT_MESSAGES.length)],
+      // The presenter picks the theme's cheer (composeFeedbackText).
+      message: "",
       cell: asNumber,
     };
 
