@@ -1,7 +1,7 @@
 # Themes: Prislista 1986, Midsommar, Cyberwave, Speakeasy and Modern
 
 Date: 2026-09-30
-Status: revised after mockup review, awaiting written-spec review
+Status: implemented on branch `themes` (plan: docs/superpowers/plans/2026-09-30-themes.md)
 
 ## Goal
 

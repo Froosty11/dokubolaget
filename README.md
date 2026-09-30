@@ -75,6 +75,42 @@ cd firestore-tests && bun install && bun run test
 
 `Dokubolaget/scripts/scrubPublicProfiles.ts` is a one-off Admin SDK cleanup that replaces email-address display names and removes stale public fields (dry run unless `--apply`).
 
+## Themes
+
+The app ships five looks. Players switch between the ones they have in **Home → Themes**:
+
+| Theme | How you get it |
+|---|---|
+| Prislista 1986 | Everyone, the default: a parody of the old printed price list |
+| Midsommar | Everyone |
+| Cyberwave | Finish your first board |
+| Speakeasy | A perfect board: all nine cells with no misses |
+| Modern | A 7-day streak (logged in). Modern ships Systembolaget's own fonts, so it is the hardest reward. |
+
+Unlocks are permanent. They're saved on the device and, when logged in, merged into `users/{uid}/private/profile`. Practice boards (`?board=`) never unlock anything.
+
+**Where things live** (all under `Dokubolaget/src/theme/`):
+
+- `themes/*.ts`: one token file per theme (colours, fonts, radii, flags, confetti, unlock rule, Swedish and English flavour copy).
+- `registry.ts`: the theme list, the default theme and the UI language.
+- `unlocks.ts` and `themeState.ts`: unlock rules and the theme part of the MobX model.
+- `fonts.ts`: fonts per theme, loaded on demand from `@expo-google-fonts/*` (OFL).
+- `decorations/`: per-theme artwork behind screens and above the celebration.
+
+**Adding a theme:**
+
+1. Add a token file and list it in `registry.ts`.
+2. Add a font loader entry to `fonts.ts`.
+3. Optionally, register decorations in `decorations/index.ts`.
+4. Add its id to `THEME_IDS` in `types.ts` and to `themeIds()` in `firestore.rules`.
+
+Then run the checks:
+
+```bash
+cd Dokubolaget && bun test src                                   # tokens, contrast (WCAG AA), unlock rules
+node tools/themeScreens.mjs --theme <id> --out /tmp/shots/<id>   # screenshots of every screen (needs the web dev server + proxy)
+```
+
 ## File structure (with `Dokubolaget` as root)
 
 ### `/assets`
