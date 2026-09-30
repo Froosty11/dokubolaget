@@ -1,4 +1,4 @@
-# Themes: Modern, Midsommar, Cyberwave, Speakeasy and Prislista 1986
+# Themes: Prislista 1986, Midsommar, Cyberwave, Speakeasy and Modern
 
 Date: 2026-09-30
 Status: revised after mockup review, awaiting written-spec review
@@ -9,6 +9,7 @@ Give Dokubolaget a set of switchable looks, most of them earned by playing, so t
 
 Success means:
 
+- New players start on Prislista 1986.
 - Every screen, dialog and effect renders correctly in all five themes on a 375 px phone and a 1440×640 laptop, with the OS in light and dark mode.
 - Switching is instant, with no reload.
 - The choice and the unlocks survive reloads and follow a logged-in player to a new device.
@@ -18,9 +19,11 @@ Mockups: `assets/2026-09-30-theme-prislista-1986.jpg`, `assets/2026-09-30-theme-
 
 ## The themes
 
-### Modern (everyone, default)
+### Modern (unlock: 7-day streak)
 
-Today's look, pixel-for-pixel unchanged. New players start here.
+Today's look, pixel-for-pixel unchanged.
+
+Modern ships Systembolaget's own typefaces (`monopol.ttf`, `bolagetMediumCondensed.ttf`) and a logo that imitates theirs. Systembolaget agreed to that for the original school project, but not for a public app. So it becomes the hardest reward rather than the first thing every visitor sees. Locking it makes it a reward. It does not reduce the exposure, because the font files still ship in the public repo and bundle.
 
 ### Midsommar (everyone)
 
@@ -53,9 +56,9 @@ Bright Swedish summer folk art.
 - **Effects.** Confetti becomes gold flecks. The board-complete card is a gold members' card.
 - **Vocabulary.** Guesses are "pours".
 
-### Prislista 1986 (unlock: 7-day streak)
+### Prislista 1986 (everyone, default)
 
-The 1980s Systembolaget printed price list.
+A parody of the 1980s Systembolaget printed price list, drawn entirely with open-licensed fonts and original artwork. New players start here.
 
 - **Palette.** Cream newsprint `#f1e9d2` with a paper grain, black ink `#1d1b17`, Systembolaget green `#0d6b3a`, and yellow `#f3c63f` for highlights only.
 - **Type.** Libre Baskerville for headings and names, Barlow Condensed for category headers, IBM Plex Mono for product numbers, prices and case files.
@@ -63,22 +66,21 @@ The 1980s Systembolaget printed price list.
 - **Search.** Catalogue entries: number, name, dotted leader, price. The wine type is shown on every line, and a rejected guess gets a rubber stamp.
 - **Effects.** Confetti becomes torn paper price tags. The board-complete card is a stamped receipt.
 
-This theme leans on Systembolaget's visual identity. Locking it behind a streak makes it a reward. It does not reduce trademark exposure, because the theme still ships in the public repo and bundle.
-
 ## Unlocks
 
-- **Rules.** Modern and Midsommar are always available. Cyberwave unlocks on the first completed board. Speakeasy unlocks on the first board completed with zero misses. Prislista 1986 unlocks when the player's best streak reaches 7 days.
+- **Rules.** Prislista 1986 and Midsommar are always available. Cyberwave unlocks on the first completed board. Speakeasy unlocks on the first board completed with zero misses. Modern unlocks when the player's best streak reaches 7 days.
 - **Permanence.** Unlocks are permanent.
-- **Where unlocks come from.** Board-based unlocks are detected on the device when the board-complete celebration fires. They are stored on the device and, when logged in, merged into the account. The streak unlock is read from `longestStreak` on the player's public profile, so it needs a login. Streaks are frozen until server-side scoring lands, so Prislista is reachable today only for players whose existing best streak is already 7 or more.
+- **Where unlocks come from.** Board-based unlocks are detected on the device when the board-complete celebration fires. They are stored on the device and, when logged in, merged into the account. The streak unlock is read from `longestStreak` on the player's public profile, so it needs a login. Streaks are frozen until server-side scoring lands, so Modern is reachable today only for players whose existing best streak is already 7 or more.
 - **Cheating.** Unlocks are cosmetic, so tracking them on the client is acceptable. A player who edits local storage gets a theme, nothing more.
 - **The unlock moment.** When a theme unlocks, the celebration is followed by a "New theme unlocked" card with a live preview swatch and two buttons, "Try it now" and "Later".
+- **No grandfathering.** Existing players also move to Prislista 1986 when it ships, and keep Modern only if their best streak is already 7 or more.
 - **Locked themes in the picker.** They stay visible with their swatch dimmed, a lock, the unlock condition, and progress where it's measurable, for example "5 of 7 days".
 
 ## Architecture
 
 ### Tokens: `src/theme/`
 
-- **`tokens.ts`.** Defines a `Theme` type and one object per theme (`modern`, `midsommar`, `cyberwave`, `speakeasy`, `prislista`), all with identical shape:
+- **`tokens.ts`.** Defines a `Theme` type and one object per theme (`prislista`, `midsommar`, `cyberwave`, `speakeasy`, `modern`), all with identical shape:
   - `colors`: page, surface, ink, inkMuted, accent, accentAlt, highlight, cellFill, cellBorder, headerCol, headerRow, correct, nearMiss, miss, overlay, dialogSurface, dialogInk.
   - `fonts`: logo, display, body, condensed, mono. Each has a system fallback.
   - `borders`, `radii`, and `glow`, an optional shadow recipe for the neon look.
@@ -104,7 +106,7 @@ Each theme's bespoke artwork is a small component, for example `CyberwaveBackdro
 
 - **Device.** AsyncStorage keys `dokubolaget.theme` and `dokubolaget.unlockedThemes`.
 - **Account.** `theme` and `unlockedThemes` fields in `users/{uid}/private/profile`. On login the two unlock sets are merged (union) and written back to both. The account's theme choice wins if it is available.
-- **Parsing.** An unknown, corrupt or locked stored theme falls back to Modern.
+- **Parsing.** An unknown, corrupt or locked stored theme falls back to Prislista 1986.
 
 ### Firestore rules
 
@@ -116,7 +118,7 @@ Each theme's bespoke artwork is a small component, for example `CyberwaveBackdro
 
 ### Web details
 
-The page background and the `theme-color` meta tag follow the active theme, so there's no white flash and the phone status bar matches. The static default in `src/app/+html.tsx` stays Modern.
+The page background and the `theme-color` meta tag follow the active theme, so there's no white flash and the phone status bar matches. The static default in `src/app/+html.tsx` becomes the Prislista paper colour, since that is the default theme.
 
 ## Scope of touched files
 
@@ -127,7 +129,7 @@ The page background and the `theme-color` meta tag follow the active theme, so t
 ## Error handling
 
 - Fonts not yet loaded: system fallback fonts.
-- Stored theme corrupt, unknown or locked: Modern.
+- Stored theme corrupt, unknown or locked: Prislista 1986.
 - Account write fails (offline or rules): device values still apply; the failure is logged like other persistence errors.
 - A theme decoration throws: an error boundary around `ThemeBackdrop` drops the decoration and keeps the screen.
 
@@ -153,19 +155,19 @@ The page background and the `theme-color` meta tag follow the active theme, so t
 
 Built in steps, each leaving the app working:
 
-1. Tokens, provider and `unlocks.ts`, with only Modern defined.
+1. Tokens, provider and `unlocks.ts`, with only Modern defined and still the default.
 2. Screens migrated one at a time to tokens, with Modern visually identical.
 3. Picker, unlock detection, the unlock card and persistence, including the rules change.
-4. Midsommar.
-5. Cyberwave.
-6. Speakeasy.
-7. Prislista 1986.
+4. Prislista 1986. It becomes the default and Modern becomes locked in the same step, so nobody is ever left without an available theme.
+5. Midsommar.
+6. Cyberwave.
+7. Speakeasy.
 
 Each theme step bundles its fonts, adds its tokens, copy, decorations and confetti style, and gets its own screenshot pass. The container is rebuilt and checked at the end.
 
 ## Dependencies and follow-ups
 
 - **Swedish/English support** is its own spec. This spec only provides both languages for the theme flavour strings.
-- **Prislista unlock.** It becomes reachable for everyone once server-side scoring and streaks land (the next spec after these).
-- **Modern's fonts.** Replacing the two Systembolaget-lookalike fonts (`monopol.ttf`, `bolagetMediumCondensed.ttf`) stays a separate follow-up.
+- **Modern unlock.** It becomes reachable for everyone once server-side scoring and streaks land (the next spec after these).
+- **Modern's fonts.** Locking Modern doesn't stop its Systembolaget font files shipping. Swapping them for open-licensed lookalikes, keeping the parody look, stays a separate follow-up.
 - **Out of scope.** Native (App Store / Play) builds. Nothing here is web-only.
