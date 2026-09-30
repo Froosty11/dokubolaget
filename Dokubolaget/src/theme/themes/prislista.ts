@@ -13,13 +13,14 @@ export const prislista: Theme = {
     headerCol: "#1d1b17", headerRow: "#1d1b17", headerLabelBg: "#f1e9d2", icon: "#1d1b17", pulse: "#0d6b3a",
     correct: "#0d6b3a", correctBg: "#dfe8cf", nearMiss: "#6e4608", nearMissBg: "#f6e3a6", miss: "#8f1d17", missBg: "#efd2c4",
     hint: "#5b5446", divider: "#1d1b17", overlay: "rgba(29, 27, 23, 0.45)", celebrationOverlay: "rgba(29, 27, 23, 0.35)",
-    dialogSurface: "#f7f1df", dialogInk: "#1d1b17", dialogButton: "#1d1b17", dialogButtonInk: "#f1e9d2",
+    dialogSurface: "#f7f1df", dialogInk: "#1d1b17", dialogButton: "#1d1b17", dialogButtonInk: "#f1e9d2", gateOverlay: "#1d1b17",
   },
   fonts: {
     logo: "LibreBaskerville_700Bold", display: "LibreBaskerville_400Regular", body: "LibreBaskerville_400Regular",
     bodyStrong: "LibreBaskerville_700Bold", condensed: "BarlowCondensed_600SemiBold", mono: "IBMPlexMono_400Regular",
   },
   radii: { card: 0, cell: 0, button: 0, pill: 0 },
+  typeScale: { headerLabel: 1 },
   borders: { cell: 1, header: 1.5, card: 1.5 },
   glow: null,
   flags: {

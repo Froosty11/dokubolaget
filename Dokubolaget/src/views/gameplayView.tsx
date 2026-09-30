@@ -84,6 +84,8 @@ export function GameView(props: Readonly<GameViewProps>) {
   // Prislista draws the board as a ruled price-list table: no gaps, hairlines.
   const ruled = theme.flags.ruledTable;
   const slipFeedback = theme.flags.feedbackPlacement === "slip";
+  // Midsommar: cross-stitched headers and a faint flower in empty cells.
+  const stitched = theme.id === "midsommar";
   const { width: windowWidth, height: windowHeight } = useWindowDimensions();
   // Fit the board to whichever dimension is tighter. Laptops are wide but
   // short, so sizing from width alone pushed the bottom row off-screen.
@@ -207,6 +209,7 @@ export function GameView(props: Readonly<GameViewProps>) {
     },
     categoryLabel: {
       fontFamily: fonts.condensed,
+      fontSize: 14 * theme.typeScale.headerLabel,
       color: colors.ink,
       marginTop: 4,
       backgroundColor: colors.headerLabelBg,
@@ -402,8 +405,19 @@ export function GameView(props: Readonly<GameViewProps>) {
         <View style={[
           board.category,
           { borderColor: axis === "col" ? colors.headerCol : colors.headerRow },
+          stitched ? { borderColor: colors.cellBorder, backgroundColor: colors.headerLabelBg } : null,
           ruled ? (axis === "col" ? { borderBottomWidth: borders.header } : { borderRightWidth: borders.header }) : null,
         ]}>
+          {stitched ? (
+            <View
+              pointerEvents="none"
+              style={{
+                position: "absolute", top: 4, left: 4, right: 4, bottom: 4,
+                borderWidth: 2, borderStyle: "dashed", borderRadius: Math.max(0, radii.cell - 4),
+                borderColor: axis === "col" ? colors.headerCol : colors.headerRow,
+              }}
+            />
+          ) : null}
           {imageUrl ? (
             <Image source={{ uri: imageUrl }} style={board.categoryImage} />
           ) : iconName ? (
@@ -432,7 +446,7 @@ export function GameView(props: Readonly<GameViewProps>) {
     return (
       <AnimatedCellSlot
         slotStyle={board.cellSlot}
-        cellStyle={board.cell}
+        cellStyle={[board.cell, selectedProduct && stitched ? { borderColor: colors.correct, borderWidth: 2.5 } : null]}
         filled={Boolean(selectedProduct)}
         flipNonce={flipNonceByCell[item] || 0}
         shakeNonce={shakeNonceByCell[item] || 0}
@@ -478,6 +492,14 @@ function CellContent({
         style={app.cellImage}
         onError={() => setImageFailed(true)}
       />
+    );
+  }
+
+  if (!selectedProduct && stitched) {
+    return (
+      <View style={[board.cellLabelWrap, { flex: 1 }]}>
+        <Text style={{ fontSize: 22, color: colors.cellBorder }}>✿</Text>
+      </View>
     );
   }
 

@@ -13,13 +13,14 @@ export const modern: Theme = {
     headerCol: "#e0e0e0", headerRow: "#e0e0e0", headerLabelBg: "#ffffff", icon: "#262626", pulse: "#1e9e55",
     correct: "#155724", correctBg: "#d4edda", nearMiss: "#7a5a00", nearMissBg: "#fff1c2", miss: "#721c24", missBg: "#f8d7da",
     hint: "#6f6242", divider: "#dddddd", overlay: "rgba(0, 0, 0, 0.35)", celebrationOverlay: "rgba(0, 40, 18, 0.55)",
-    dialogSurface: "#ffffff", dialogInk: "#262626", dialogButton: "#c7e5ce", dialogButtonInk: "#0a6149",
+    dialogSurface: "#ffffff", dialogInk: "#262626", dialogButton: "#c7e5ce", dialogButtonInk: "#0a6149", gateOverlay: "#c7e5ce",
   },
   fonts: {
     logo: "Monopol", display: "Monopol", body: "InterVariable", bodyStrong: "InterVariable",
     condensed: "BolagetMediumCondensed", mono: "InterVariable",
   },
   radii: { card: 18, cell: 3, button: 24, pill: 10 },
+  typeScale: { headerLabel: 1 },
   borders: { cell: 1, header: 1, card: 4 },
   glow: null,
   flags: {

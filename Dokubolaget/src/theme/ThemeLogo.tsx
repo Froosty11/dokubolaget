@@ -23,7 +23,11 @@ export function ThemeLogo({ height, fill = false }: { height: number; fill?: boo
         lineHeight: height * 0.42,
         textAlign: "center",
         color: theme.colors.accent,
-        ...(theme.glow ? { textShadowColor: theme.glow.color, textShadowRadius: theme.glow.radius } : {}),
+        // Neon glows; everything else gets a soft halo so the name stays
+        // readable over backdrop artwork.
+        ...(theme.glow
+          ? { textShadowColor: theme.glow.color, textShadowRadius: theme.glow.radius }
+          : { textShadowColor: theme.colors.page, textShadowRadius: 8 }),
       }}
     >
       {"DOKU\nBOLAGET"}

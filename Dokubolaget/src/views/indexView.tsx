@@ -250,7 +250,7 @@ function AgeVerificationDialog({
 const makeAgeStyles = (theme: Theme) => ({
   overlay: {
     flex: 1,
-    backgroundColor: theme.colors.dialogButton,
+    backgroundColor: theme.colors.gateOverlay,
     opacity: 0.4, // Unsure whether to keep
   },
   content: {

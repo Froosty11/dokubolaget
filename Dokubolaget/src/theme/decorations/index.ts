@@ -1,5 +1,9 @@
 // Registers every theme's decorations. Imported once by ThemeBackdrop.tsx.
+import { Maypole } from "./Maypole";
+import { MidsommarMeadow } from "./MidsommarMeadow";
 import { PaperGrain } from "./PaperGrain";
-import { BACKDROPS } from "./registry";
+import { BACKDROPS, CELEBRATION_ART } from "./registry";
 
 BACKDROPS.prislista = PaperGrain;
+BACKDROPS.midsommar = MidsommarMeadow;
+CELEBRATION_ART.midsommar = Maypole;

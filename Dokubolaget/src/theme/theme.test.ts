@@ -42,3 +42,7 @@ test("default theme is registered and always available", () => {
   expect(getTheme(DEFAULT_THEME_ID).id).toBe(DEFAULT_THEME_ID);
   expect(getTheme(DEFAULT_THEME_ID).unlock.kind).toBe("always");
 });
+
+test("themes appear in picker order", () => {
+  expect(THEMES.map((t) => t.id)).toEqual(["prislista", "midsommar", "modern"]);
+});

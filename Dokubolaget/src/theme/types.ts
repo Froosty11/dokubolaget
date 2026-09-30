@@ -11,6 +11,8 @@ export type ThemeColors = {
   correct: string; correctBg: string; nearMiss: string; nearMissBg: string; miss: string; missBg: string;
   hint: string; divider: string; overlay: string; celebrationOverlay: string;
   dialogSurface: string; dialogInk: string; dialogButton: string; dialogButtonInk: string;
+  // Tint behind the age gate (drawn at 40% opacity).
+  gateOverlay: string;
 };
 
 // Font family names as registered with expo-font.
@@ -36,6 +38,8 @@ export type Theme = {
   colors: ThemeColors;
   fonts: ThemeFonts;
   radii: { card: number; cell: number; button: number; pill: number };
+  // Wide display fonts need smaller board header labels to avoid breaking words.
+  typeScale: { headerLabel: number };
   borders: { cell: number; header: number; card: number };
   glow: { color: string; radius: number } | null;
   flags: {

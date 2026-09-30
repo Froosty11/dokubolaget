@@ -6,6 +6,10 @@ import { LibreBaskerville_700Bold } from "@expo-google-fonts/libre-baskerville/7
 import { BarlowCondensed_600SemiBold } from "@expo-google-fonts/barlow-condensed/600SemiBold";
 import { IBMPlexMono_400Regular } from "@expo-google-fonts/ibm-plex-mono/400Regular";
 import { IBMPlexMono_600SemiBold } from "@expo-google-fonts/ibm-plex-mono/600SemiBold";
+import { Fraunces_700Bold } from "@expo-google-fonts/fraunces/700Bold";
+import { Fraunces_900Black } from "@expo-google-fonts/fraunces/900Black";
+import { Nunito_600SemiBold } from "@expo-google-fonts/nunito/600SemiBold";
+import { Nunito_800ExtraBold } from "@expo-google-fonts/nunito/800ExtraBold";
 
 // Loaded at startup by app/_layout.tsx, so always safe to fall back to.
 export const FALLBACK_FONTS: ThemeFonts = {
@@ -20,6 +24,7 @@ export const THEME_FONT_LOADERS: Partial<Record<ThemeId, () => Record<string, an
     LibreBaskerville_400Regular, LibreBaskerville_700Bold, BarlowCondensed_600SemiBold,
     IBMPlexMono_400Regular, IBMPlexMono_600SemiBold,
   }),
+  midsommar: () => ({ Fraunces_700Bold, Fraunces_900Black, Nunito_600SemiBold, Nunito_800ExtraBold }),
 };
 
 export function useThemeFonts(id: ThemeId): boolean {
