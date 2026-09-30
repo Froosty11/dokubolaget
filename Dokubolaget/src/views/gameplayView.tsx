@@ -81,9 +81,7 @@ export function GameView(props: Readonly<GameViewProps>) {
     miss: { background: colors.missBg, text: colors.miss },
   };
   const glowText = theme.glow ? { textShadowColor: theme.glow.color, textShadowRadius: theme.glow.radius } : null;
-  // Prislista draws the board as a ruled price-list table: no gaps, hairlines.
-  const ruled = theme.flags.ruledTable;
-  const slipFeedback = theme.flags.feedbackPlacement === "slip";
+
   // Midsommar: cross-stitched headers and a faint flower in empty cells.
   const stitched = theme.id === "midsommar";
   // Speakeasy: stepped double gold frames on headers and solved cells.
@@ -98,10 +96,14 @@ export function GameView(props: Readonly<GameViewProps>) {
   const glowBox = theme.glow
     ? { shadowColor: theme.glow.color, shadowOpacity: 1, shadowRadius: theme.glow.radius, shadowOffset: { width: 0, height: 0 } }
     : null;
+  // Prislista draws the board as a ruled price-list table: no gaps, hairlines.
+  const ruled = theme.flags.ruledTable;
+  const slipFeedback = theme.flags.feedbackPlacement === "slip";
   const { width: windowWidth, height: windowHeight } = useWindowDimensions();
   // Fit the board to whichever dimension is tighter. Laptops are wide but
   // short, so sizing from width alone pushed the bottom row off-screen.
-  const TAB_BAR_AND_PADDING = 56 + 32 + 10;
+  // Themes that show feedback as a slip under the board need room for it.
+  const TAB_BAR_AND_PADDING = 56 + 32 + 10 + (slipFeedback ? 56 : 0);
   const logoHeight = Math.round(Math.min(110, Math.max(56, windowHeight * 0.12)));
   const boardSize = Math.max(
     280,
