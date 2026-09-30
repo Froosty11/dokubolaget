@@ -1,10 +1,13 @@
 import { observer } from "mobx-react-lite";
 import { IndexView } from "../views/indexView";
+import { ThemeUnlockView } from "../views/themeUnlockView";
+import { useTheme } from "../theme/ThemeProvider";
+import type { ThemeId } from "../theme/types";
 import { reactiveModel } from "../mobxReactiveModel";
 import { useState, useEffect } from "react";
 
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { Linking } from "react-native";
+import { Linking, View } from "react-native";
 import * as Haptics from "expo-haptics"
 
 //temp
@@ -22,6 +25,16 @@ const AGE_VERIFIED_KEY = "verified";
 const Index = observer(
     function (props: IndexProps,) {
         const [isOpen, setIsOpen] = useState(false);
+        const { setId } = useTheme();
+        const [unlockCard, setUnlockCard] = useState<ThemeId | null>(null);
+
+        // Unlocks earned away from the board (streaks) are announced here.
+        const hasPendingUnlock = reactiveModel.pendingUnlocks.length > 0;
+        useEffect(() => {
+            if (!unlockCard && !isOpen && hasPendingUnlock) {
+                setUnlockCard(reactiveModel.shiftPendingUnlock());
+            }
+        }, [hasPendingUnlock, isOpen, unlockCard]);
 
         useEffect(() => {
             // AsyncStorage is cross-platform (uses localStorage on web,
@@ -63,9 +76,21 @@ const Index = observer(
             rejectAgeACB
         }
 
-        return (<IndexView
-            ageGate={ageGate}
-        />)
+        return (
+            <View style={{ flex: 1 }}>
+                <IndexView ageGate={ageGate} />
+                {unlockCard ? (
+                    <ThemeUnlockView
+                        themeId={unlockCard}
+                        onTry={() => {
+                            setId(unlockCard);
+                            setUnlockCard(null);
+                        }}
+                        onLater={() => setUnlockCard(null)}
+                    />
+                ) : null}
+            </View>
+        )
 
     }
 );

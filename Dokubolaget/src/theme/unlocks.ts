@@ -59,3 +59,15 @@ export function mergeUnlocked(a: readonly ThemeId[], b: readonly ThemeId[]): The
 export function resolveActiveThemeId(stored: ThemeId | null, available: readonly ThemeId[], fallback: ThemeId): ThemeId {
   return stored && available.includes(stored) ? stored : fallback;
 }
+
+export type ThemeCardState = {
+  state: "active" | "available" | "locked";
+  progress: { current: number; target: number } | null;
+};
+
+// What the theme picker shows for one theme.
+export function themeCardState(theme: Theme, ctx: UnlockContext, activeId: ThemeId): ThemeCardState {
+  if (theme.id === activeId) return { state: "active", progress: null };
+  if (isThemeAvailable(theme, ctx)) return { state: "available", progress: null };
+  return { state: "locked", progress: ctx.loggedIn ? unlockProgress(theme, ctx) : null };
+}

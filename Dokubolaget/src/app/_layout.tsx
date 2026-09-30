@@ -34,6 +34,7 @@ export default function RootLayout() {
                 contentStyle: { backgroundColor: "transparent" },
               }}
             />
+            <Stack.Screen name="themes" options={{ headerShown: false, presentation: "modal" }} />
           </Stack>
         </NavThemeProvider>
       </ThemeProvider>

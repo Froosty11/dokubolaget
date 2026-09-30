@@ -15,6 +15,7 @@ import DokubolagetLogo from "../../assets/Dokubolaget3.svg";
 import Chevron from "../../assets/chevron.svg";
 import Drinks from "../../assets/drinks.svg";
 import Smakprofil from "../../assets/smakprofil.svg";
+import Lista from "../../assets/lista.svg";
 
 
 /* === INDEX OPTIONS === */
@@ -90,6 +91,11 @@ export function IndexView({ageGate}) {
   //   setShowLeaderboard(true);
   // }
 
+  function themesACB() {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium)
+    router.push("/themes");
+  }
+
   function loginACB() {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium)
     setShowLogin(true);
@@ -131,6 +137,12 @@ export function IndexView({ageGate}) {
           Icon={Drinks}
           text="Daily play!"
           onPress={dailyPlayACB}
+        />
+
+        <IndexOption
+          Icon={Lista}
+          text="Themes"
+          onPress={themesACB}
         />
 
         {/* Login conditional rendering */}

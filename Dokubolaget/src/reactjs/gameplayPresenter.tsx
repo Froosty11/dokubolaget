@@ -4,6 +4,8 @@ import { observer } from "mobx-react-lite"
 import AsyncStorage from "@react-native-async-storage/async-storage"
 import { GameView } from "../views/gameplayView"
 import { BoardCompleteView } from "../views/boardCompleteView"
+import { ThemeUnlockView } from "../views/themeUnlockView"
+import type { ThemeId } from "../theme/types"
 import type { HeaderRevealState } from "../views/boardAnimations"
 import { Dossier, redactionKeysForTags } from "../components/Dossier"
 import { router } from "expo-router"
@@ -34,6 +36,8 @@ type GameplayProps = {
     buildShareText: () => string
     lastFeedback: GuessFeedback | null
     clearLastFeedback: () => void
+    recordBoardComplete: () => ThemeId[]
+    shiftPendingUnlock: () => ThemeId | null
   }
 }
 
@@ -63,7 +67,8 @@ async function shareTextACB(text: string): Promise<"shared" | "copied" | "failed
 }
 
 const Gameplay = observer(function GameRender({ model }: GameplayProps) {
-    const { copy } = useTheme();
+    const { copy, setId } = useTheme();
+    const [unlockCard, setUnlockCard] = useState<ThemeId | null>(null);
     const [feedback, setFeedback] = useState<GuessFeedback | null>(null);
     const fadeAnim = useRef(new Animated.Value(1)).current;
 
@@ -123,6 +128,7 @@ const Gameplay = observer(function GameRender({ model }: GameplayProps) {
       const previous = previousFilledRef.current;
       previousFilledRef.current = model.filledCellCount;
       if (previous < 9 && model.filledCellCount === 9) {
+        model.recordBoardComplete();
         setShareStatus("idle");
         const timer = setTimeout(() => setBoardCompleteOpen(true), 900);
         return () => clearTimeout(timer);
@@ -240,7 +246,21 @@ const Gameplay = observer(function GameRender({ model }: GameplayProps) {
             shareStatus={shareStatus}
             receiptLines={receiptLines(model.selectedProductsByCell)}
             onShare={onShareACB}
-            onClose={() => setBoardCompleteOpen(false)}
+            onClose={() => {
+              setBoardCompleteOpen(false);
+              setUnlockCard(model.shiftPendingUnlock());
+            }}
+          />
+        ) : null}
+
+        {unlockCard ? (
+          <ThemeUnlockView
+            themeId={unlockCard}
+            onTry={() => {
+              setId(unlockCard);
+              setUnlockCard(model.shiftPendingUnlock());
+            }}
+            onLater={() => setUnlockCard(model.shiftPendingUnlock())}
           />
         ) : null}
       </SafeAreaView>

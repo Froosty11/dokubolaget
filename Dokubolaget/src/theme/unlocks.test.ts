@@ -77,3 +77,20 @@ describe("resolveActiveThemeId", () => {
   test("falls back when nothing is stored", () =>
     expect(resolveActiveThemeId(null, ["prislista"], "prislista")).toBe("prislista"));
 });
+
+import { themeCardState } from "./unlocks";
+
+describe("themeCardState", () => {
+  const ctx = { unlocked: [], longestStreak: 5, loggedIn: true };
+  test("active, available and locked", () => {
+    expect(themeCardState(ALL[0], ctx, "prislista")).toEqual({ state: "active", progress: null });
+    expect(themeCardState(ALL[1], ctx, "prislista")).toEqual({ state: "available", progress: null });
+    expect(themeCardState(ALL[2], ctx, "prislista")).toEqual({ state: "locked", progress: null });
+  });
+  test("a locked streak theme reports progress", () => {
+    expect(themeCardState(ALL[4], ctx, "prislista")).toEqual({ state: "locked", progress: { current: 5, target: 7 } });
+  });
+  test("logged-out players see no streak progress", () => {
+    expect(themeCardState(ALL[4], { ...ctx, loggedIn: false }, "prislista").progress).toBeNull();
+  });
+});
