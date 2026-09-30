@@ -7,6 +7,9 @@ import generatedBoards from "../data/generated-boards.json";
 import { doesProductMatchTagId } from "./boardTags";
 import { formatTagLabel } from "./tagDisplay";
 import { fetchBoardForDateACB } from "./firestoreModel";
+import { createThemeState } from "./theme/themeState";
+import { THEMES } from "./theme/registry";
+import { unlocksForBoard } from "./theme/unlocks";
 
 export type BoardTag = {
   id: string;
@@ -141,7 +144,7 @@ function getProductThumbnailUrlACB(product: any) {
    The Model keeps the state of the application (Application State). 
    It is an abstract object, i.e. it knows nothing about graphics and interaction.
 */
-export const model = {
+const modelBody = {
   /* ===== Gameplay related props ===== */
   currentCell: null,
   topCategories: initialBoardPick.board.cols,
@@ -418,7 +421,25 @@ export const model = {
 
     resolvePromise(searchPromise, this.searchResultsPromiseState);
   },
+
+  // Called once when a real (non-practice) board reaches 9/9. Returns the
+  // themes it newly unlocked.
+  recordBoardComplete(this: any) {
+    if (this.practiceBoard) return [];
+    const misses = Object.values(this.missesByCell as Record<number, number>).reduce(
+      (sum, count) => sum + Number(count || 0),
+      0,
+    );
+    return this.addUnlocks(unlocksForBoard(THEMES, { misses }), true);
+  },
 };
+
+// Theme state is merged by property descriptor so its getters stay getters
+// (MobX turns them into computeds).
+export const model = Object.defineProperties(
+  modelBody,
+  Object.getOwnPropertyDescriptors(createThemeState()),
+) as typeof modelBody & ReturnType<typeof createThemeState>;
 
 // expose Systembolaget API to the browser console for debugging
 if (__DEV__ && globalThis.window) {

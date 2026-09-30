@@ -1,0 +1,22 @@
+import { expect, test } from "bun:test";
+import { createThemeState } from "./themeState";
+
+test("setThemeId refuses locked themes", () => {
+  const s = createThemeState();
+  expect(s.setThemeId("cyberwave")).toBe(false);
+  expect(s.activeThemeId).toBe(s.themeId);
+});
+
+test("addUnlocks announces only fresh unlocks, once", () => {
+  const s = createThemeState();
+  expect(s.addUnlocks(["cyberwave"], true)).toEqual(["cyberwave"]);
+  expect(s.addUnlocks(["cyberwave"], true)).toEqual([]);
+  expect(s.pendingUnlocks).toEqual(["cyberwave"]);
+  expect(s.shiftPendingUnlock()).toBe("cyberwave");
+  expect(s.shiftPendingUnlock()).toBeNull();
+});
+
+test("always-available themes are never recorded as unlocks", () => {
+  const s = createThemeState();
+  expect(s.addUnlocks([s.activeThemeId], true)).toEqual([]);
+});

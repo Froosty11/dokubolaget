@@ -1,9 +1,11 @@
 import "@tamagui/native/setup-zeego";
 
-import { DefaultTheme, ThemeProvider } from "@react-navigation/native";
+import { DefaultTheme, ThemeProvider as NavThemeProvider } from "@react-navigation/native";
 import { Stack } from "expo-router";
 import { TamaguiProvider } from "tamagui";
 import { tamaguiConfig } from "../../tamagui.config";
+import { ThemeProvider } from "../theme/ThemeProvider";
+import { reactiveModel } from "../mobxReactiveModel";
 
 import { useFonts } from "expo-font";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
@@ -20,18 +22,20 @@ export default function RootLayout() {
 
   return (
     <TamaguiProvider config={tamaguiConfig} defaultTheme="light">
-      <ThemeProvider value={DefaultTheme}>
-        <Stack>
-          <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-          <Stack.Screen
-            name="search"
-            options={{
-              headerShown: false,
-              presentation: "transparentModal",
-              contentStyle: { backgroundColor: "transparent" },
-            }}
-          />
-        </Stack>
+      <ThemeProvider model={reactiveModel}>
+        <NavThemeProvider value={DefaultTheme}>
+          <Stack>
+            <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+            <Stack.Screen
+              name="search"
+              options={{
+                headerShown: false,
+                presentation: "transparentModal",
+                contentStyle: { backgroundColor: "transparent" },
+              }}
+            />
+          </Stack>
+        </NavThemeProvider>
       </ThemeProvider>
     </TamaguiProvider>
   );
