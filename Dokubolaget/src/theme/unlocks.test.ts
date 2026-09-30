@@ -94,3 +94,8 @@ describe("themeCardState", () => {
     expect(themeCardState(ALL[4], { ...ctx, loggedIn: false }, "prislista").progress).toBeNull();
   });
 });
+
+test("themeCardState honours an explicit availability list", () => {
+  const ctx = { unlocked: [], longestStreak: 0, loggedIn: false };
+  expect(themeCardState(ALL[4], ctx, "prislista", ["prislista", "modern"]).state).toBe("available");
+});

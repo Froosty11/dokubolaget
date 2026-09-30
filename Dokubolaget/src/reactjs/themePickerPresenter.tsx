@@ -14,9 +14,9 @@ type ThemePickerModel = {
 };
 
 export const ThemePicker = observer(function ThemePicker({ model }: { model: ThemePickerModel }) {
-  const { id, setId } = useTheme();
+  const { id, setId, available } = useTheme();
   const ctx = { unlocked: model.unlockedThemes, longestStreak: model.longestStreak, loggedIn: model.loggedIn };
-  const cards = THEMES.map((theme) => ({ theme, card: themeCardState(theme, ctx, id) }));
+  const cards = THEMES.map((theme) => ({ theme, card: themeCardState(theme, ctx, id, available) }));
   const streakLine = model.loggedIn ? `Best streak: ${model.longestStreak} days` : "Log in to earn streak rewards";
 
   function onPick(next: ThemeId) {

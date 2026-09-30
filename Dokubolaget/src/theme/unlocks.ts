@@ -65,9 +65,15 @@ export type ThemeCardState = {
   progress: { current: number; target: number } | null;
 };
 
-// What the theme picker shows for one theme.
-export function themeCardState(theme: Theme, ctx: UnlockContext, activeId: ThemeId): ThemeCardState {
+// What the theme picker shows for one theme. `available` (the model's list)
+// wins when given, so build-time overrides show up in the picker too.
+export function themeCardState(
+  theme: Theme,
+  ctx: UnlockContext,
+  activeId: ThemeId,
+  available?: readonly ThemeId[],
+): ThemeCardState {
   if (theme.id === activeId) return { state: "active", progress: null };
-  if (isThemeAvailable(theme, ctx)) return { state: "available", progress: null };
+  if (available ? available.includes(theme.id) : isThemeAvailable(theme, ctx)) return { state: "available", progress: null };
   return { state: "locked", progress: ctx.loggedIn ? unlockProgress(theme, ctx) : null };
 }
