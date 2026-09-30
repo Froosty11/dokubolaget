@@ -88,7 +88,7 @@ function SearchResultRow(props: Readonly<SearchResultRowProps>) {
 			{theme.flags.dottedLeaderPrices ? (
 				<View style={row.resultTextWrap}>
 					<View style={row.leaderLine}>
-						<Text style={row.leaderNumber}>{result.raw?.productNumber}</Text>
+						<Text style={row.leaderNumber} numberOfLines={1}>{result.raw?.productNumber}</Text>
 						<Text style={row.leaderName} numberOfLines={1}>{result.raw?.productNameBold ?? result.name}</Text>
 						<View style={row.leaderDots} />
 						<Text style={row.leaderPrice}>{formatKronor(result.raw?.price)}:-</Text>
@@ -197,8 +197,8 @@ const makeRowStyles = (theme: Theme) => ({
 	},
 	leaderNumber: {
 		fontFamily: theme.fonts.mono,
-		fontSize: 13,
-		width: 46,
+		fontSize: 12,
+		width: 62,
 		color: theme.colors.ink,
 	},
 	leaderName: {
@@ -223,7 +223,7 @@ const makeRowStyles = (theme: Theme) => ({
 		color: theme.colors.ink,
 	},
 	leaderSub: {
-		marginLeft: 46,
+		marginLeft: 62,
 		fontFamily: theme.fonts.mono,
 		fontSize: 11,
 		color: theme.colors.inkMuted,

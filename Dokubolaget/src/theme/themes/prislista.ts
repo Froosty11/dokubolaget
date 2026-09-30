@@ -1,0 +1,45 @@
+import type { Theme } from "../types";
+
+// A parody of the 1980s Systembolaget printed price list: cream newsprint,
+// black ink, green and a little yellow. Open-licensed fonts only.
+export const prislista: Theme = {
+  id: "prislista",
+  dark: false,
+  colors: {
+    page: "#f1e9d2", surface: "#f7f1df", surfaceAlt: "#e8dcbc",
+    ink: "#1d1b17", inkStrong: "#1d1b17", inkMuted: "#5b5446", inkFaint: "#625a49",
+    accent: "#0d6b3a", accentInk: "#f1e9d2", highlight: "#f3c63f",
+    cellFill: "#f1e9d2", cellBorder: "#1d1b17", cellShimmer: "#e6d9b4",
+    headerCol: "#1d1b17", headerRow: "#1d1b17", headerLabelBg: "#f1e9d2", icon: "#1d1b17", pulse: "#0d6b3a",
+    correct: "#0d6b3a", correctBg: "#dfe8cf", nearMiss: "#6e4608", nearMissBg: "#f6e3a6", miss: "#8f1d17", missBg: "#efd2c4",
+    hint: "#5b5446", divider: "#1d1b17", overlay: "rgba(29, 27, 23, 0.45)", celebrationOverlay: "rgba(29, 27, 23, 0.35)",
+    dialogSurface: "#f7f1df", dialogInk: "#1d1b17", dialogButton: "#1d1b17", dialogButtonInk: "#f1e9d2",
+  },
+  fonts: {
+    logo: "LibreBaskerville_700Bold", display: "LibreBaskerville_400Regular", body: "LibreBaskerville_400Regular",
+    bodyStrong: "LibreBaskerville_700Bold", condensed: "BarlowCondensed_600SemiBold", mono: "IBMPlexMono_400Regular",
+  },
+  radii: { card: 0, cell: 0, button: 0, pill: 0 },
+  borders: { cell: 1, header: 1.5, card: 1.5 },
+  glow: null,
+  flags: {
+    ruledTable: true, productNumberCells: true, dottedLeaderPrices: true,
+    greyscaleFlags: true, groupResultsByType: false, feedbackPlacement: "slip", celebrationLayout: "receipt",
+  },
+  confetti: { shape: "priceTags", colors: ["#0d6b3a", "#1d1b17", "#f3c63f", "#fbf7ea"] },
+  unlock: { kind: "always" },
+  copy: {
+    en: {
+      name: "Prislista 1986", description: "The old printed price list. Ink on newsprint.", unlockHint: "Always available.",
+      correctTitles: ["Godkänd!", "Skål!", "Right bottle!", "Noted!"], nearMissTitle: "Nära!",
+      completeTitle: "Receipt", searchTitle: "Make your guess",
+      tabHome: "Home", tabPlay: "Play", tabLeaderboard: "Leaderboard",
+    },
+    sv: {
+      name: "Prislista 1986", description: "Den gamla tryckta prislistan. Trycksvärta på tidningspapper.", unlockHint: "Alltid tillgänglig.",
+      correctTitles: ["Godkänd!", "Skål!", "Rätt vara!", "Noterat!"], nearMissTitle: "Nära!",
+      completeTitle: "Kvitto", searchTitle: "Gör din gissning",
+      tabHome: "Hem", tabPlay: "Spela", tabLeaderboard: "Topplista",
+    },
+  },
+};

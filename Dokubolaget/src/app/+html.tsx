@@ -25,7 +25,7 @@ export default function Root({ children }: PropsWithChildren) {
         />
 
         <link rel="manifest" href="/manifest.webmanifest" />
-        <meta name="theme-color" content="#007a33" />
+        <meta name="theme-color" content="#f1e9d2" />
         <link rel="icon" type="image/png" sizes="32x32" href="/favicon.png" />
         <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -43,7 +43,7 @@ export default function Root({ children }: PropsWithChildren) {
 }
 
 const responsiveBackground = `
-body { background-color: #f3f3f1; }`;
+body { background-color: #f1e9d2; }`;
 
 const registerServiceWorker = `
 if ("serviceWorker" in navigator) {

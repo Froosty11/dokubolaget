@@ -1,2 +1,5 @@
 // Registers every theme's decorations. Imported once by ThemeBackdrop.tsx.
-export {};
+import { PaperGrain } from "./PaperGrain";
+import { BACKDROPS } from "./registry";
+
+BACKDROPS.prislista = PaperGrain;

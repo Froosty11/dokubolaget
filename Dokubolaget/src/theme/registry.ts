@@ -1,10 +1,11 @@
 import { THEME_IDS, type Lang, type Theme, type ThemeId } from "./types";
 import { modern } from "./themes/modern";
+import { prislista } from "./themes/prislista";
 
 // Order here is the order in the theme picker.
-export const THEMES: Theme[] = [modern];
+export const THEMES: Theme[] = [prislista, modern];
 
-export const DEFAULT_THEME_ID: ThemeId = "modern";
+export const DEFAULT_THEME_ID: ThemeId = "prislista";
 
 // Replaced by the Swedish/English work; every theme already ships both.
 export const UI_LANG: Lang = "en";

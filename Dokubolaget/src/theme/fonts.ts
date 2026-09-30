@@ -1,6 +1,11 @@
 import * as Font from "expo-font";
 import { useEffect, useState } from "react";
 import type { ThemeFonts, ThemeId } from "./types";
+import { LibreBaskerville_400Regular } from "@expo-google-fonts/libre-baskerville/400Regular";
+import { LibreBaskerville_700Bold } from "@expo-google-fonts/libre-baskerville/700Bold";
+import { BarlowCondensed_600SemiBold } from "@expo-google-fonts/barlow-condensed/600SemiBold";
+import { IBMPlexMono_400Regular } from "@expo-google-fonts/ibm-plex-mono/400Regular";
+import { IBMPlexMono_600SemiBold } from "@expo-google-fonts/ibm-plex-mono/600SemiBold";
 
 // Loaded at startup by app/_layout.tsx, so always safe to fall back to.
 export const FALLBACK_FONTS: ThemeFonts = {
@@ -10,7 +15,12 @@ export const FALLBACK_FONTS: ThemeFonts = {
 
 // Each theme registers { familyName: fontModule } here. Loaded on demand the
 // first time the theme is used, so the first page load doesn't grow.
-export const THEME_FONT_LOADERS: Partial<Record<ThemeId, () => Record<string, any>>> = {};
+export const THEME_FONT_LOADERS: Partial<Record<ThemeId, () => Record<string, any>>> = {
+  prislista: () => ({
+    LibreBaskerville_400Regular, LibreBaskerville_700Bold, BarlowCondensed_600SemiBold,
+    IBMPlexMono_400Regular, IBMPlexMono_600SemiBold,
+  }),
+};
 
 export function useThemeFonts(id: ThemeId): boolean {
   const loader = THEME_FONT_LOADERS[id];

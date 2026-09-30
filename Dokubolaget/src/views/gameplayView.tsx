@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { FlatList, Image, Pressable, ScrollView as RNScrollView, StyleSheet, Text, View, useWindowDimensions, Animated } from "react-native";
+import { FlatList, Image, Platform, Pressable, ScrollView as RNScrollView, StyleSheet, Text, View, useWindowDimensions, Animated } from "react-native";
 import { makeAppStyles } from "../AppStyles"
 import { useTheme, useThemedStyles } from "../theme/ThemeProvider";
 import { ThemeLogo } from "../theme/ThemeLogo";
@@ -12,6 +12,7 @@ import InfoIcon from "../../assets/info.svg";
 import { Confetti } from "../components/Confetti";
 import { AnimatedCellSlot, AnimatedHeader, type HeaderRevealState } from "./boardAnimations";
 import type { GuessFeedback } from "../dokuModel";
+import { formatKronor } from "../searchHelpers";
 
 type BoardTag = {
   id: string;
@@ -80,6 +81,9 @@ export function GameView(props: Readonly<GameViewProps>) {
     miss: { background: colors.missBg, text: colors.miss },
   };
   const glowText = theme.glow ? { textShadowColor: theme.glow.color, textShadowRadius: theme.glow.radius } : null;
+  // Prislista draws the board as a ruled price-list table: no gaps, hairlines.
+  const ruled = theme.flags.ruledTable;
+  const slipFeedback = theme.flags.feedbackPlacement === "slip";
   const { width: windowWidth, height: windowHeight } = useWindowDimensions();
   // Fit the board to whichever dimension is tighter. Laptops are wide but
   // short, so sizing from width alone pushed the bottom row off-screen.
@@ -98,7 +102,7 @@ export function GameView(props: Readonly<GameViewProps>) {
       height: cellSize * 3
     },
     cellSlot: {
-      padding: 5,
+      padding: ruled ? 0 : 5,
       width: cellSize,
       height: cellSize
     },
@@ -114,6 +118,57 @@ export function GameView(props: Readonly<GameViewProps>) {
       padding: 5,
       width: "100%",
     },
+    ruledBoard: {
+      borderTopWidth: borders.header,
+      borderLeftWidth: borders.cell,
+      borderColor: colors.ink,
+    },
+    numberCell: {
+      flex: 1,
+      justifyContent: "flex-start",
+      gap: 2,
+    },
+    numberCellNr: {
+      fontFamily: fonts.mono,
+      fontSize: Math.max(9, cellSize * 0.1),
+      color: colors.accent,
+    },
+    numberCellName: {
+      fontFamily: fonts.display,
+      fontSize: Math.max(10, cellSize * 0.11),
+      lineHeight: Math.max(12, cellSize * 0.14),
+      color: colors.ink,
+      paddingRight: 14,
+    },
+    numberCellPrice: {
+      fontFamily: fonts.mono,
+      fontSize: Math.max(10, cellSize * 0.11),
+      color: colors.ink,
+    },
+    numberCellThumb: {
+      position: "absolute",
+      top: 2,
+      right: 2,
+      width: 14,
+      height: 34,
+      resizeMode: "contain",
+      opacity: 0.9,
+    },
+    slip: {
+      alignSelf: "center",
+      width: boardSize,
+      marginTop: 10,
+      borderWidth: 1.5,
+      borderStyle: "dashed",
+      borderColor: colors.ink,
+      paddingVertical: 10,
+      paddingHorizontal: 12,
+    },
+    slipText: {
+      fontFamily: fonts.mono,
+      fontSize: 13,
+      lineHeight: 19,
+    },
     cellLabelWrap: {
       width: "100%",
       justifyContent: "center",
@@ -127,7 +182,9 @@ export function GameView(props: Readonly<GameViewProps>) {
     category: {
       flex: 1,
       padding: 5,
-      borderWidth: borders.header,
+      ...(ruled
+        ? { borderRightWidth: borders.cell, borderBottomWidth: borders.cell }
+        : { borderWidth: borders.header }),
       borderRadius: radii.cell,
       borderColor: colors.headerCol,
       backgroundColor: theme.dark ? colors.surface : undefined,
@@ -139,6 +196,11 @@ export function GameView(props: Readonly<GameViewProps>) {
       width: 32,
       height: 32,
       resizeMode: "contain",
+      ...(theme.flags.greyscaleFlags
+        ? Platform.OS === "web"
+          ? { filter: "grayscale(1) contrast(1.2)" }
+          : { opacity: 0.85 }
+        : {}),
     },
     categoryIcon: {
       color: colors.icon,
@@ -194,11 +256,14 @@ export function GameView(props: Readonly<GameViewProps>) {
         <ThemeLogo height={logoHeight} />
 
       {/* game window */}
-      <View style={{alignSelf: "center", width: boardSize, height: boardSize, position: "relative"}}>
+      <View style={[{alignSelf: "center", width: boardSize, height: boardSize, position: "relative"}, ruled ? board.ruledBoard : null]}>
 
         <View style={{flexDirection: "row", height: cellSize}}>
           {/* top left */}
-          <View style={{padding: 5, width: cellSize, height: cellSize, alignItems: "center", justifyContent: "center" }}>
+          <View style={[
+            {padding: 5, width: cellSize, height: cellSize, alignItems: "center", justifyContent: "center" },
+            ruled ? { backgroundColor: colors.surfaceAlt, borderRightWidth: borders.cell, borderBottomWidth: borders.header, borderColor: colors.ink } : null,
+          ]}>
             {/*Tutorial popup*/}
             {tutorialPopup()}
           </View>
@@ -249,7 +314,7 @@ export function GameView(props: Readonly<GameViewProps>) {
           );
         })}
 
-        {feedback && (
+        {feedback && !slipFeedback && (
           <Animated.View pointerEvents="none" style={[
             board.feedbackOverlay,
             {
@@ -266,6 +331,17 @@ export function GameView(props: Readonly<GameViewProps>) {
           </Animated.View>
         )}
       </View>
+
+      {/* Prislista: a typed slip under the board instead of a popup. */}
+      {feedback && slipFeedback ? (
+        <Animated.View
+          pointerEvents="none"
+          accessibilityLiveRegion="polite"
+          style={[board.slip, { backgroundColor: FEEDBACK_COLORS[feedback.kind].background, opacity: feedbackFadeAnim }]}
+        >
+          <Text style={[board.slipText, { color: FEEDBACK_COLORS[feedback.kind].text }]}>{feedback.message}</Text>
+        </Animated.View>
+      ) : null}
     </RNScrollView>
     </View>
   );
@@ -323,7 +399,11 @@ export function GameView(props: Readonly<GameViewProps>) {
         pulseColor={colors.pulse}
         radius={radii.cell}
       >
-        <View style={[board.category, { borderColor: axis === "col" ? colors.headerCol : colors.headerRow }]}>
+        <View style={[
+          board.category,
+          { borderColor: axis === "col" ? colors.headerCol : colors.headerRow },
+          ruled ? (axis === "col" ? { borderBottomWidth: borders.header } : { borderRightWidth: borders.header }) : null,
+        ]}>
           {imageUrl ? (
             <Image source={{ uri: imageUrl }} style={board.categoryImage} />
           ) : iconName ? (
@@ -377,6 +457,19 @@ function CellContent({
   }, [selectedProduct?.image]);
 
   const shouldShowImage = Boolean(selectedProduct?.image) && !imageFailed;
+
+  if (selectedProduct && theme.flags.productNumberCells) {
+    return (
+      <View style={board.numberCell}>
+        {shouldShowImage ? (
+          <Image source={{ uri: selectedProduct.image }} style={board.numberCellThumb} onError={() => setImageFailed(true)} />
+        ) : null}
+        <Text style={board.numberCellNr}>NR {selectedProduct.raw?.productNumber}</Text>
+        <Text numberOfLines={3} style={board.numberCellName}>{selectedProduct.name}</Text>
+        <Text style={board.numberCellPrice}>{formatKronor(selectedProduct.raw?.price)}:-</Text>
+      </View>
+    );
+  }
 
   if (shouldShowImage) {
     return (
