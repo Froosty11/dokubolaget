@@ -2,8 +2,9 @@
 //
 //   1. Serves the static Expo web build from ./dist
 //   2. Proxies browser requests to Systembolaget on /proxy?url=... so the web
-//      app can call their API without CORS trouble. Only systembolaget.se
-//      hosts are allowed, so this is not an open relay.
+//      app can call their API without CORS trouble. Only the few Systembolaget
+//      URLs the app needs are allowed (see proxyPolicy.js), so this is not an
+//      open relay.
 //   3. Runs the daily board pipeline (download catalog → find tags → generate
 //      board → write to Firestore) once a day on a timer, if Firebase
 //      credentials are present.
@@ -19,13 +20,23 @@
 //   SEED_HOUR_UTC / SEED_MINUTE_UTC  daily run time (default 00:05 UTC)
 //   SEED_ATTEMPTS                 generator attempts per board (default 3000)
 //   CATALOG_URL                   product catalog source (default susbolaget)
+//   TRUST_PROXY                   "true" when behind a reverse proxy, so rate
+//                                 limiting keys on X-Forwarded-For
+//   PROXY_RATE_LIMIT              proxy requests per client per minute (default 120)
 
 const http = require("node:http");
 const fs = require("node:fs");
 const path = require("node:path");
 const { spawn } = require("node:child_process");
 const { pipeline } = require("node:stream/promises");
-const { Readable } = require("node:stream");
+const { Readable, Transform } = require("node:stream");
+const crypto = require("node:crypto");
+const zlib = require("node:zlib");
+const {
+  isAllowedProxyTarget,
+  proxiedContentType,
+  PROXY_RESPONSE_HEADERS,
+} = require("./proxyPolicy");
 
 const APP_ROOT = __dirname;
 const DIST_DIR = path.join(APP_ROOT, "dist");
@@ -35,6 +46,7 @@ const PORT = Number(process.env.PORT) || 8080;
 const CATALOG_URL =
   process.env.CATALOG_URL || "https://susbolaget.emrik.org/v1/products";
 const MIN_CATALOG_BYTES = 1_000_000;
+const MAX_CATALOG_BYTES = 500_000_000;
 
 // ---------------------------------------------------------------------------
 // Logging
@@ -70,12 +82,19 @@ const CONTENT_TYPES = {
   ".webmanifest": "application/manifest+json",
 };
 
-function resolveStaticFile(urlPath) {
-  // Never let the request escape dist/.
-  const decoded = decodeURIComponent(urlPath.split("?")[0]);
-  const safe = path.normalize(decoded).replace(/^(\.\.[/\\])+/, "");
-  const base = path.join(DIST_DIR, safe);
-  if (!base.startsWith(DIST_DIR)) {
+// Returns null for paths that can't be decoded or that escape dist/.
+function resolveStaticFile(pathname) {
+  let decoded;
+  try {
+    decoded = decodeURIComponent(pathname);
+  } catch {
+    return null;
+  }
+  if (decoded.includes("\0")) {
+    return null;
+  }
+  const base = path.join(DIST_DIR, path.normalize(decoded));
+  if (base !== DIST_DIR && !base.startsWith(DIST_DIR + path.sep)) {
     return null;
   }
 
@@ -91,17 +110,21 @@ function resolveStaticFile(urlPath) {
   return fs.existsSync(fallback) ? fallback : null;
 }
 
-function serveStatic(req, res) {
-  const filePath = resolveStaticFile(req.url || "/");
+const COMPRESSIBLE = new Set([".html", ".js", ".mjs", ".css", ".json", ".map", ".svg", ".txt", ".webmanifest", ".ttf", ".otf"]);
+
+function serveStatic(req, res, pathname) {
+  const filePath = resolveStaticFile(pathname);
   if (!filePath) {
-    res.writeHead(404, { "Content-Type": "text/plain" });
-    res.end("Not found");
+    res.writeHead(400, { "Content-Type": "text/plain" });
+    res.end("Bad request");
     return;
   }
 
   const ext = path.extname(filePath).toLowerCase();
   const contentType = CONTENT_TYPES[ext] || "application/octet-stream";
   const hashed = filePath.includes(`${path.sep}_expo${path.sep}`);
+  const gzip =
+    COMPRESSIBLE.has(ext) && /\bgzip\b/.test(String(req.headers["accept-encoding"] || ""));
   res.writeHead(200, {
     "Content-Type": contentType,
     "Cache-Control": hashed
@@ -109,32 +132,86 @@ function serveStatic(req, res) {
       : ext === ".html"
         ? "no-cache"
         : "public, max-age=3600",
+    Vary: "Accept-Encoding",
+    ...(gzip ? { "Content-Encoding": "gzip" } : {}),
+    ...(ext === ".html" ? { "Content-Security-Policy": contentSecurityPolicy() } : {}),
   });
 
   if (req.method === "HEAD") {
     res.end();
     return;
   }
-  fs.createReadStream(filePath).pipe(res);
+  const stream = fs.createReadStream(filePath);
+  const onError = (error) => {
+    log("server", `Static stream failed for ${pathname}: ${error.message}`);
+    res.destroy();
+  };
+  if (gzip) {
+    pipeline(stream, zlib.createGzip(), res).catch(onError);
+  } else {
+    pipeline(stream, res).catch(onError);
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Security headers
+// ---------------------------------------------------------------------------
+
+const BASE_SECURITY_HEADERS = {
+  "X-Content-Type-Options": "nosniff",
+  "Referrer-Policy": "strict-origin-when-cross-origin",
+  "X-Frame-Options": "DENY",
+  "Permissions-Policy": "camera=(), microphone=(), geolocation=(), payment=()",
+};
+
+// Expo's static export puts a few small inline scripts in each HTML page (the
+// router hydration flag, the service worker registration). Allow exactly those
+// by hash, read from the built files once at startup.
+function inlineScriptHashes() {
+  const hashes = new Set();
+  const walk = (dir) => {
+    if (!fs.existsSync(dir)) return;
+    for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+      const full = path.join(dir, entry.name);
+      if (entry.isDirectory()) walk(full);
+      else if (entry.name.endsWith(".html")) {
+        const html = fs.readFileSync(full, "utf8");
+        for (const match of html.matchAll(/<script(?![^>]*\bsrc=)[^>]*>([\s\S]*?)<\/script>/gi)) {
+          if (!match[1]) continue;
+          const digest = crypto.createHash("sha256").update(match[1]).digest("base64");
+          hashes.add(`'sha256-${digest}'`);
+        }
+      }
+    }
+  };
+  walk(DIST_DIR);
+  return [...hashes];
+}
+
+let cachedCsp = null;
+function contentSecurityPolicy() {
+  if (cachedCsp) return cachedCsp;
+  cachedCsp = [
+    "default-src 'self'",
+    `script-src 'self' ${inlineScriptHashes().join(" ")}`.trim(),
+    // React Native Web injects its styles at runtime.
+    "style-src 'self' 'unsafe-inline'",
+    "img-src 'self' data: blob: https://product-cdn.systembolaget.se https://www.systembolaget.se https://flagcdn.com",
+    "font-src 'self' data:",
+    "connect-src 'self' https://*.googleapis.com",
+    "worker-src 'self'",
+    "manifest-src 'self'",
+    "object-src 'none'",
+    "base-uri 'self'",
+    "form-action 'self'",
+    "frame-ancestors 'none'",
+  ].join("; ");
+  return cachedCsp;
 }
 
 // ---------------------------------------------------------------------------
 // Systembolaget proxy
 // ---------------------------------------------------------------------------
-
-function isAllowedProxyTarget(target) {
-  let url;
-  try {
-    url = new URL(target);
-  } catch {
-    return false;
-  }
-  if (url.protocol !== "https:") {
-    return false;
-  }
-  const host = url.hostname.toLowerCase();
-  return host === "systembolaget.se" || host.endsWith(".systembolaget.se");
-}
 
 const DROPPED_REQUEST_HEADERS = new Set([
   "host",
@@ -144,6 +221,11 @@ const DROPPED_REQUEST_HEADERS = new Set([
   "content-length",
   "cookie",
   "accept-encoding",
+  "x-forwarded-for",
+  "x-forwarded-host",
+  "x-forwarded-proto",
+  "x-real-ip",
+  "forwarded",
 ]);
 
 function forwardHeaders(headers) {
@@ -155,63 +237,131 @@ function forwardHeaders(headers) {
   return out;
 }
 
-async function serveProxy(req, res, requestUrl) {
-  res.setHeader("Access-Control-Allow-Origin", "*");
-  res.setHeader("Access-Control-Allow-Methods", "GET,HEAD,OPTIONS");
-  res.setHeader("Access-Control-Allow-Headers", "*");
+const MAX_PROXY_BYTES = 15_000_000;
+const MAX_PROXY_REDIRECTS = 3;
+const PROXY_TIMEOUT_MS = 15_000;
+const PROXY_RATE_LIMIT = Number(process.env.PROXY_RATE_LIMIT) || 120;
+const TRUST_PROXY = process.env.TRUST_PROXY === "true";
 
-  if (req.method === "OPTIONS") {
-    res.writeHead(204);
-    res.end();
+// Fixed one-minute windows per client. Plenty for a player (a search is one
+// request, key discovery is a few dozen once), tight enough to stop the proxy
+// being used as free bandwidth.
+const rateWindows = new Map();
+
+function clientKey(req) {
+  if (TRUST_PROXY) {
+    const forwarded = String(req.headers["x-forwarded-for"] || "").split(",")[0].trim();
+    if (forwarded) return forwarded;
+  }
+  return req.socket.remoteAddress || "unknown";
+}
+
+function isRateLimited(req) {
+  const now = Date.now();
+  const key = clientKey(req);
+  const current = rateWindows.get(key);
+  if (!current || now - current.start >= 60_000) {
+    rateWindows.set(key, { start: now, count: 1 });
+    return false;
+  }
+  current.count += 1;
+  return current.count > PROXY_RATE_LIMIT;
+}
+
+setInterval(() => {
+  const cutoff = Date.now() - 60_000;
+  for (const [key, window] of rateWindows) {
+    if (window.start < cutoff) rateWindows.delete(key);
+  }
+}, 60_000).unref();
+
+// Follows redirects by hand so every hop is checked against the allowlist.
+async function fetchAllowed(target, init) {
+  let url = target;
+  for (let hop = 0; hop <= MAX_PROXY_REDIRECTS; hop++) {
+    const response = await fetch(url, { ...init, redirect: "manual" });
+    const location = response.headers.get("location");
+    if (response.status < 300 || response.status >= 400 || !location) {
+      return response;
+    }
+    const next = new URL(location, url).toString();
+    if (!isAllowedProxyTarget(next)) {
+      throw new Error(`redirect to disallowed target ${next}`);
+    }
+    url = next;
+  }
+  throw new Error("too many redirects");
+}
+
+function byteLimit(max) {
+  let seen = 0;
+  return new Transform({
+    transform(chunk, _encoding, callback) {
+      seen += chunk.length;
+      if (seen > max) callback(new Error(`response larger than ${max} bytes`));
+      else callback(null, chunk);
+    },
+  });
+}
+
+function sendJson(res, status, body) {
+  res.writeHead(status, { "Content-Type": "application/json", ...PROXY_RESPONSE_HEADERS });
+  res.end(JSON.stringify(body));
+}
+
+async function serveProxy(req, res, requestUrl) {
+  // Same-origin only: the web app is served from this server, so no CORS
+  // headers are sent and other sites can't read proxied responses.
+  if (req.method !== "GET" && req.method !== "HEAD") {
+    sendJson(res, 405, { error: "Only GET is proxied" });
     return;
   }
 
-  if (req.method !== "GET" && req.method !== "HEAD") {
-    res.writeHead(405, { "Content-Type": "application/json" });
-    res.end(JSON.stringify({ error: "Only GET is proxied" }));
+  if (isRateLimited(req)) {
+    res.setHeader("Retry-After", "60");
+    sendJson(res, 429, { error: "Too many requests" });
     return;
   }
 
   const target = requestUrl.searchParams.get("url");
   if (!target) {
-    res.writeHead(400, { "Content-Type": "application/json" });
-    res.end(JSON.stringify({ error: "Missing required query param: url" }));
+    sendJson(res, 400, { error: "Missing required query param: url" });
     return;
   }
 
   if (!isAllowedProxyTarget(target)) {
-    res.writeHead(403, { "Content-Type": "application/json" });
-    res.end(JSON.stringify({ error: "Only systembolaget.se targets are allowed" }));
+    sendJson(res, 403, { error: "Target not allowed" });
     return;
   }
 
   try {
-    const upstream = await fetch(target, {
+    const upstream = await fetchAllowed(target, {
       method: req.method,
       headers: forwardHeaders(req.headers),
-      redirect: "follow",
+      signal: AbortSignal.timeout(PROXY_TIMEOUT_MS),
     });
 
-    const contentType = upstream.headers.get("content-type");
+    const declaredLength = Number(upstream.headers.get("content-length"));
+    if (declaredLength > MAX_PROXY_BYTES) {
+      throw new Error(`response larger than ${MAX_PROXY_BYTES} bytes`);
+    }
+
     res.writeHead(upstream.status, {
-      ...(contentType ? { "Content-Type": contentType } : {}),
-      "Cache-Control": "no-store",
+      ...PROXY_RESPONSE_HEADERS,
+      "Content-Type": proxiedContentType(upstream.headers.get("content-type")),
     });
     if (req.method === "HEAD" || !upstream.body) {
       res.end();
       return;
     }
-    await pipeline(Readable.fromWeb(upstream.body), res);
+    await pipeline(Readable.fromWeb(upstream.body), byteLimit(MAX_PROXY_BYTES), res);
   } catch (error) {
+    log("proxy", `Request for ${target} failed: ${error && error.message ? error.message : error}`);
     if (!res.headersSent) {
-      res.writeHead(502, { "Content-Type": "application/json" });
+      sendJson(res, 502, { error: "Proxy request failed" });
+    } else {
+      res.destroy();
     }
-    res.end(
-      JSON.stringify({
-        error: "Proxy request failed",
-        details: error && error.message ? error.message : String(error),
-      }),
-    );
   }
 }
 
@@ -244,12 +394,23 @@ function utcDatePlusDays(days) {
   return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + days));
 }
 
-function runStep(label, command, args) {
+const CREDENTIAL_ENV_KEYS = ["FIREBASE_SERVICE_ACCOUNT_KEY", "GOOGLE_APPLICATION_CREDENTIALS"];
+
+// Only the Firestore upload step gets the service account; the catalog and
+// generator steps run without it.
+function stepEnv(withCredentials) {
+  if (withCredentials) return process.env;
+  const env = { ...process.env };
+  for (const key of CREDENTIAL_ENV_KEYS) delete env[key];
+  return env;
+}
+
+function runStep(label, command, args, { withCredentials = false } = {}) {
   return new Promise((resolve, reject) => {
     log("seed", `${label}: ${command} ${args.join(" ")}`);
     const child = spawn(command, args, {
       cwd: APP_ROOT,
-      env: process.env,
+      env: stepEnv(withCredentials),
       stdio: ["ignore", "pipe", "pipe"],
     });
     const forward = (stream, level) => {
@@ -276,7 +437,20 @@ async function downloadCatalog() {
     throw new Error(`Catalog download failed: HTTP ${response.status}`);
   }
   const tmpPath = `${PRODUCTS_PATH}.tmp`;
-  await pipeline(Readable.fromWeb(response.body), fs.createWriteStream(tmpPath));
+  const declaredLength = Number(response.headers.get("content-length"));
+  if (declaredLength > MAX_CATALOG_BYTES) {
+    throw new Error(`Catalog too large (${declaredLength} bytes); aborting`);
+  }
+  try {
+    await pipeline(
+      Readable.fromWeb(response.body),
+      byteLimit(MAX_CATALOG_BYTES),
+      fs.createWriteStream(tmpPath),
+    );
+  } catch (error) {
+    fs.rmSync(tmpPath, { force: true });
+    throw error;
+  }
   const size = fs.statSync(tmpPath).size;
   if (size < MIN_CATALOG_BYTES) {
     fs.unlinkSync(tmpPath);
@@ -317,7 +491,7 @@ async function runSeedPipeline(startDate, days) {
       start,
       "--days",
       String(days),
-    ]);
+    ], { withCredentials: true });
     seedState.lastResult = `ok: ${days} board(s) from ${start}`;
     seedState.lastError = null;
     log("seed", seedState.lastResult);
@@ -384,17 +558,29 @@ function startSeeding() {
 // HTTP server
 // ---------------------------------------------------------------------------
 
-const server = http.createServer((req, res) => {
-  const requestUrl = new URL(req.url || "/", `http://localhost:${PORT}`);
+function handleRequest(req, res) {
+  for (const [name, value] of Object.entries(BASE_SECURITY_HEADERS)) {
+    res.setHeader(name, value);
+  }
+
+  let requestUrl;
+  try {
+    requestUrl = new URL(req.url || "/", "http://localhost");
+  } catch {
+    res.writeHead(400, { "Content-Type": "text/plain" });
+    res.end("Bad request");
+    return;
+  }
 
   if (requestUrl.pathname === "/proxy") {
-    serveProxy(req, res, requestUrl);
+    serveProxy(req, res, requestUrl).catch((error) => handleRequestError(res, error));
     return;
   }
 
   if (requestUrl.pathname === "/healthz") {
-    res.writeHead(200, { "Content-Type": "application/json" });
-    res.end(JSON.stringify({ ok: true, seed: seedState }));
+    // Public, so it reports liveness only. Seed details go to the logs.
+    res.writeHead(200, { "Content-Type": "application/json", "Cache-Control": "no-store" });
+    res.end(JSON.stringify({ ok: true, seedEnabled: seedState.enabled, seedRunning: seedState.running }));
     return;
   }
 
@@ -404,7 +590,30 @@ const server = http.createServer((req, res) => {
     return;
   }
 
-  serveStatic(req, res);
+  serveStatic(req, res, requestUrl.pathname);
+}
+
+function handleRequestError(res, error) {
+  log("server", `Request failed: ${error && error.stack ? error.stack : error}`);
+  if (!res.headersSent) {
+    res.writeHead(500, { "Content-Type": "text/plain" });
+    res.end("Internal error");
+  } else {
+    res.destroy();
+  }
+}
+
+const server = http.createServer((req, res) => {
+  try {
+    handleRequest(req, res);
+  } catch (error) {
+    handleRequestError(res, error);
+  }
+});
+
+// A bad request must never take the whole site down. Log and keep serving.
+process.on("unhandledRejection", (error) => {
+  log("server", `Unhandled rejection: ${error && error.stack ? error.stack : error}`);
 });
 
 if (!fs.existsSync(path.join(DIST_DIR, "index.html"))) {

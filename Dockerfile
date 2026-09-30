@@ -50,7 +50,7 @@ RUN echo '{"name":"dokubolaget-runtime","private":true}' > package.json \
  && rm -rf ~/.bun/install/cache
 
 COPY --from=build /app/Dokubolaget/dist ./dist
-COPY Dokubolaget/server.js Dokubolaget/tsconfig.json ./
+COPY Dokubolaget/server.js Dokubolaget/proxyPolicy.js Dokubolaget/tsconfig.json ./
 COPY Dokubolaget/scripts ./scripts
 COPY Dokubolaget/src/boardTags.ts ./src/boardTags.ts
 COPY Dokubolaget/data ./data

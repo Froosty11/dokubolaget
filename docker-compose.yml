@@ -13,6 +13,8 @@ services:
     image: dokubolaget
     restart: unless-stopped
     ports:
-      - "${PORT:-8080}:8080"
+      # Loopback only by default: put a TLS reverse proxy (e.g. Caddy) in front.
+      # Set BIND_ADDRESS=0.0.0.0 to expose the port on the network directly.
+      - "${BIND_ADDRESS:-127.0.0.1}:${PORT:-8080}:8080"
     env_file:
       - .env

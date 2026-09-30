@@ -1,14 +1,29 @@
-//node cors reverse proxy. gpt 5.3 generated. cant be arsed since it's temporary. 
+// Local development CORS proxy for the web app (bun run proxy). Production
+// uses the same-origin /proxy route in server.js instead.
+//
+// Same allowlist as production, and it only listens on and answers to
+// localhost, so it can't be used as a relay from the network or other sites.
 
 const http = require("http");
 const { URL } = require("url");
+const {
+  isAllowedProxyTarget,
+  proxiedContentType,
+  PROXY_RESPONSE_HEADERS,
+} = require("./proxyPolicy");
 
 const PORT = 8787;
+const HOST = "127.0.0.1";
+const LOCAL_ORIGIN = /^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/;
 
-function writeCorsHeaders(res) {
-  res.setHeader("Access-Control-Allow-Origin", "*");
-  res.setHeader("Access-Control-Allow-Methods", "GET,POST,PUT,PATCH,DELETE,OPTIONS");
-  res.setHeader("Access-Control-Allow-Headers", "*");
+function writeCorsHeaders(req, res) {
+  const origin = req.headers.origin;
+  if (origin && LOCAL_ORIGIN.test(origin)) {
+    res.setHeader("Access-Control-Allow-Origin", origin);
+    res.setHeader("Vary", "Origin");
+    res.setHeader("Access-Control-Allow-Methods", "GET,OPTIONS");
+    res.setHeader("Access-Control-Allow-Headers", "*");
+  }
 }
 
 function filterOutgoingHeaders(headers) {
@@ -23,7 +38,8 @@ function filterOutgoingHeaders(headers) {
       lower === "origin" ||
       lower === "referer" ||
       lower === "connection" ||
-      lower === "content-length"
+      lower === "content-length" ||
+      lower === "cookie"
     ) {
       return;
     }
@@ -34,8 +50,14 @@ function filterOutgoingHeaders(headers) {
   return out;
 }
 
+function sendJson(res, status, body) {
+  res.statusCode = status;
+  res.setHeader("Content-Type", "application/json");
+  res.end(JSON.stringify(body));
+}
+
 const server = http.createServer(async function handler(req, res) {
-  writeCorsHeaders(res);
+  writeCorsHeaders(req, res);
 
   if (req.method === "OPTIONS") {
     res.statusCode = 204;
@@ -43,51 +65,56 @@ const server = http.createServer(async function handler(req, res) {
     return;
   }
 
-  const incomingUrl = new URL(req.url, "http://localhost:" + PORT);
+  let incomingUrl;
+  try {
+    incomingUrl = new URL(req.url, "http://localhost:" + PORT);
+  } catch {
+    sendJson(res, 400, { error: "Bad request" });
+    return;
+  }
 
   if (incomingUrl.pathname !== "/proxy") {
-    res.statusCode = 404;
-    res.setHeader("Content-Type", "application/json");
-    res.end(JSON.stringify({ error: "Not found" }));
+    sendJson(res, 404, { error: "Not found" });
+    return;
+  }
+
+  if (req.method !== "GET") {
+    sendJson(res, 405, { error: "Only GET is proxied" });
     return;
   }
 
   const target = incomingUrl.searchParams.get("url");
   if (!target) {
-    res.statusCode = 400;
-    res.setHeader("Content-Type", "application/json");
-    res.end(JSON.stringify({ error: "Missing required query param: url" }));
+    sendJson(res, 400, { error: "Missing required query param: url" });
+    return;
+  }
+
+  if (!isAllowedProxyTarget(target)) {
+    sendJson(res, 403, { error: "Target not allowed" });
     return;
   }
 
   try {
     const upstreamRes = await fetch(target, {
-      method: req.method,
+      method: "GET",
       headers: filterOutgoingHeaders(req.headers),
+      redirect: "manual",
     });
 
     res.statusCode = upstreamRes.status;
-
-    // Preserve content type for JSON and text responses.
-    const contentType = upstreamRes.headers.get("content-type");
-    if (contentType) {
-      res.setHeader("Content-Type", contentType);
+    for (const [name, value] of Object.entries(PROXY_RESPONSE_HEADERS)) {
+      res.setHeader(name, value);
     }
+    res.setHeader("Content-Type", proxiedContentType(upstreamRes.headers.get("content-type")));
 
     const bodyBuffer = Buffer.from(await upstreamRes.arrayBuffer());
     res.end(bodyBuffer);
   } catch (error) {
-    res.statusCode = 502;
-    res.setHeader("Content-Type", "application/json");
-    res.end(
-      JSON.stringify({
-        error: "Proxy request failed",
-        details: error && error.message ? error.message : String(error),
-      }),
-    );
+    console.log("Proxy request failed:", error && error.message ? error.message : error);
+    sendJson(res, 502, { error: "Proxy request failed" });
   }
 });
 
-server.listen(PORT, function onListen() {
-  console.log("Local proxy listening on http://localhost:" + PORT);
+server.listen(PORT, HOST, function onListen() {
+  console.log("Local proxy listening on http://" + HOST + ":" + PORT);
 });
