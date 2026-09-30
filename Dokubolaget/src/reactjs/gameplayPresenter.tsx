@@ -37,7 +37,7 @@ type GameplayProps = {
     lastFeedback: GuessFeedback | null
     clearLastFeedback: () => void
     recordBoardComplete: () => ThemeId[]
-    shiftPendingUnlock: () => ThemeId | null
+    shiftPendingUnlock: (source?: "board" | "streak") => ThemeId | null
   }
 }
 
@@ -248,7 +248,7 @@ const Gameplay = observer(function GameRender({ model }: GameplayProps) {
             onShare={onShareACB}
             onClose={() => {
               setBoardCompleteOpen(false);
-              setUnlockCard(model.shiftPendingUnlock());
+              setUnlockCard(model.shiftPendingUnlock("board"));
             }}
           />
         ) : null}
@@ -258,9 +258,9 @@ const Gameplay = observer(function GameRender({ model }: GameplayProps) {
             themeId={unlockCard}
             onTry={() => {
               setId(unlockCard);
-              setUnlockCard(model.shiftPendingUnlock());
+              setUnlockCard(model.shiftPendingUnlock("board"));
             }}
-            onLater={() => setUnlockCard(model.shiftPendingUnlock())}
+            onLater={() => setUnlockCard(model.shiftPendingUnlock("board"))}
           />
         ) : null}
       </SafeAreaView>

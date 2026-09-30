@@ -10,7 +10,7 @@ import {
   initializeTestEnvironment,
   type RulesTestEnvironment,
 } from "@firebase/rules-unit-testing";
-import { collection, doc, getDoc, getDocs, limit, query, setDoc, updateDoc } from "firebase/firestore";
+import { arrayUnion, collection, doc, getDoc, getDocs, limit, query, setDoc, updateDoc } from "firebase/firestore";
 
 let env: RulesTestEnvironment;
 
@@ -105,6 +105,11 @@ describe("users/{uid}/private", () => {
     await assertFails(setDoc(ref, { theme: "hacker" }, { merge: true }));
     await assertFails(setDoc(ref, { unlockedThemes: ["cyberwave", "free-money"] }, { merge: true }));
     await assertFails(setDoc(ref, { unlockedThemes: "cyberwave" }, { merge: true }));
+  });
+  test("unlocks written as a union are accepted and validated", async () => {
+    const ref = doc(alice(), "users", "alice", "private", "profile");
+    await assertSucceeds(setDoc(ref, { theme: "prislista", unlockedThemes: arrayUnion("cyberwave") }, { merge: true }));
+    await assertFails(setDoc(ref, { unlockedThemes: arrayUnion("free-money") }, { merge: true }));
   });
   test("unknown private fields are rejected", async () => {
     await assertFails(

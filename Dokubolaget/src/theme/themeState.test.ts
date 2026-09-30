@@ -34,3 +34,10 @@ test("a player stored on Modern without the streak lands on Prislista", () => {
 test("new players start on Prislista 1986", () => {
   expect(createThemeState().activeThemeId).toBe("prislista");
 });
+
+test("board unlocks wait for the board; Home only takes streak unlocks", () => {
+  const s = createThemeState();
+  s.addUnlocks(["cyberwave"], "board");
+  expect(s.shiftPendingUnlock("streak")).toBeNull();
+  expect(s.shiftPendingUnlock("board")).toBe("cyberwave");
+});

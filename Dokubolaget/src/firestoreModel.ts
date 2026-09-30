@@ -7,12 +7,12 @@ import {
   initializeAuth,
   onAuthStateChanged,
 } from "firebase/auth";
-import { doc, getDoc, getFirestore, setDoc } from "firebase/firestore";
+import { arrayUnion, doc, getDoc, getFirestore, setDoc } from "firebase/firestore";
 import { Platform } from "react-native";
 
 // uncomment the following lines when you have your firebaseConfig. Understand what the lines are doing!
 import { firebaseConfig } from "./firebaseConfig";
-import { parseThemeId, parseUnlocked } from "./theme/unlocks";
+import { applyAccountThemeData, themeFieldsForAccount } from "./theme/accountSync";
 
 export const app = initializeApp(firebaseConfig);
 
@@ -143,23 +143,27 @@ export function connectToPersistence(model: any, watchFunction: any) {
     if (!model.ready || !privateDocACB) {
       return;
     }
-    // Theme choice and unlocks follow the player to other devices. Progress
-    // on a ?board= practice board is never saved.
-    const update: Record<string, unknown> = {
-      theme: model.themeId,
-      unlockedThemes: model.unlockedThemes,
-    };
+    // Progress on a ?board= practice board is never saved.
     if (!model.practiceBoard) {
-      update.gameCells = model.gameCells;
-      update.currentCell = model.currentCell || null;
+      setDoc(
+        privateDocACB,
+        { gameCells: model.gameCells, currentCell: model.currentCell || null },
+        { merge: true },
+      ).catch(errorACB);
     }
-    setDoc(privateDocACB, update, { merge: true }).catch(errorACB);
+    // Theme choice and unlocks follow the player to other devices. A separate
+    // write, so a rules mismatch on theme fields can never block progress;
+    // unlocks are a union so devices never erase each other's.
+    setDoc(privateDocACB, themeFieldsForAccount(model, arrayUnion), { merge: true }).catch(errorACB);
   }
+
+  let accountPublicData: any = {};
+  let accountPrivateData: any = {};
 
   function applyPublicACB(snapshot: any) {
     const data = snapshot.data() || {};
+    accountPublicData = data;
     model.scoreHistory = normalizeHistoryACB(data.scoreHistory);
-    model.applyStreak(Number(data.longestStreak) || 0);
   }
 
   function applyPrivateACB(snapshot: any) {
@@ -171,11 +175,7 @@ export function connectToPersistence(model: any, watchFunction: any) {
       : [1, 2, 3, 4, 5, 6, 7, 8, 9];
     model.currentCell = !data.currentCell ? null : data.currentCell;
     model.score = 0;
-    // Merge unlocks from both devices first, so an account theme earned
-    // elsewhere is selectable here.
-    model.addUnlocks(parseUnlocked(data.unlockedThemes), false);
-    const accountTheme = parseThemeId(data.theme);
-    if (accountTheme) model.setThemeId(accountTheme);
+    accountPrivateData = data;
   }
 
   function errorACB(error: any) {
@@ -186,6 +186,7 @@ export function connectToPersistence(model: any, watchFunction: any) {
   }
 
   function modelReadyACB() {
+    applyAccountThemeData(model, accountPrivateData, accountPublicData);
     model.ready = true;
     effectACB();
   }
@@ -226,6 +227,8 @@ export function connectToPersistence(model: any, watchFunction: any) {
     }
 
     model.ready = false;
+    accountPublicData = {};
+    accountPrivateData = {};
     model.setLoggedIn(true);
     publicDocACB = doc(db, USERS_COLLECTION, user.uid);
     privateDocACB = doc(db, USERS_COLLECTION, user.uid, "private", "profile");
@@ -233,8 +236,8 @@ export function connectToPersistence(model: any, watchFunction: any) {
     const publicSeed = syncDisplayNameACB(user, publicDocACB).then(applyPublicACB);
     const privateSeed = getDoc(privateDocACB).then(applyPrivateACB);
 
-    Promise.all([publicSeed, privateSeed])
-      .catch(errorACB)
-      .then(modelReadyACB);
+    // If the account can't be read (offline), stay not-ready: writing now
+    // would push this device's defaults over the account's theme.
+    Promise.all([publicSeed, privateSeed]).then(modelReadyACB, errorACB);
   });
 }

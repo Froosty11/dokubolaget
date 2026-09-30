@@ -29,10 +29,10 @@ const Index = observer(
         const [unlockCard, setUnlockCard] = useState<ThemeId | null>(null);
 
         // Unlocks earned away from the board (streaks) are announced here.
-        const hasPendingUnlock = reactiveModel.pendingUnlocks.length > 0;
+        const hasPendingUnlock = reactiveModel.hasPendingUnlock("streak");
         useEffect(() => {
             if (!unlockCard && !isOpen && hasPendingUnlock) {
-                setUnlockCard(reactiveModel.shiftPendingUnlock());
+                setUnlockCard(reactiveModel.shiftPendingUnlock("streak"));
             }
         }, [hasPendingUnlock, isOpen, unlockCard]);
 
