@@ -77,6 +77,75 @@ const TAG_DISPLAY: Record<string, TagDisplay> = {
   "volume:party":    { label: "500–750 ml",  iconName: "bottle-wine" },
   "volume:large":    { label: "750–1000 ml", iconName: "bottle-tonic" },
 
+  // Regions
+  "Region:Champagne":              { label: "Champagne",        iconName: "map-marker" },
+  "Region:Piemonte":               { label: "Piedmont",         iconName: "map-marker" },
+  "Region:Skottland":              { label: "Scotland",         iconName: "map-marker" },
+  "Region:Västra Götalands län":   { label: "Västra Götaland",  iconName: "map-marker" },
+  "Region:Bourgogne":              { label: "Burgundy",         iconName: "map-marker" },
+  "Region:Skåne län":              { label: "Skåne",            iconName: "map-marker" },
+  "Region:Toscana":                { label: "Tuscany",          iconName: "map-marker" },
+  "Region:Western Cape":           { label: "Western Cape",     iconName: "map-marker" },
+  "Region:Stockholms län":         { label: "Stockholm",        iconName: "map-marker" },
+  "Region:Venetien":               { label: "Veneto",           iconName: "map-marker" },
+  "Region:Kalifornien":            { label: "California",       iconName: "map-marker" },
+  "Region:Rhonedalen":             { label: "Rhône",            iconName: "map-marker" },
+  "Region:Bordeaux":               { label: "Bordeaux",         iconName: "map-marker" },
+  "Region:Languedoc-Roussillon":   { label: "Languedoc",        iconName: "map-marker" },
+  "Region:Katalonien":             { label: "Catalonia",        iconName: "map-marker" },
+  "Region:Rioja":                  { label: "Rioja",            iconName: "map-marker" },
+  "Region:Loiredalen":             { label: "Loire",            iconName: "map-marker" },
+  "Region:Sicilien":               { label: "Sicily",           iconName: "map-marker" },
+
+  // Grapes
+  "Grape:Chardonnay":         { label: "Chardonnay",         iconName: "fruit-grapes" },
+  "Grape:Pinot noir":         { label: "Pinot Noir",         iconName: "fruit-grapes" },
+  "Grape:Cabernet sauvignon": { label: "Cabernet Sauvignon", iconName: "fruit-grapes" },
+  "Grape:Syrah":              { label: "Syrah",              iconName: "fruit-grapes" },
+  "Grape:Merlot":             { label: "Merlot",             iconName: "fruit-grapes" },
+  "Grape:Riesling":           { label: "Riesling",           iconName: "fruit-grapes" },
+  "Grape:Sauvignon blanc":    { label: "Sauvignon Blanc",    iconName: "fruit-grapes" },
+  "Grape:Grenache":           { label: "Grenache",           iconName: "fruit-grapes" },
+  "Grape:Nebbiolo":           { label: "Nebbiolo",           iconName: "fruit-grapes" },
+  "Grape:Sangiovese":         { label: "Sangiovese",         iconName: "fruit-grapes" },
+  "Grape:Tempranillo":        { label: "Tempranillo",        iconName: "fruit-grapes" },
+
+  // Styles (categoryLevel3)
+  "Style:Torrt vitt":                          { label: "Dry white",          imageUrl: SB + "packaging-wine-bottle.png" },
+  "Style:Maltwhisky":                          { label: "Malt whisky",        imageUrl: SB + "packaging-barrel.png" },
+  "Style:Gin":                                 { label: "Gin",                iconName: "glass-cocktail" },
+  "Style:India pale ale (IPA)":                { label: "IPA",                imageUrl: SB + "packaging-beer-can.png" },
+  "Style:New England IPA/Hazy IPA":            { label: "Hazy IPA",           imageUrl: SB + "packaging-beer-can.png" },
+  "Style:Imperial/Dubbel IPA":                 { label: "Double IPA",         imageUrl: SB + "packaging-beer-can.png" },
+  "Style:Amerikansk pale ale (APA)":           { label: "American Pale Ale",  imageUrl: SB + "packaging-beer-can.png" },
+  "Style:Imperial porter och stout":           { label: "Imperial stout",     imageUrl: SB + "packaging-beer-bottle.png" },
+  "Style:Övrig syrlig öl":                     { label: "Sour beer",          imageUrl: SB + "packaging-beer-can.png" },
+  "Style:Pilsner - tysk stil":                 { label: "German pilsner",     imageUrl: SB + "packaging-beer-bottle.png" },
+  "Style:Internationell stil":                 { label: "International lager", imageUrl: SB + "packaging-beer-can.png" },
+  "Style:Mörk rom & Lagrad sockerrörssprit":   { label: "Dark rum",           imageUrl: SB + "packaging-barrel.png" },
+  "Style:Blended whisky":                      { label: "Blended whisky",     imageUrl: SB + "packaging-barrel.png" },
+  "Style:Kryddat brännvin":                    { label: "Spiced aquavit",     iconName: "glass-tulip" },
+  "Style:Annan likör":                         { label: "Liqueur",            iconName: "glass-tulip" },
+  "Style:Fruktlikör":                          { label: "Fruit liqueur",      iconName: "glass-tulip" },
+  "Style:Fruktigt & Smakrikt":                 { label: "Fruity & flavourful (red)", imageUrl: SB + "packaging-wine-bottle.png" },
+  "Style:Friskt & Fruktigt":                   { label: "Fresh & fruity (white)",    imageUrl: SB + "packaging-wine-bottle.png" },
+  "Style:Kryddigt & Mustigt":                  { label: "Spicy & robust (red)",      imageUrl: SB + "packaging-wine-bottle.png" },
+  "Style:Fylligt & Smakrikt":                  { label: "Full-bodied (white)",       imageUrl: SB + "packaging-wine-bottle.png" },
+  "Style:Mjukt & Bärigt":                      { label: "Soft & berry (red)",        imageUrl: SB + "packaging-wine-bottle.png" },
+  "Style:Rosé":                                { label: "Rosé",               imageUrl: SB + "packaging-wine-bottle.png" },
+  "Style:Söt":                                 { label: "Sweet",              iconName: "candy" },
+  "Style:Sött":                                { label: "Sweet",              iconName: "candy" },
+  "Style:Torr/halvtorr":                       { label: "Dry / off-dry",      imageUrl: SB + "packaging-wine-bottle.png" },
+
+  // Flags
+  "flag:organic":         { label: "Organic",              iconName: "leaf" },
+  "flag:regularShelf":    { label: "On the regular shelf", iconName: "store" },
+  "flag:localSmallScale": { label: "Local & small-scale",  iconName: "home-heart" },
+
+  // Seal
+  "seal:screwCap":    { label: "Screw cap",    iconName: "bottle-tonic" },
+  "seal:naturalCork": { label: "Natural cork", iconName: "bottle-wine-outline" },
+
   // Taste clock
   "taste:sweetMid":   { label: "Sweetness mid",   iconName: "candy" },
   "taste:sweetHigh":  { label: "Sweetness high",  iconName: "candy-outline" },
@@ -97,7 +166,15 @@ const TAG_DISPLAY: Record<string, TagDisplay> = {
 
 // Family-prefix fallback: when a tag isn't in the explicit map, drop the
 // "Family:" prefix so we at least don't render raw IDs like "Country:Foo".
-const PREFIX_STRIPS = ["Country:", "Beverage:", "ContainerType:", "ContainerMaterial:"];
+const PREFIX_STRIPS = [
+  "Country:",
+  "Beverage:",
+  "ContainerType:",
+  "ContainerMaterial:",
+  "Region:",
+  "Grape:",
+  "Style:",
+];
 
 function stripPrefix(value: string) {
   for (const prefix of PREFIX_STRIPS) {

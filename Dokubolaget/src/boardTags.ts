@@ -7,6 +7,9 @@ export type BoardTagCandidate = {
   support: number;
   share: number;
   predicate: (product: Product) => boolean;
+  // Tag ids this tag must never share a board with, because one implies the
+  // other (Region:Champagne ⊂ Country:Frankrike, Style:IPA ⊂ Beverage:Ale).
+  conflicts?: string[];
 };
 
 function countByStringField(products: Product[], field: string) {
@@ -50,6 +53,99 @@ function createStringTags(params: {
       };
     })
     .filter((tag) => tag.share >= minShare && tag.share <= maxShare);
+}
+
+function countByArrayField(products: Product[], field: string) {
+  const counts = new Map<string, number>();
+  for (const product of products) {
+    const values = product[field];
+    if (!Array.isArray(values)) {
+      continue;
+    }
+    for (const value of values) {
+      if (typeof value === "string" && value) {
+        counts.set(value, (counts.get(value) ?? 0) + 1);
+      }
+    }
+  }
+  return counts;
+}
+
+function createArrayTags(params: {
+  products: Product[];
+  field: string;
+  family: string;
+  prefix: string;
+  limit: number;
+  minShare: number;
+  maxShare: number;
+}): BoardTagCandidate[] {
+  const { products, field, family, prefix, limit, minShare, maxShare } = params;
+  const total = products.length;
+  const map = countByArrayField(products, field);
+  return topEntries(map, limit)
+    .map(([value, support]) => ({
+      id: `${prefix}:${value}`,
+      label: `${prefix}:${value}`,
+      family,
+      support,
+      share: support / total,
+      predicate: (product: Product) =>
+        Array.isArray(product[field]) && (product[field] as unknown[]).includes(value),
+    }))
+    .filter((tag) => tag.share >= minShare && tag.share <= maxShare);
+}
+
+function createFlagTags(
+  products: Product[],
+  family: string,
+  flags: Array<{ id: string; label: string; test: (product: Product) => boolean }>,
+  minShare: number,
+  maxShare: number,
+): BoardTagCandidate[] {
+  const total = products.length;
+  return flags
+    .map((flag) => {
+      let support = 0;
+      for (const product of products) {
+        if (flag.test(product)) support += 1;
+      }
+      return {
+        id: flag.id,
+        label: flag.label,
+        family,
+        support,
+        share: support / total,
+        predicate: flag.test,
+      };
+    })
+    .filter((tag) => tag.share >= minShare && tag.share <= maxShare);
+}
+
+// For a "child" tag (region, style, grape), find parent tags whose value
+// covers almost every product of the child. Those pairs are redundant on a
+// board: "Champagne" × "France" is just "Champagne".
+function attachParentConflicts(
+  products: Product[],
+  tags: BoardTagCandidate[],
+  parents: Array<{ field: string; prefix: string }>,
+  threshold = 0.9,
+) {
+  for (const tag of tags) {
+    const matching = products.filter(tag.predicate);
+    if (matching.length === 0) continue;
+    const conflicts: string[] = [];
+    for (const parent of parents) {
+      const counts = countByStringField(matching, parent.field);
+      for (const [value, count] of counts) {
+        if (count / matching.length >= threshold) {
+          conflicts.push(`${parent.prefix}:${value}`);
+        }
+      }
+    }
+    if (conflicts.length > 0) tag.conflicts = conflicts;
+  }
+  return tags;
 }
 
 function createBucketTags(
@@ -154,7 +250,105 @@ export function buildCandidateTags(products: Product[]) {
     materialCounts: containerMaterialCounts,
   } = countContainerDimensions(products);
 
+  const originCounts = countByStringField(products, "originLevel1");
+  const styleCounts = countByStringField(products, "categoryLevel3");
+
+  const regionTags = attachParentConflicts(
+    products,
+    createStringTags({
+      products,
+      map: originCounts,
+      field: "originLevel1",
+      family: "region",
+      prefix: "Region",
+      limit: 16,
+      minShare: 0.009,
+      maxShare: 0.3,
+    }),
+    [{ field: "country", prefix: "Country" }],
+  );
+
+  const grapeTags = attachParentConflicts(
+    products,
+    createArrayTags({
+      products,
+      field: "grapes",
+      family: "grape",
+      prefix: "Grape",
+      limit: 10,
+      minShare: 0.01,
+      maxShare: 0.3,
+    }),
+    [
+      { field: "country", prefix: "Country" },
+      { field: "categoryLevel2", prefix: "Beverage" },
+    ],
+  );
+
+  const styleTags = attachParentConflicts(
+    products,
+    createStringTags({
+      products,
+      map: styleCounts,
+      field: "categoryLevel3",
+      family: "style",
+      prefix: "Style",
+      limit: 20,
+      minShare: 0.007,
+      maxShare: 0.3,
+    }),
+    [{ field: "categoryLevel2", prefix: "Beverage" }],
+  );
+
+  const flagTags = createFlagTags(
+    products,
+    "flag",
+    [
+      {
+        id: "flag:organic",
+        label: "Organic",
+        test: (product) => product.isOrganic === true,
+      },
+      {
+        id: "flag:regularShelf",
+        label: "Regular shelf assortment",
+        test: (product) => product.assortmentText === "Fast sortiment",
+      },
+      {
+        id: "flag:localSmallScale",
+        label: "Local & small-scale",
+        test: (product) => product.assortmentText === "Lokalt & Småskaligt",
+      },
+    ],
+    0.02,
+    0.5,
+  );
+
+  const sealTags = createFlagTags(
+    products,
+    "seal",
+    [
+      {
+        id: "seal:screwCap",
+        label: "Screw cap",
+        test: (product) => product.seal === "Skruvkapsyl",
+      },
+      {
+        id: "seal:naturalCork",
+        label: "Natural cork",
+        test: (product) => product.seal === "Naturkork",
+      },
+    ],
+    0.02,
+    0.5,
+  );
+
   return uniqueTags([
+    ...regionTags,
+    ...grapeTags,
+    ...styleTags,
+    ...flagTags,
+    ...sealTags,
     ...createStringTags({
       products,
       map: categoryLevel2Counts,
@@ -178,7 +372,7 @@ export function buildCandidateTags(products: Product[]) {
     ...createStringTags({
       products,
       map: packagingCounts,
-      field: "packaging",
+      field: "packagingLevel1",
       family: "container",
       prefix: "Container",
       limit: 8,
@@ -542,6 +736,23 @@ function matchTaste(product: any, tagId: string) {
   return true;
 }
 
+function matchFlag(product: any, tagId: string) {
+  const rules: Record<string, (product: any) => boolean> = {
+    "flag:organic": (item) => item?.isOrganic === true,
+    "flag:regularShelf": (item) => item?.assortmentText === "Fast sortiment",
+    "flag:localSmallScale": (item) => item?.assortmentText === "Lokalt & Småskaligt",
+  };
+  return rules[tagId]?.(product) ?? false;
+}
+
+function matchSeal(product: any, tagId: string) {
+  const rules: Record<string, string> = {
+    "seal:screwCap": "Skruvkapsyl",
+    "seal:naturalCork": "Naturkork",
+  };
+  return rules[tagId] != null && product?.seal === rules[tagId];
+}
+
 const matchers: Array<{
   prefix: string;
   match: (product: any, tagId: string) => boolean;
@@ -560,6 +771,24 @@ const matchers: Array<{
     match: (product, tagId) =>
       product?.packagingLevel1 === tagId.slice("Container:".length),
   },
+  {
+    prefix: "Region:",
+    match: (product, tagId) =>
+      product?.originLevel1 === tagId.slice("Region:".length),
+  },
+  {
+    prefix: "Grape:",
+    match: (product, tagId) =>
+      Array.isArray(product?.grapes) &&
+      product.grapes.includes(tagId.slice("Grape:".length)),
+  },
+  {
+    prefix: "Style:",
+    match: (product, tagId) =>
+      product?.categoryLevel3 === tagId.slice("Style:".length),
+  },
+  { prefix: "flag:", match: matchFlag },
+  { prefix: "seal:", match: matchSeal },
   { prefix: "ContainerType:", match: matchContainerType },
   { prefix: "ContainerMaterial:", match: matchContainerMaterial },
   { prefix: "price:", match: matchPrice },

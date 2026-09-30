@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-30T12:35:45.184Z",
+  "generatedAt": "2026-09-30T13:01:18.715Z",
   "seed": "2026-09-30",
   "minCellMatches": 15,
   "targetLow": 40,
@@ -8,238 +8,14 @@
     {
       "rows": [
         {
-          "id": "Beverage:Rött vin",
-          "label": "Beverage:Rött vin",
-          "family": "beverage"
-        },
-        {
-          "id": "Beverage:Vitt vin",
-          "label": "Beverage:Vitt vin",
-          "family": "beverage"
-        },
-        {
-          "id": "taste:acidHigh",
-          "label": "Acidity: high (7+)",
-          "family": "taste"
-        }
-      ],
-      "cols": [
-        {
-          "id": "Country:Tyskland",
-          "label": "Country:Tyskland",
-          "family": "geography"
-        },
-        {
-          "id": "Country:Spanien",
-          "label": "Country:Spanien",
-          "family": "geography"
-        },
-        {
-          "id": "volume:standard",
-          "label": "Volume: 330-500 ml",
-          "family": "volume"
-        }
-      ],
-      "counts": [
-        [
-          98,
-          913,
-          90
-        ],
-        [
-          509,
-          367,
-          143
-        ],
-        [
-          204,
-          479,
-          470
-        ]
-      ],
-      "score": 523,
-      "difficulty": 10,
-      "difficultyLabel": "medium"
-    },
-    {
-      "rows": [
-        {
-          "id": "Country:Tyskland",
-          "label": "Country:Tyskland",
-          "family": "geography"
-        },
-        {
-          "id": "taste:oakMid",
-          "label": "Oak/Cask: medium (2-4)",
-          "family": "taste"
-        },
-        {
-          "id": "Country:Spanien",
-          "label": "Country:Spanien",
-          "family": "geography"
-        }
-      ],
-      "cols": [
-        {
-          "id": "volume:party",
-          "label": "Volume: 500-750 ml",
-          "family": "volume"
-        },
-        {
-          "id": "Beverage:Vitt vin",
-          "label": "Beverage:Vitt vin",
-          "family": "beverage"
-        },
-        {
-          "id": "price:fancy",
-          "label": "Price: 350-700 SEK",
-          "family": "price"
-        }
-      ],
-      "counts": [
-        [
-          170,
-          509,
-          147
-        ],
-        [
-          148,
-          152,
-          116
-        ],
-        [
-          109,
-          367,
-          280
-        ]
-      ],
-      "score": 509,
-      "difficulty": 11,
-      "difficultyLabel": "hard"
-    },
-    {
-      "rows": [
-        {
-          "id": "price:mid",
-          "label": "Price: 100-200 SEK",
-          "family": "price"
-        },
-        {
-          "id": "Beverage:Mousserande vin",
-          "label": "Beverage:Mousserande vin",
-          "family": "beverage"
-        },
-        {
-          "id": "volume:party",
-          "label": "Volume: 500-750 ml",
-          "family": "volume"
-        }
-      ],
-      "cols": [
-        {
-          "id": "alcohol:strong",
-          "label": "Alcohol: 10-13%",
+          "id": "alcohol:medium",
+          "label": "Alcohol: 5-10%",
           "family": "alcohol"
         },
         {
-          "id": "Country:Italien",
-          "label": "Country:Italien",
-          "family": "geography"
-        },
-        {
-          "id": "Country:Spanien",
-          "label": "Country:Spanien",
-          "family": "geography"
-        }
-      ],
-      "counts": [
-        [
-          1751,
-          1048,
-          665
-        ],
-        [
-          2203,
-          372,
-          271
-        ],
-        [
-          91,
-          381,
-          109
-        ]
-      ],
-      "score": 503,
-      "difficulty": 10,
-      "difficultyLabel": "medium"
-    },
-    {
-      "rows": [
-        {
-          "id": "price:mid",
-          "label": "Price: 100-200 SEK",
-          "family": "price"
-        },
-        {
-          "id": "volume:standard",
-          "label": "Volume: 330-500 ml",
-          "family": "volume"
-        },
-        {
-          "id": "taste:bodyMid",
-          "label": "Body: medium (3-6)",
-          "family": "taste"
-        }
-      ],
-      "cols": [
-        {
-          "id": "Country:Italien",
-          "label": "Country:Italien",
-          "family": "geography"
-        },
-        {
-          "id": "Beverage:Rött vin",
-          "label": "Beverage:Rött vin",
-          "family": "beverage"
-        },
-        {
-          "id": "Country:Tyskland",
-          "label": "Country:Tyskland",
-          "family": "geography"
-        }
-      ],
-      "counts": [
-        [
-          1048,
-          1760,
-          231
-        ],
-        [
-          113,
-          90,
-          74
-        ],
-        [
-          425,
-          438,
-          270
-        ]
-      ],
-      "score": 497,
-      "difficulty": 11,
-      "difficultyLabel": "hard"
-    },
-    {
-      "rows": [
-        {
-          "id": "volume:standard",
-          "label": "Volume: 330-500 ml",
-          "family": "volume"
-        },
-        {
-          "id": "taste:bodyHigh",
-          "label": "Body: full (7+)",
-          "family": "taste"
+          "id": "ContainerType:Can",
+          "label": "ContainerType:Can",
+          "family": "containerType"
         },
         {
           "id": "price:budget",
@@ -254,547 +30,43 @@
           "family": "beverage"
         },
         {
-          "id": "Country:Storbritannien",
-          "label": "Country:Storbritannien",
-          "family": "geography"
+          "id": "Style:India pale ale (IPA)",
+          "label": "Style:India pale ale (IPA)",
+          "family": "style"
         },
         {
-          "id": "Country:Frankrike",
-          "label": "Country:Frankrike",
-          "family": "geography"
+          "id": "Style:New England IPA/Hazy IPA",
+          "label": "Style:New England IPA/Hazy IPA",
+          "family": "style"
         }
       ],
       "counts": [
         [
-          980,
-          188,
-          171
+          853,
+          548,
+          443
         ],
         [
-          78,
-          67,
-          324
+          696,
+          360,
+          413
         ],
         [
           1257,
-          197,
-          273
+          533,
+          418
         ]
       ],
-      "score": 492,
-      "difficulty": 11,
-      "difficultyLabel": "hard"
-    },
-    {
-      "rows": [
-        {
-          "id": "Beverage:Vitt vin",
-          "label": "Beverage:Vitt vin",
-          "family": "beverage"
-        },
-        {
-          "id": "volume:party",
-          "label": "Volume: 500-750 ml",
-          "family": "volume"
-        },
-        {
-          "id": "taste:bodyHigh",
-          "label": "Body: full (7+)",
-          "family": "taste"
-        }
-      ],
-      "cols": [
-        {
-          "id": "Country:Spanien",
-          "label": "Country:Spanien",
-          "family": "geography"
-        },
-        {
-          "id": "Country:Sverige",
-          "label": "Country:Sverige",
-          "family": "geography"
-        },
-        {
-          "id": "price:budget",
-          "label": "Price: < 100 SEK",
-          "family": "price"
-        }
-      ],
-      "counts": [
-        [
-          367,
-          79,
-          357
-        ],
-        [
-          109,
-          1672,
-          589
-        ],
-        [
-          209,
-          1654,
-          2129
-        ]
-      ],
-      "score": 491,
-      "difficulty": 11,
-      "difficultyLabel": "hard"
-    },
-    {
-      "rows": [
-        {
-          "id": "alcohol:strong",
-          "label": "Alcohol: 10-13%",
-          "family": "alcohol"
-        },
-        {
-          "id": "price:mid",
-          "label": "Price: 100-200 SEK",
-          "family": "price"
-        },
-        {
-          "id": "Country:Tyskland",
-          "label": "Country:Tyskland",
-          "family": "geography"
-        }
-      ],
-      "cols": [
-        {
-          "id": "volume:party",
-          "label": "Volume: 500-750 ml",
-          "family": "volume"
-        },
-        {
-          "id": "ContainerMaterial:Aluminum/Metal",
-          "label": "ContainerMaterial:Aluminum/Metal",
-          "family": "containerMaterial"
-        },
-        {
-          "id": "Beverage:Vitt vin",
-          "label": "Beverage:Vitt vin",
-          "family": "beverage"
-        }
-      ],
-      "counts": [
-        [
-          91,
-          168,
-          2018
-        ],
-        [
-          335,
-          127,
-          1453
-        ],
-        [
-          170,
-          46,
-          509
-        ]
-      ],
-      "score": 472,
-      "difficulty": 11,
-      "difficultyLabel": "hard"
-    },
-    {
-      "rows": [
-        {
-          "id": "price:premium",
-          "label": "Price: 200-350 SEK",
-          "family": "price"
-        },
-        {
-          "id": "volume:party",
-          "label": "Volume: 500-750 ml",
-          "family": "volume"
-        },
-        {
-          "id": "taste:bodyHigh",
-          "label": "Body: full (7+)",
-          "family": "taste"
-        }
-      ],
-      "cols": [
-        {
-          "id": "Country:Storbritannien",
-          "label": "Country:Storbritannien",
-          "family": "geography"
-        },
-        {
-          "id": "Country:Frankrike",
-          "label": "Country:Frankrike",
-          "family": "geography"
-        },
-        {
-          "id": "Country:USA",
-          "label": "Country:USA",
-          "family": "geography"
-        }
-      ],
-      "counts": [
-        [
-          120,
-          1079,
-          180
-        ],
-        [
-          1418,
-          539,
-          201
-        ],
-        [
-          67,
-          324,
-          182
-        ]
-      ],
-      "score": 470,
-      "difficulty": 11,
-      "difficultyLabel": "hard"
-    },
-    {
-      "rows": [
-        {
-          "id": "Country:Tyskland",
-          "label": "Country:Tyskland",
-          "family": "geography"
-        },
-        {
-          "id": "taste:bodyMid",
-          "label": "Body: medium (3-6)",
-          "family": "taste"
-        },
-        {
-          "id": "volume:standard",
-          "label": "Volume: 330-500 ml",
-          "family": "volume"
-        }
-      ],
-      "cols": [
-        {
-          "id": "price:mid",
-          "label": "Price: 100-200 SEK",
-          "family": "price"
-        },
-        {
-          "id": "Beverage:Rött vin",
-          "label": "Beverage:Rött vin",
-          "family": "beverage"
-        },
-        {
-          "id": "ContainerMaterial:Aluminum/Metal",
-          "label": "ContainerMaterial:Aluminum/Metal",
-          "family": "containerMaterial"
-        }
-      ],
-      "counts": [
-        [
-          231,
-          98,
-          46
-        ],
-        [
-          1020,
-          438,
-          1853
-        ],
-        [
-          417,
-          90,
-          3006
-        ]
-      ],
-      "score": 465,
-      "difficulty": 12,
-      "difficultyLabel": "hard"
-    },
-    {
-      "rows": [
-        {
-          "id": "ContainerMaterial:Plastic",
-          "label": "ContainerMaterial:Plastic",
-          "family": "containerMaterial"
-        },
-        {
-          "id": "alcohol:veryStrong",
-          "label": "Alcohol: 13-22%",
-          "family": "alcohol"
-        },
-        {
-          "id": "Country:Frankrike",
-          "label": "Country:Frankrike",
-          "family": "geography"
-        }
-      ],
-      "cols": [
-        {
-          "id": "price:premium",
-          "label": "Price: 200-350 SEK",
-          "family": "price"
-        },
-        {
-          "id": "volume:party",
-          "label": "Volume: 500-750 ml",
-          "family": "volume"
-        },
-        {
-          "id": "Beverage:Rött vin",
-          "label": "Beverage:Rött vin",
-          "family": "beverage"
-        }
-      ],
-      "counts": [
-        [
-          70,
-          103,
-          108
-        ],
-        [
-          3232,
-          627,
-          6438
-        ],
-        [
-          1079,
-          539,
-          1677
-        ]
-      ],
-      "score": 454,
-      "difficulty": 11,
-      "difficultyLabel": "hard"
-    },
-    {
-      "rows": [
-        {
-          "id": "taste:oakHigh",
-          "label": "Oak/Cask: high (5+)",
-          "family": "taste"
-        },
-        {
-          "id": "Beverage:Rött vin",
-          "label": "Beverage:Rött vin",
-          "family": "beverage"
-        },
-        {
-          "id": "Beverage:Vitt vin",
-          "label": "Beverage:Vitt vin",
-          "family": "beverage"
-        }
-      ],
-      "cols": [
-        {
-          "id": "Country:Portugal",
-          "label": "Country:Portugal",
-          "family": "geography"
-        },
-        {
-          "id": "Country:Sydafrika",
-          "label": "Country:Sydafrika",
-          "family": "geography"
-        },
-        {
-          "id": "volume:standard",
-          "label": "Volume: 330-500 ml",
-          "family": "volume"
-        }
-      ],
-      "counts": [
-        [
-          35,
-          49,
-          101
-        ],
-        [
-          199,
-          331,
-          90
-        ],
-        [
-          161,
-          265,
-          143
-        ]
-      ],
-      "score": 449,
+      "score": 542,
       "difficulty": 10,
       "difficultyLabel": "medium"
     },
     {
       "rows": [
         {
-          "id": "Country:Italien",
-          "label": "Country:Italien",
-          "family": "geography"
-        },
-        {
-          "id": "taste:acidHigh",
-          "label": "Acidity: high (7+)",
-          "family": "taste"
-        },
-        {
-          "id": "Country:Sydafrika",
-          "label": "Country:Sydafrika",
-          "family": "geography"
-        }
-      ],
-      "cols": [
-        {
-          "id": "price:fancy",
-          "label": "Price: 350-700 SEK",
-          "family": "price"
-        },
-        {
-          "id": "Beverage:Mousserande vin",
-          "label": "Beverage:Mousserande vin",
-          "family": "beverage"
-        },
-        {
-          "id": "volume:party",
-          "label": "Volume: 500-750 ml",
-          "family": "volume"
-        }
-      ],
-      "counts": [
-        [
-          884,
-          372,
-          381
-        ],
-        [
-          339,
-          608,
-          84
-        ],
-        [
-          143,
-          40,
-          16
-        ]
-      ],
-      "score": 442,
-      "difficulty": 11,
-      "difficultyLabel": "hard"
-    },
-    {
-      "rows": [
-        {
-          "id": "taste:acidHigh",
-          "label": "Acidity: high (7+)",
-          "family": "taste"
-        },
-        {
-          "id": "ContainerType:Can",
-          "label": "ContainerType:Can",
-          "family": "containerType"
-        },
-        {
-          "id": "Beverage:Vitt vin",
-          "label": "Beverage:Vitt vin",
-          "family": "beverage"
-        }
-      ],
-      "cols": [
-        {
-          "id": "Country:Sydafrika",
-          "label": "Country:Sydafrika",
-          "family": "geography"
-        },
-        {
-          "id": "Country:USA",
-          "label": "Country:USA",
-          "family": "geography"
-        },
-        {
-          "id": "Country:Italien",
-          "label": "Country:Italien",
-          "family": "geography"
-        }
-      ],
-      "counts": [
-        [
-          170,
-          194,
-          896
-        ],
-        [
-          15,
-          213,
-          33
-        ],
-        [
-          265,
-          170,
-          687
-        ]
-      ],
-      "score": 441,
-      "difficulty": 10,
-      "difficultyLabel": "medium"
-    },
-    {
-      "rows": [
-        {
-          "id": "ContainerMaterial:Paper/Cardboard",
-          "label": "ContainerMaterial:Paper/Cardboard",
-          "family": "containerMaterial"
-        },
-        {
-          "id": "alcohol:strong",
-          "label": "Alcohol: 10-13%",
-          "family": "alcohol"
-        },
-        {
-          "id": "price:premium",
-          "label": "Price: 200-350 SEK",
-          "family": "price"
-        }
-      ],
-      "cols": [
-        {
-          "id": "Country:Frankrike",
-          "label": "Country:Frankrike",
-          "family": "geography"
-        },
-        {
-          "id": "Beverage:Rosévin",
-          "label": "Beverage:Rosévin",
-          "family": "beverage"
-        },
-        {
-          "id": "Country:Spanien",
-          "label": "Country:Spanien",
-          "family": "geography"
-        }
-      ],
-      "counts": [
-        [
-          48,
-          34,
-          48
-        ],
-        [
-          2273,
-          357,
-          510
-        ],
-        [
-          1079,
-          145,
-          592
-        ]
-      ],
-      "score": 440,
-      "difficulty": 10,
-      "difficultyLabel": "medium"
-    },
-    {
-      "rows": [
-        {
-          "id": "Beverage:Rött vin",
-          "label": "Beverage:Rött vin",
-          "family": "beverage"
+          "id": "Style:Internationell stil",
+          "label": "Style:Internationell stil",
+          "family": "style"
         },
         {
           "id": "Beverage:Ale",
@@ -802,569 +74,9 @@
           "family": "beverage"
         },
         {
-          "id": "taste:acidHigh",
-          "label": "Acidity: high (7+)",
-          "family": "taste"
-        }
-      ],
-      "cols": [
-        {
-          "id": "Country:Italien",
-          "label": "Country:Italien",
-          "family": "geography"
-        },
-        {
-          "id": "ContainerMaterial:Aluminum/Metal",
-          "label": "ContainerMaterial:Aluminum/Metal",
-          "family": "containerMaterial"
-        },
-        {
-          "id": "Country:USA",
-          "label": "Country:USA",
-          "family": "geography"
-        }
-      ],
-      "counts": [
-        [
-          2502,
-          33,
-          426
-        ],
-        [
-          20,
-          1522,
-          161
-        ],
-        [
-          896,
-          366,
-          194
-        ]
-      ],
-      "score": 438,
-      "difficulty": 10,
-      "difficultyLabel": "medium"
-    },
-    {
-      "rows": [
-        {
-          "id": "taste:roughHigh",
-          "label": "Roughness: high (5+)",
-          "family": "taste"
-        },
-        {
-          "id": "Country:Frankrike",
-          "label": "Country:Frankrike",
-          "family": "geography"
-        },
-        {
-          "id": "price:premium",
-          "label": "Price: 200-350 SEK",
-          "family": "price"
-        }
-      ],
-      "cols": [
-        {
-          "id": "volume:standard",
-          "label": "Volume: 330-500 ml",
-          "family": "volume"
-        },
-        {
-          "id": "ContainerMaterial:Plastic",
-          "label": "ContainerMaterial:Plastic",
-          "family": "containerMaterial"
-        },
-        {
-          "id": "Beverage:Rött vin",
-          "label": "Beverage:Rött vin",
-          "family": "beverage"
-        }
-      ],
-      "counts": [
-        [
-          60,
-          107,
-          1637
-        ],
-        [
-          171,
-          41,
-          1677
-        ],
-        [
-          170,
-          70,
-          2154
-        ]
-      ],
-      "score": 435,
-      "difficulty": 12,
-      "difficultyLabel": "hard"
-    },
-    {
-      "rows": [
-        {
-          "id": "Country:Frankrike",
-          "label": "Country:Frankrike",
-          "family": "geography"
-        },
-        {
-          "id": "Country:Storbritannien",
-          "label": "Country:Storbritannien",
-          "family": "geography"
-        },
-        {
-          "id": "Country:Sverige",
-          "label": "Country:Sverige",
-          "family": "geography"
-        }
-      ],
-      "cols": [
-        {
-          "id": "volume:party",
-          "label": "Volume: 500-750 ml",
-          "family": "volume"
-        },
-        {
-          "id": "price:fancy",
-          "label": "Price: 350-700 SEK",
-          "family": "price"
-        },
-        {
-          "id": "ContainerMaterial:Aluminum/Metal",
-          "label": "ContainerMaterial:Aluminum/Metal",
-          "family": "containerMaterial"
-        }
-      ],
-      "counts": [
-        [
-          539,
-          1558,
-          36
-        ],
-        [
-          1418,
-          331,
-          130
-        ],
-        [
-          1672,
-          719,
-          2571
-        ]
-      ],
-      "score": 434,
-      "difficulty": 9,
-      "difficultyLabel": "medium"
-    },
-    {
-      "rows": [
-        {
-          "id": "ContainerType:Can",
-          "label": "ContainerType:Can",
-          "family": "containerType"
-        },
-        {
-          "id": "alcohol:liquor",
-          "label": "Alcohol: liquor (>=22%)",
-          "family": "alcohol"
-        },
-        {
-          "id": "volume:standard",
-          "label": "Volume: 330-500 ml",
-          "family": "volume"
-        }
-      ],
-      "cols": [
-        {
-          "id": "Country:USA",
-          "label": "Country:USA",
-          "family": "geography"
-        },
-        {
-          "id": "Country:Sverige",
-          "label": "Country:Sverige",
-          "family": "geography"
-        },
-        {
-          "id": "Country:Tyskland",
-          "label": "Country:Tyskland",
-          "family": "geography"
-        }
-      ],
-      "counts": [
-        [
-          213,
-          2570,
-          46
-        ],
-        [
-          194,
-          1290,
-          84
-        ],
-        [
-          278,
-          3713,
-          74
-        ]
-      ],
-      "score": 433,
-      "difficulty": 10,
-      "difficultyLabel": "medium"
-    },
-    {
-      "rows": [
-        {
-          "id": "Beverage:Rött vin",
-          "label": "Beverage:Rött vin",
-          "family": "beverage"
-        },
-        {
-          "id": "alcohol:veryStrong",
-          "label": "Alcohol: 13-22%",
-          "family": "alcohol"
-        },
-        {
-          "id": "Beverage:Vitt vin",
-          "label": "Beverage:Vitt vin",
-          "family": "beverage"
-        }
-      ],
-      "cols": [
-        {
-          "id": "price:fancy",
-          "label": "Price: 350-700 SEK",
-          "family": "price"
-        },
-        {
-          "id": "Country:Sverige",
-          "label": "Country:Sverige",
-          "family": "geography"
-        },
-        {
-          "id": "ContainerType:Box",
-          "label": "ContainerType:Box",
-          "family": "containerType"
-        }
-      ],
-      "counts": [
-        [
-          1463,
-          17,
-          189
-        ],
-        [
-          2124,
-          321,
-          203
-        ],
-        [
-          708,
-          79,
-          117
-        ]
-      ],
-      "score": 433,
-      "difficulty": 10,
-      "difficultyLabel": "medium"
-    },
-    {
-      "rows": [
-        {
-          "id": "price:premium",
-          "label": "Price: 200-350 SEK",
-          "family": "price"
-        },
-        {
-          "id": "ContainerMaterial:Aluminum/Metal",
-          "label": "ContainerMaterial:Aluminum/Metal",
-          "family": "containerMaterial"
-        },
-        {
-          "id": "volume:standard",
-          "label": "Volume: 330-500 ml",
-          "family": "volume"
-        }
-      ],
-      "cols": [
-        {
-          "id": "Beverage:Vitt vin",
-          "label": "Beverage:Vitt vin",
-          "family": "beverage"
-        },
-        {
-          "id": "Country:Tyskland",
-          "label": "Country:Tyskland",
-          "family": "geography"
-        },
-        {
-          "id": "Beverage:Mousserande vin",
-          "label": "Beverage:Mousserande vin",
-          "family": "beverage"
-        }
-      ],
-      "counts": [
-        [
-          1602,
-          275,
-          380
-        ],
-        [
-          27,
-          46,
-          32
-        ],
-        [
-          143,
-          74,
-          67
-        ]
-      ],
-      "score": 428,
-      "difficulty": 9,
-      "difficultyLabel": "medium"
-    },
-    {
-      "rows": [
-        {
-          "id": "taste:acidHigh",
-          "label": "Acidity: high (7+)",
-          "family": "taste"
-        },
-        {
-          "id": "price:premium",
-          "label": "Price: 200-350 SEK",
-          "family": "price"
-        },
-        {
-          "id": "ContainerType:Can",
-          "label": "ContainerType:Can",
-          "family": "containerType"
-        }
-      ],
-      "cols": [
-        {
-          "id": "Country:USA",
-          "label": "Country:USA",
-          "family": "geography"
-        },
-        {
-          "id": "Beverage:Rött vin",
-          "label": "Beverage:Rött vin",
-          "family": "beverage"
-        },
-        {
-          "id": "Country:Frankrike",
-          "label": "Country:Frankrike",
-          "family": "geography"
-        }
-      ],
-      "counts": [
-        [
-          194,
-          1738,
-          944
-        ],
-        [
-          180,
-          2154,
-          1079
-        ],
-        [
-          213,
-          33,
-          36
-        ]
-      ],
-      "score": 428,
-      "difficulty": 11,
-      "difficultyLabel": "hard"
-    },
-    {
-      "rows": [
-        {
-          "id": "price:mid",
-          "label": "Price: 100-200 SEK",
-          "family": "price"
-        },
-        {
-          "id": "alcohol:strong",
-          "label": "Alcohol: 10-13%",
-          "family": "alcohol"
-        },
-        {
-          "id": "Country:Portugal",
-          "label": "Country:Portugal",
-          "family": "geography"
-        }
-      ],
-      "cols": [
-        {
-          "id": "volume:party",
-          "label": "Volume: 500-750 ml",
-          "family": "volume"
-        },
-        {
-          "id": "Beverage:Vitt vin",
-          "label": "Beverage:Vitt vin",
-          "family": "beverage"
-        },
-        {
-          "id": "Beverage:Mousserande vin",
-          "label": "Beverage:Mousserande vin",
-          "family": "beverage"
-        }
-      ],
-      "counts": [
-        [
-          335,
-          1453,
-          427
-        ],
-        [
-          91,
-          2018,
-          2203
-        ],
-        [
-          26,
-          161,
-          34
-        ]
-      ],
-      "score": 427,
-      "difficulty": 10,
-      "difficultyLabel": "medium"
-    },
-    {
-      "rows": [
-        {
-          "id": "ContainerMaterial:Plastic",
-          "label": "ContainerMaterial:Plastic",
-          "family": "containerMaterial"
-        },
-        {
-          "id": "Beverage:Mousserande vin",
-          "label": "Beverage:Mousserande vin",
-          "family": "beverage"
-        },
-        {
-          "id": "taste:bodyMid",
-          "label": "Body: medium (3-6)",
-          "family": "taste"
-        }
-      ],
-      "cols": [
-        {
-          "id": "Country:Italien",
-          "label": "Country:Italien",
-          "family": "geography"
-        },
-        {
-          "id": "Country:Sverige",
-          "label": "Country:Sverige",
-          "family": "geography"
-        },
-        {
-          "id": "Country:Spanien",
-          "label": "Country:Spanien",
-          "family": "geography"
-        }
-      ],
-      "counts": [
-        [
-          37,
-          62,
-          18
-        ],
-        [
-          372,
-          27,
-          271
-        ],
-        [
-          425,
-          2665,
-          317
-        ]
-      ],
-      "score": 425,
-      "difficulty": 10,
-      "difficultyLabel": "medium"
-    },
-    {
-      "rows": [
-        {
-          "id": "Country:Tyskland",
-          "label": "Country:Tyskland",
-          "family": "geography"
-        },
-        {
-          "id": "taste:oakMid",
-          "label": "Oak/Cask: medium (2-4)",
-          "family": "taste"
-        },
-        {
-          "id": "Country:Sverige",
-          "label": "Country:Sverige",
-          "family": "geography"
-        }
-      ],
-      "cols": [
-        {
-          "id": "price:premium",
-          "label": "Price: 200-350 SEK",
-          "family": "price"
-        },
-        {
-          "id": "Beverage:Vitt vin",
-          "label": "Beverage:Vitt vin",
-          "family": "beverage"
-        },
-        {
-          "id": "ContainerMaterial:Paper/Cardboard",
-          "label": "ContainerMaterial:Paper/Cardboard",
-          "family": "containerMaterial"
-        }
-      ],
-      "counts": [
-        [
-          275,
-          509,
-          17
-        ],
-        [
-          280,
-          152,
-          95
-        ],
-        [
-          679,
-          79,
-          17
-        ]
-      ],
-      "score": 424,
-      "difficulty": 11,
-      "difficultyLabel": "hard"
-    },
-    {
-      "rows": [
-        {
-          "id": "alcohol:liquor",
-          "label": "Alcohol: liquor (>=22%)",
-          "family": "alcohol"
-        },
-        {
-          "id": "Beverage:Whisky",
-          "label": "Beverage:Whisky",
-          "family": "beverage"
-        },
-        {
-          "id": "ContainerType:Can",
-          "label": "ContainerType:Can",
-          "family": "containerType"
+          "id": "Style:Pilsner - tysk stil",
+          "label": "Style:Pilsner - tysk stil",
+          "family": "style"
         }
       ],
       "cols": [
@@ -1372,174 +84,6 @@
           "id": "Country:Sverige",
           "label": "Country:Sverige",
           "family": "geography"
-        },
-        {
-          "id": "Country:Frankrike",
-          "label": "Country:Frankrike",
-          "family": "geography"
-        },
-        {
-          "id": "Country:Storbritannien",
-          "label": "Country:Storbritannien",
-          "family": "geography"
-        }
-      ],
-      "counts": [
-        [
-          1290,
-          462,
-          1406
-        ],
-        [
-          147,
-          16,
-          1247
-        ],
-        [
-          2570,
-          36,
-          129
-        ]
-      ],
-      "score": 422,
-      "difficulty": 9,
-      "difficultyLabel": "medium"
-    },
-    {
-      "rows": [
-        {
-          "id": "taste:bodyMid",
-          "label": "Body: medium (3-6)",
-          "family": "taste"
-        },
-        {
-          "id": "volume:standard",
-          "label": "Volume: 330-500 ml",
-          "family": "volume"
-        },
-        {
-          "id": "Beverage:Mousserande vin",
-          "label": "Beverage:Mousserande vin",
-          "family": "beverage"
-        }
-      ],
-      "cols": [
-        {
-          "id": "Country:Spanien",
-          "label": "Country:Spanien",
-          "family": "geography"
-        },
-        {
-          "id": "Country:Portugal",
-          "label": "Country:Portugal",
-          "family": "geography"
-        },
-        {
-          "id": "price:fancy",
-          "label": "Price: 350-700 SEK",
-          "family": "price"
-        }
-      ],
-      "counts": [
-        [
-          317,
-          68,
-          190
-        ],
-        [
-          102,
-          22,
-          73
-        ],
-        [
-          271,
-          34,
-          856
-        ]
-      ],
-      "score": 422,
-      "difficulty": 11,
-      "difficultyLabel": "hard"
-    },
-    {
-      "rows": [
-        {
-          "id": "ContainerType:Can",
-          "label": "ContainerType:Can",
-          "family": "containerType"
-        },
-        {
-          "id": "alcohol:medium",
-          "label": "Alcohol: 5-10%",
-          "family": "alcohol"
-        },
-        {
-          "id": "price:mid",
-          "label": "Price: 100-200 SEK",
-          "family": "price"
-        }
-      ],
-      "cols": [
-        {
-          "id": "Country:Storbritannien",
-          "label": "Country:Storbritannien",
-          "family": "geography"
-        },
-        {
-          "id": "Country:Italien",
-          "label": "Country:Italien",
-          "family": "geography"
-        },
-        {
-          "id": "Country:USA",
-          "label": "Country:USA",
-          "family": "geography"
-        }
-      ],
-      "counts": [
-        [
-          129,
-          33,
-          213
-        ],
-        [
-          148,
-          110,
-          217
-        ],
-        [
-          59,
-          1048,
-          242
-        ]
-      ],
-      "score": 421,
-      "difficulty": 10,
-      "difficultyLabel": "medium"
-    },
-    {
-      "rows": [
-        {
-          "id": "Country:USA",
-          "label": "Country:USA",
-          "family": "geography"
-        },
-        {
-          "id": "volume:standard",
-          "label": "Volume: 330-500 ml",
-          "family": "volume"
-        },
-        {
-          "id": "Beverage:Vitt vin",
-          "label": "Beverage:Vitt vin",
-          "family": "beverage"
-        }
-      ],
-      "cols": [
-        {
-          "id": "alcohol:medium",
-          "label": "Alcohol: 5-10%",
-          "family": "alcohol"
         },
         {
           "id": "ContainerMaterial:Aluminum/Metal",
@@ -1554,24 +98,472 @@
       ],
       "counts": [
         [
-          217,
-          218,
-          181
+          267,
+          237,
+          431
         ],
         [
-          3316,
-          3006,
-          4592
+          1816,
+          1522,
+          2252
         ],
         [
-          174,
-          27,
-          357
+          189,
+          137,
+          219
         ]
       ],
-      "score": 421,
+      "score": 537,
+      "difficulty": 8,
+      "difficultyLabel": "easy"
+    },
+    {
+      "rows": [
+        {
+          "id": "Style:Amerikansk pale ale (APA)",
+          "label": "Style:Amerikansk pale ale (APA)",
+          "family": "style"
+        },
+        {
+          "id": "taste:sweetHigh",
+          "label": "Sweetness: high (7+)",
+          "family": "taste"
+        },
+        {
+          "id": "Style:Imperial/Dubbel IPA",
+          "label": "Style:Imperial/Dubbel IPA",
+          "family": "style"
+        }
+      ],
+      "cols": [
+        {
+          "id": "Country:Sverige",
+          "label": "Country:Sverige",
+          "family": "geography"
+        },
+        {
+          "id": "ContainerMaterial:Aluminum/Metal",
+          "label": "ContainerMaterial:Aluminum/Metal",
+          "family": "containerMaterial"
+        },
+        {
+          "id": "price:budget",
+          "label": "Price: < 100 SEK",
+          "family": "price"
+        }
+      ],
+      "counts": [
+        [
+          204,
+          142,
+          228
+        ],
+        [
+          495,
+          280,
+          499
+        ],
+        [
+          177,
+          247,
+          244
+        ]
+      ],
+      "score": 530,
       "difficulty": 11,
       "difficultyLabel": "hard"
+    },
+    {
+      "rows": [
+        {
+          "id": "Style:Internationell stil",
+          "label": "Style:Internationell stil",
+          "family": "style"
+        },
+        {
+          "id": "Country:Frankrike",
+          "label": "Country:Frankrike",
+          "family": "geography"
+        },
+        {
+          "id": "Country:Tyskland",
+          "label": "Country:Tyskland",
+          "family": "geography"
+        }
+      ],
+      "cols": [
+        {
+          "id": "price:budget",
+          "label": "Price: < 100 SEK",
+          "family": "price"
+        },
+        {
+          "id": "flag:regularShelf",
+          "label": "Regular shelf assortment",
+          "family": "flag"
+        },
+        {
+          "id": "volume:standard",
+          "label": "Volume: 330-500 ml",
+          "family": "volume"
+        }
+      ],
+      "counts": [
+        [
+          431,
+          137,
+          328
+        ],
+        [
+          273,
+          513,
+          171
+        ],
+        [
+          227,
+          120,
+          74
+        ]
+      ],
+      "score": 527,
+      "difficulty": 9,
+      "difficultyLabel": "medium"
+    },
+    {
+      "rows": [
+        {
+          "id": "ContainerType:Box",
+          "label": "ContainerType:Box",
+          "family": "containerType"
+        },
+        {
+          "id": "Country:Sydafrika",
+          "label": "Country:Sydafrika",
+          "family": "geography"
+        },
+        {
+          "id": "Grape:Pinot noir",
+          "label": "Grape:Pinot noir",
+          "family": "grape"
+        }
+      ],
+      "cols": [
+        {
+          "id": "flag:regularShelf",
+          "label": "Regular shelf assortment",
+          "family": "flag"
+        },
+        {
+          "id": "Beverage:Rött vin",
+          "label": "Beverage:Rött vin",
+          "family": "beverage"
+        },
+        {
+          "id": "price:premium",
+          "label": "Price: 200-350 SEK",
+          "family": "price"
+        }
+      ],
+      "counts": [
+        [
+          206,
+          189,
+          252
+        ],
+        [
+          91,
+          331,
+          247
+        ],
+        [
+          141,
+          587,
+          236
+        ]
+      ],
+      "score": 524,
+      "difficulty": 10,
+      "difficultyLabel": "medium"
+    },
+    {
+      "rows": [
+        {
+          "id": "Country:Sydafrika",
+          "label": "Country:Sydafrika",
+          "family": "geography"
+        },
+        {
+          "id": "ContainerMaterial:Paper/Cardboard",
+          "label": "ContainerMaterial:Paper/Cardboard",
+          "family": "containerMaterial"
+        },
+        {
+          "id": "Region:Venetien",
+          "label": "Region:Venetien",
+          "family": "region"
+        }
+      ],
+      "cols": [
+        {
+          "id": "Beverage:Vitt vin",
+          "label": "Beverage:Vitt vin",
+          "family": "beverage"
+        },
+        {
+          "id": "price:mid",
+          "label": "Price: 100-200 SEK",
+          "family": "price"
+        },
+        {
+          "id": "Beverage:Rött vin",
+          "label": "Beverage:Rött vin",
+          "family": "beverage"
+        }
+      ],
+      "counts": [
+        [
+          265,
+          191,
+          331
+        ],
+        [
+          146,
+          95,
+          225
+        ],
+        [
+          82,
+          226,
+          289
+        ]
+      ],
+      "score": 524,
+      "difficulty": 9,
+      "difficultyLabel": "medium"
+    },
+    {
+      "rows": [
+        {
+          "id": "Beverage:Ale",
+          "label": "Beverage:Ale",
+          "family": "beverage"
+        },
+        {
+          "id": "Style:Internationell stil",
+          "label": "Style:Internationell stil",
+          "family": "style"
+        },
+        {
+          "id": "Beverage:Whisky",
+          "label": "Beverage:Whisky",
+          "family": "beverage"
+        }
+      ],
+      "cols": [
+        {
+          "id": "volume:party",
+          "label": "Volume: 500-750 ml",
+          "family": "volume"
+        },
+        {
+          "id": "Country:Sverige",
+          "label": "Country:Sverige",
+          "family": "geography"
+        },
+        {
+          "id": "flag:regularShelf",
+          "label": "Regular shelf assortment",
+          "family": "flag"
+        }
+      ],
+      "counts": [
+        [
+          123,
+          1816,
+          178
+        ],
+        [
+          98,
+          267,
+          137
+        ],
+        [
+          1888,
+          147,
+          180
+        ]
+      ],
+      "score": 518,
+      "difficulty": 8,
+      "difficultyLabel": "easy"
+    },
+    {
+      "rows": [
+        {
+          "id": "Style:Torrt vitt",
+          "label": "Style:Torrt vitt",
+          "family": "style"
+        },
+        {
+          "id": "price:budget",
+          "label": "Price: < 100 SEK",
+          "family": "price"
+        },
+        {
+          "id": "Style:Kryddigt & Mustigt",
+          "label": "Style:Kryddigt & Mustigt",
+          "family": "style"
+        }
+      ],
+      "cols": [
+        {
+          "id": "seal:naturalCork",
+          "label": "Natural cork",
+          "family": "seal"
+        },
+        {
+          "id": "Country:Frankrike",
+          "label": "Country:Frankrike",
+          "family": "geography"
+        },
+        {
+          "id": "Country:Italien",
+          "label": "Country:Italien",
+          "family": "geography"
+        }
+      ],
+      "counts": [
+        [
+          81,
+          1165,
+          215
+        ],
+        [
+          122,
+          273,
+          352
+        ],
+        [
+          236,
+          116,
+          259
+        ]
+      ],
+      "score": 517,
+      "difficulty": 9,
+      "difficultyLabel": "medium"
+    },
+    {
+      "rows": [
+        {
+          "id": "Style:New England IPA/Hazy IPA",
+          "label": "Style:New England IPA/Hazy IPA",
+          "family": "style"
+        },
+        {
+          "id": "Region:Stockholms län",
+          "label": "Region:Stockholms län",
+          "family": "region"
+        },
+        {
+          "id": "Style:Söt",
+          "label": "Style:Söt",
+          "family": "style"
+        }
+      ],
+      "cols": [
+        {
+          "id": "Container:Burk",
+          "label": "Container:Burk",
+          "family": "container"
+        },
+        {
+          "id": "volume:standard",
+          "label": "Volume: 330-500 ml",
+          "family": "volume"
+        },
+        {
+          "id": "flag:localSmallScale",
+          "label": "Local & small-scale",
+          "family": "flag"
+        }
+      ],
+      "counts": [
+        [
+          413,
+          437,
+          329
+        ],
+        [
+          293,
+          422,
+          526
+        ],
+        [
+          204,
+          187,
+          83
+        ]
+      ],
+      "score": 516,
+      "difficulty": 10,
+      "difficultyLabel": "medium"
+    },
+    {
+      "rows": [
+        {
+          "id": "Style:Övrig syrlig öl",
+          "label": "Style:Övrig syrlig öl",
+          "family": "style"
+        },
+        {
+          "id": "Beverage:Whisky",
+          "label": "Beverage:Whisky",
+          "family": "beverage"
+        },
+        {
+          "id": "Style:Internationell stil",
+          "label": "Style:Internationell stil",
+          "family": "style"
+        }
+      ],
+      "cols": [
+        {
+          "id": "flag:localSmallScale",
+          "label": "Local & small-scale",
+          "family": "flag"
+        },
+        {
+          "id": "Country:Sverige",
+          "label": "Country:Sverige",
+          "family": "geography"
+        },
+        {
+          "id": "volume:standard",
+          "label": "Volume: 330-500 ml",
+          "family": "volume"
+        }
+      ],
+      "counts": [
+        [
+          156,
+          175,
+          225
+        ],
+        [
+          60,
+          147,
+          43
+        ],
+        [
+          150,
+          267,
+          328
+        ]
+      ],
+      "score": 516,
+      "difficulty": 8,
+      "difficultyLabel": "easy"
     },
     {
       "rows": [
@@ -1581,60 +573,116 @@
           "family": "taste"
         },
         {
-          "id": "Beverage:Rött vin",
-          "label": "Beverage:Rött vin",
-          "family": "beverage"
+          "id": "flag:organic",
+          "label": "Organic",
+          "family": "flag"
         },
         {
-          "id": "ContainerMaterial:Plastic",
-          "label": "ContainerMaterial:Plastic",
-          "family": "containerMaterial"
+          "id": "price:budget",
+          "label": "Price: < 100 SEK",
+          "family": "price"
         }
       ],
       "cols": [
         {
-          "id": "price:premium",
-          "label": "Price: 200-350 SEK",
-          "family": "price"
+          "id": "Country:Spanien",
+          "label": "Country:Spanien",
+          "family": "geography"
+        },
+        {
+          "id": "Container:Lättare glasflaska",
+          "label": "Container:Lättare glasflaska",
+          "family": "container"
         },
         {
           "id": "Country:Italien",
           "label": "Country:Italien",
           "family": "geography"
-        },
-        {
-          "id": "Country:Spanien",
-          "label": "Country:Spanien",
-          "family": "geography"
         }
       ],
       "counts": [
         [
-          610,
-          425,
-          317
+          317,
+          787,
+          425
         ],
         [
-          2154,
-          2502,
-          913
+          498,
+          753,
+          748
         ],
         [
-          70,
-          37,
-          18
+          242,
+          573,
+          352
         ]
       ],
-      "score": 420,
-      "difficulty": 11,
+      "score": 515,
+      "difficulty": 12,
       "difficultyLabel": "hard"
     },
     {
       "rows": [
         {
-          "id": "Beverage:Rosévin",
-          "label": "Beverage:Rosévin",
+          "id": "Region:Bourgogne",
+          "label": "Region:Bourgogne",
+          "family": "region"
+        },
+        {
+          "id": "Style:Fruktigt & Smakrikt",
+          "label": "Style:Fruktigt & Smakrikt",
+          "family": "style"
+        },
+        {
+          "id": "price:fancy",
+          "label": "Price: 350-700 SEK",
+          "family": "price"
+        }
+      ],
+      "cols": [
+        {
+          "id": "Beverage:Rött vin",
+          "label": "Beverage:Rött vin",
           "family": "beverage"
+        },
+        {
+          "id": "flag:organic",
+          "label": "Organic",
+          "family": "flag"
+        },
+        {
+          "id": "Container:Lättare glasflaska",
+          "label": "Container:Lättare glasflaska",
+          "family": "container"
+        }
+      ],
+      "counts": [
+        [
+          477,
+          178,
+          104
+        ],
+        [
+          798,
+          260,
+          286
+        ],
+        [
+          1463,
+          525,
+          448
+        ]
+      ],
+      "score": 515,
+      "difficulty": 10,
+      "difficultyLabel": "medium"
+    },
+    {
+      "rows": [
+        {
+          "id": "Country:Portugal",
+          "label": "Country:Portugal",
+          "family": "geography"
         },
         {
           "id": "price:fancy",
@@ -1642,9 +690,9 @@
           "family": "price"
         },
         {
-          "id": "Beverage:Rött vin",
-          "label": "Beverage:Rött vin",
-          "family": "beverage"
+          "id": "Country:Italien",
+          "label": "Country:Italien",
+          "family": "geography"
         }
       ],
       "cols": [
@@ -1654,36 +702,988 @@
           "family": "alcohol"
         },
         {
-          "id": "Country:Italien",
-          "label": "Country:Italien",
-          "family": "geography"
+          "id": "Container:Lättare glasflaska",
+          "label": "Container:Lättare glasflaska",
+          "family": "container"
         },
         {
-          "id": "Country:Sydafrika",
-          "label": "Country:Sydafrika",
+          "id": "Beverage:Vitt vin",
+          "label": "Beverage:Vitt vin",
+          "family": "beverage"
+        }
+      ],
+      "counts": [
+        [
+          392,
+          169,
+          161
+        ],
+        [
+          2124,
+          448,
+          708
+        ],
+        [
+          2863,
+          844,
+          687
+        ]
+      ],
+      "score": 514,
+      "difficulty": 10,
+      "difficultyLabel": "medium"
+    },
+    {
+      "rows": [
+        {
+          "id": "seal:screwCap",
+          "label": "Screw cap",
+          "family": "seal"
+        },
+        {
+          "id": "Style:Söt",
+          "label": "Style:Söt",
+          "family": "style"
+        },
+        {
+          "id": "Country:Frankrike",
+          "label": "Country:Frankrike",
+          "family": "geography"
+        }
+      ],
+      "cols": [
+        {
+          "id": "volume:standard",
+          "label": "Volume: 330-500 ml",
+          "family": "volume"
+        },
+        {
+          "id": "flag:regularShelf",
+          "label": "Regular shelf assortment",
+          "family": "flag"
+        },
+        {
+          "id": "price:budget",
+          "label": "Price: < 100 SEK",
+          "family": "price"
+        }
+      ],
+      "counts": [
+        [
+          123,
+          682,
+          471
+        ],
+        [
+          187,
+          98,
+          277
+        ],
+        [
+          171,
+          513,
+          273
+        ]
+      ],
+      "score": 514,
+      "difficulty": 11,
+      "difficultyLabel": "hard"
+    },
+    {
+      "rows": [
+        {
+          "id": "Grape:Sauvignon blanc",
+          "label": "Grape:Sauvignon blanc",
+          "family": "grape"
+        },
+        {
+          "id": "volume:standard",
+          "label": "Volume: 330-500 ml",
+          "family": "volume"
+        },
+        {
+          "id": "Beverage:Rosévin",
+          "label": "Beverage:Rosévin",
+          "family": "beverage"
+        }
+      ],
+      "cols": [
+        {
+          "id": "flag:organic",
+          "label": "Organic",
+          "family": "flag"
+        },
+        {
+          "id": "alcohol:strong",
+          "label": "Alcohol: 10-13%",
+          "family": "alcohol"
+        },
+        {
+          "id": "Country:Frankrike",
+          "label": "Country:Frankrike",
           "family": "geography"
         }
       ],
       "counts": [
         [
-          202,
-          85,
-          16
-        ],
-        [
-          2124,
-          884,
+          95,
+          211,
           143
         ],
         [
-          6438,
-          2502,
-          331
+          276,
+          352,
+          171
+        ],
+        [
+          167,
+          357,
+          233
         ]
       ],
-      "score": 419,
+      "score": 513,
+      "difficulty": 11,
+      "difficultyLabel": "hard"
+    },
+    {
+      "rows": [
+        {
+          "id": "Region:Västra Götalands län",
+          "label": "Region:Västra Götalands län",
+          "family": "region"
+        },
+        {
+          "id": "Country:USA",
+          "label": "Country:USA",
+          "family": "geography"
+        },
+        {
+          "id": "Style:Pilsner - tysk stil",
+          "label": "Style:Pilsner - tysk stil",
+          "family": "style"
+        }
+      ],
+      "cols": [
+        {
+          "id": "alcohol:medium",
+          "label": "Alcohol: 5-10%",
+          "family": "alcohol"
+        },
+        {
+          "id": "ContainerType:Can",
+          "label": "ContainerType:Can",
+          "family": "containerType"
+        },
+        {
+          "id": "volume:standard",
+          "label": "Volume: 330-500 ml",
+          "family": "volume"
+        }
+      ],
+      "counts": [
+        [
+          631,
+          663,
+          813
+        ],
+        [
+          217,
+          213,
+          278
+        ],
+        [
+          111,
+          137,
+          190
+        ]
+      ],
+      "score": 511,
+      "difficulty": 11,
+      "difficultyLabel": "hard"
+    },
+    {
+      "rows": [
+        {
+          "id": "alcohol:light",
+          "label": "Alcohol: < 5%",
+          "family": "alcohol"
+        },
+        {
+          "id": "Beverage:Ale",
+          "label": "Beverage:Ale",
+          "family": "beverage"
+        },
+        {
+          "id": "Beverage:Ljus lager",
+          "label": "Beverage:Ljus lager",
+          "family": "beverage"
+        }
+      ],
+      "cols": [
+        {
+          "id": "flag:localSmallScale",
+          "label": "Local & small-scale",
+          "family": "flag"
+        },
+        {
+          "id": "ContainerType:Can",
+          "label": "ContainerType:Can",
+          "family": "containerType"
+        },
+        {
+          "id": "Country:Sverige",
+          "label": "Country:Sverige",
+          "family": "geography"
+        }
+      ],
+      "counts": [
+        [
+          621,
+          824,
+          1008
+        ],
+        [
+          1618,
+          1521,
+          1816
+        ],
+        [
+          676,
+          696,
+          961
+        ]
+      ],
+      "score": 511,
+      "difficulty": 10,
+      "difficultyLabel": "medium"
+    },
+    {
+      "rows": [
+        {
+          "id": "flag:regularShelf",
+          "label": "Regular shelf assortment",
+          "family": "flag"
+        },
+        {
+          "id": "Style:Sött",
+          "label": "Style:Sött",
+          "family": "style"
+        },
+        {
+          "id": "Country:USA",
+          "label": "Country:USA",
+          "family": "geography"
+        }
+      ],
+      "cols": [
+        {
+          "id": "Beverage:Vitt vin",
+          "label": "Beverage:Vitt vin",
+          "family": "beverage"
+        },
+        {
+          "id": "volume:party",
+          "label": "Volume: 500-750 ml",
+          "family": "volume"
+        },
+        {
+          "id": "alcohol:medium",
+          "label": "Alcohol: 5-10%",
+          "family": "alcohol"
+        }
+      ],
+      "counts": [
+        [
+          518,
+          574,
+          524
+        ],
+        [
+          184,
+          52,
+          76
+        ],
+        [
+          170,
+          201,
+          217
+        ]
+      ],
+      "score": 511,
+      "difficulty": 10,
+      "difficultyLabel": "medium"
+    },
+    {
+      "rows": [
+        {
+          "id": "Country:Sverige",
+          "label": "Country:Sverige",
+          "family": "geography"
+        },
+        {
+          "id": "Beverage:Mousserande vin",
+          "label": "Beverage:Mousserande vin",
+          "family": "beverage"
+        },
+        {
+          "id": "volume:standard",
+          "label": "Volume: 330-500 ml",
+          "family": "volume"
+        }
+      ],
+      "cols": [
+        {
+          "id": "price:fancy",
+          "label": "Price: 350-700 SEK",
+          "family": "price"
+        },
+        {
+          "id": "alcohol:strong",
+          "label": "Alcohol: 10-13%",
+          "family": "alcohol"
+        },
+        {
+          "id": "flag:organic",
+          "label": "Organic",
+          "family": "flag"
+        }
+      ],
+      "counts": [
+        [
+          719,
+          276,
+          466
+        ],
+        [
+          856,
+          2203,
+          312
+        ],
+        [
+          73,
+          352,
+          276
+        ]
+      ],
+      "score": 510,
+      "difficulty": 11,
+      "difficultyLabel": "hard"
+    },
+    {
+      "rows": [
+        {
+          "id": "price:mid",
+          "label": "Price: 100-200 SEK",
+          "family": "price"
+        },
+        {
+          "id": "Country:Sydafrika",
+          "label": "Country:Sydafrika",
+          "family": "geography"
+        },
+        {
+          "id": "seal:naturalCork",
+          "label": "Natural cork",
+          "family": "seal"
+        }
+      ],
+      "cols": [
+        {
+          "id": "flag:regularShelf",
+          "label": "Regular shelf assortment",
+          "family": "flag"
+        },
+        {
+          "id": "Style:Fruktigt & Smakrikt",
+          "label": "Style:Fruktigt & Smakrikt",
+          "family": "style"
+        },
+        {
+          "id": "Beverage:Vitt vin",
+          "label": "Beverage:Vitt vin",
+          "family": "beverage"
+        }
+      ],
+      "counts": [
+        [
+          866,
+          382,
+          1453
+        ],
+        [
+          91,
+          60,
+          265
+        ],
+        [
+          367,
+          188,
+          1188
+        ]
+      ],
+      "score": 510,
+      "difficulty": 10,
+      "difficultyLabel": "medium"
+    },
+    {
+      "rows": [
+        {
+          "id": "Beverage:Mousserande vin",
+          "label": "Beverage:Mousserande vin",
+          "family": "beverage"
+        },
+        {
+          "id": "price:mid",
+          "label": "Price: 100-200 SEK",
+          "family": "price"
+        },
+        {
+          "id": "volume:standard",
+          "label": "Volume: 330-500 ml",
+          "family": "volume"
+        }
+      ],
+      "cols": [
+        {
+          "id": "Country:Spanien",
+          "label": "Country:Spanien",
+          "family": "geography"
+        },
+        {
+          "id": "Grape:Chardonnay",
+          "label": "Grape:Chardonnay",
+          "family": "grape"
+        },
+        {
+          "id": "Country:Italien",
+          "label": "Country:Italien",
+          "family": "geography"
+        }
+      ],
+      "counts": [
+        [
+          271,
+          805,
+          372
+        ],
+        [
+          665,
+          276,
+          1048
+        ],
+        [
+          102,
+          41,
+          113
+        ]
+      ],
+      "score": 507,
       "difficulty": 9,
       "difficultyLabel": "medium"
+    },
+    {
+      "rows": [
+        {
+          "id": "Beverage:Rosévin",
+          "label": "Beverage:Rosévin",
+          "family": "beverage"
+        },
+        {
+          "id": "ContainerMaterial:Paper/Cardboard",
+          "label": "ContainerMaterial:Paper/Cardboard",
+          "family": "containerMaterial"
+        },
+        {
+          "id": "Style:Rosé",
+          "label": "Style:Rosé",
+          "family": "style"
+        }
+      ],
+      "cols": [
+        {
+          "id": "alcohol:strong",
+          "label": "Alcohol: 10-13%",
+          "family": "alcohol"
+        },
+        {
+          "id": "price:premium",
+          "label": "Price: 200-350 SEK",
+          "family": "price"
+        },
+        {
+          "id": "Country:Frankrike",
+          "label": "Country:Frankrike",
+          "family": "geography"
+        }
+      ],
+      "counts": [
+        [
+          357,
+          145,
+          233
+        ],
+        [
+          153,
+          254,
+          48
+        ],
+        [
+          314,
+          67,
+          173
+        ]
+      ],
+      "score": 506,
+      "difficulty": 10,
+      "difficultyLabel": "medium"
+    },
+    {
+      "rows": [
+        {
+          "id": "Region:Stockholms län",
+          "label": "Region:Stockholms län",
+          "family": "region"
+        },
+        {
+          "id": "Style:Övrig syrlig öl",
+          "label": "Style:Övrig syrlig öl",
+          "family": "style"
+        },
+        {
+          "id": "Style:Imperial porter och stout",
+          "label": "Style:Imperial porter och stout",
+          "family": "style"
+        }
+      ],
+      "cols": [
+        {
+          "id": "flag:localSmallScale",
+          "label": "Local & small-scale",
+          "family": "flag"
+        },
+        {
+          "id": "Container:Burk",
+          "label": "Container:Burk",
+          "family": "container"
+        },
+        {
+          "id": "volume:standard",
+          "label": "Volume: 330-500 ml",
+          "family": "volume"
+        }
+      ],
+      "counts": [
+        [
+          526,
+          293,
+          422
+        ],
+        [
+          156,
+          186,
+          225
+        ],
+        [
+          143,
+          127,
+          245
+        ]
+      ],
+      "score": 506,
+      "difficulty": 10,
+      "difficultyLabel": "medium"
+    },
+    {
+      "rows": [
+        {
+          "id": "Beverage:Mousserande vin",
+          "label": "Beverage:Mousserande vin",
+          "family": "beverage"
+        },
+        {
+          "id": "Style:Kryddigt & Mustigt",
+          "label": "Style:Kryddigt & Mustigt",
+          "family": "style"
+        },
+        {
+          "id": "alcohol:veryStrong",
+          "label": "Alcohol: 13-22%",
+          "family": "alcohol"
+        }
+      ],
+      "cols": [
+        {
+          "id": "Grape:Pinot noir",
+          "label": "Grape:Pinot noir",
+          "family": "grape"
+        },
+        {
+          "id": "Region:Venetien",
+          "label": "Region:Venetien",
+          "family": "region"
+        },
+        {
+          "id": "Country:Spanien",
+          "label": "Country:Spanien",
+          "family": "geography"
+        }
+      ],
+      "counts": [
+        [
+          606,
+          130,
+          271
+        ],
+        [
+          78,
+          71,
+          83
+        ],
+        [
+          501,
+          271,
+          1253
+        ]
+      ],
+      "score": 505,
+      "difficulty": 10,
+      "difficultyLabel": "medium"
+    },
+    {
+      "rows": [
+        {
+          "id": "Style:Torrt vitt",
+          "label": "Style:Torrt vitt",
+          "family": "style"
+        },
+        {
+          "id": "Beverage:Rött vin",
+          "label": "Beverage:Rött vin",
+          "family": "beverage"
+        },
+        {
+          "id": "Country:Italien",
+          "label": "Country:Italien",
+          "family": "geography"
+        }
+      ],
+      "cols": [
+        {
+          "id": "alcohol:strong",
+          "label": "Alcohol: 10-13%",
+          "family": "alcohol"
+        },
+        {
+          "id": "price:mid",
+          "label": "Price: 100-200 SEK",
+          "family": "price"
+        },
+        {
+          "id": "Grape:Pinot noir",
+          "label": "Grape:Pinot noir",
+          "family": "grape"
+        }
+      ],
+      "counts": [
+        [
+          1674,
+          283,
+          465
+        ],
+        [
+          664,
+          1760,
+          587
+        ],
+        [
+          894,
+          1048,
+          50
+        ]
+      ],
+      "score": 505,
+      "difficulty": 10,
+      "difficultyLabel": "medium"
+    },
+    {
+      "rows": [
+        {
+          "id": "Style:India pale ale (IPA)",
+          "label": "Style:India pale ale (IPA)",
+          "family": "style"
+        },
+        {
+          "id": "Style:Övrig syrlig öl",
+          "label": "Style:Övrig syrlig öl",
+          "family": "style"
+        },
+        {
+          "id": "Country:Tyskland",
+          "label": "Country:Tyskland",
+          "family": "geography"
+        }
+      ],
+      "cols": [
+        {
+          "id": "Container:Burk",
+          "label": "Container:Burk",
+          "family": "container"
+        },
+        {
+          "id": "volume:standard",
+          "label": "Volume: 330-500 ml",
+          "family": "volume"
+        },
+        {
+          "id": "alcohol:medium",
+          "label": "Alcohol: 5-10%",
+          "family": "alcohol"
+        }
+      ],
+      "counts": [
+        [
+          360,
+          516,
+          548
+        ],
+        [
+          186,
+          225,
+          235
+        ],
+        [
+          46,
+          74,
+          236
+        ]
+      ],
+      "score": 505,
+      "difficulty": 10,
+      "difficultyLabel": "medium"
+    },
+    {
+      "rows": [
+        {
+          "id": "Beverage:Rött vin",
+          "label": "Beverage:Rött vin",
+          "family": "beverage"
+        },
+        {
+          "id": "Style:Imperial porter och stout",
+          "label": "Style:Imperial porter och stout",
+          "family": "style"
+        },
+        {
+          "id": "ContainerType:Can",
+          "label": "ContainerType:Can",
+          "family": "containerType"
+        }
+      ],
+      "cols": [
+        {
+          "id": "volume:standard",
+          "label": "Volume: 330-500 ml",
+          "family": "volume"
+        },
+        {
+          "id": "price:budget",
+          "label": "Price: < 100 SEK",
+          "family": "price"
+        },
+        {
+          "id": "Country:USA",
+          "label": "Country:USA",
+          "family": "geography"
+        }
+      ],
+      "counts": [
+        [
+          90,
+          491,
+          426
+        ],
+        [
+          245,
+          195,
+          51
+        ],
+        [
+          3006,
+          3272,
+          213
+        ]
+      ],
+      "score": 504,
+      "difficulty": 9,
+      "difficultyLabel": "medium"
+    },
+    {
+      "rows": [
+        {
+          "id": "Grape:Pinot noir",
+          "label": "Grape:Pinot noir",
+          "family": "grape"
+        },
+        {
+          "id": "Beverage:Rosévin",
+          "label": "Beverage:Rosévin",
+          "family": "beverage"
+        },
+        {
+          "id": "Grape:Merlot",
+          "label": "Grape:Merlot",
+          "family": "grape"
+        }
+      ],
+      "cols": [
+        {
+          "id": "Country:Frankrike",
+          "label": "Country:Frankrike",
+          "family": "geography"
+        },
+        {
+          "id": "alcohol:veryStrong",
+          "label": "Alcohol: 13-22%",
+          "family": "alcohol"
+        },
+        {
+          "id": "Container:Lättare glasflaska",
+          "label": "Container:Lättare glasflaska",
+          "family": "container"
+        }
+      ],
+      "counts": [
+        [
+          765,
+          501,
+          203
+        ],
+        [
+          233,
+          202,
+          163
+        ],
+        [
+          208,
+          507,
+          97
+        ]
+      ],
+      "score": 503,
+      "difficulty": 11,
+      "difficultyLabel": "hard"
+    },
+    {
+      "rows": [
+        {
+          "id": "Region:Venetien",
+          "label": "Region:Venetien",
+          "family": "region"
+        },
+        {
+          "id": "Country:Spanien",
+          "label": "Country:Spanien",
+          "family": "geography"
+        },
+        {
+          "id": "Country:Frankrike",
+          "label": "Country:Frankrike",
+          "family": "geography"
+        }
+      ],
+      "cols": [
+        {
+          "id": "flag:regularShelf",
+          "label": "Regular shelf assortment",
+          "family": "flag"
+        },
+        {
+          "id": "price:budget",
+          "label": "Price: < 100 SEK",
+          "family": "price"
+        },
+        {
+          "id": "Style:Torrt vitt",
+          "label": "Style:Torrt vitt",
+          "family": "style"
+        }
+      ],
+      "counts": [
+        [
+          85,
+          48,
+          98
+        ],
+        [
+          230,
+          242,
+          183
+        ],
+        [
+          513,
+          273,
+          1165
+        ]
+      ],
+      "score": 503,
+      "difficulty": 9,
+      "difficultyLabel": "medium"
+    },
+    {
+      "rows": [
+        {
+          "id": "Country:Storbritannien",
+          "label": "Country:Storbritannien",
+          "family": "geography"
+        },
+        {
+          "id": "Style:Torrt vitt",
+          "label": "Style:Torrt vitt",
+          "family": "style"
+        },
+        {
+          "id": "Grape:Chardonnay",
+          "label": "Grape:Chardonnay",
+          "family": "grape"
+        }
+      ],
+      "cols": [
+        {
+          "id": "price:premium",
+          "label": "Price: 200-350 SEK",
+          "family": "price"
+        },
+        {
+          "id": "flag:regularShelf",
+          "label": "Regular shelf assortment",
+          "family": "flag"
+        },
+        {
+          "id": "seal:naturalCork",
+          "label": "Natural cork",
+          "family": "seal"
+        }
+      ],
+      "counts": [
+        [
+          120,
+          169,
+          167
+        ],
+        [
+          234,
+          179,
+          81
+        ],
+        [
+          361,
+          247,
+          262
+        ]
+      ],
+      "score": 503,
+      "difficulty": 11,
+      "difficultyLabel": "hard"
     }
   ]
 }

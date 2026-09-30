@@ -31,6 +31,7 @@ type Tag = {
   support: number;
   share: number;
   predicate: (product: Product) => boolean;
+  conflicts?: string[];
 };
 
 type Board = {
@@ -399,6 +400,11 @@ function hasEnoughPairs(
 const FAMILY_DIFFICULTY: Record<string, number> = {
   beverage: 1,
   geography: 1,
+  style: 1,
+  region: 2,
+  grape: 2,
+  flag: 2,
+  seal: 3,
   container: 2,
   containerType: 2,
   containerMaterial: 2,
@@ -408,7 +414,7 @@ const FAMILY_DIFFICULTY: Record<string, number> = {
   taste: 4,
 };
 
-const EASY_FAMILIES = new Set<string>(["beverage", "geography"]);
+const EASY_FAMILIES = new Set<string>(["beverage", "geography", "style"]);
 const HARD_DIFFICULTY = 3;
 
 // Max total difficulty for a board. Six easy tags = 6; one hard tag plus
@@ -488,7 +494,9 @@ function scoreBoard(
   //    people say out loud ("a Spanish red", "an Italian beer").
   const easyCount = tags.filter((tag) => EASY_FAMILIES.has(tag.family)).length;
   score += Math.min(easyCount, 4) * 6;
-  const hasBeverage = tags.some((tag) => tag.family === "beverage");
+  const hasBeverage = tags.some(
+    (tag) => tag.family === "beverage" || tag.family === "style",
+  );
   const hasCountry = tags.some((tag) => tag.family === "geography");
   if (hasBeverage && hasCountry) {
     score += 15;
@@ -533,6 +541,7 @@ const BLACKLISTED_TAG_IDS = new Set<string>([
 // (Can ↔ Aluminum, Box ↔ Paper/Cardboard, Bottle ↔ Glass), so allowing both
 // on one board makes two slots redundant. Treat them as one "container" group.
 const CONTAINER_FAMILIES = new Set<string>([
+  "container",
   "containerType",
   "containerMaterial",
 ]);
@@ -573,15 +582,26 @@ function findBoards(tags: Tag[], matrix: number[][], args: Args) {
 
   for (let attempt = 0; attempt < args.attempts; attempt += 1) {
     const rows = sampleN(rowPool, 3, random);
-    const cols = sampleN(
-      colPool.filter((tag) => !rows.some((row) => row.id === tag.id)),
-      3,
-      random,
-    );
-
-    if (cols.length < 3) {
+    const rowIndices = rows.map((row) => idToIndex.get(row.id) ?? -1);
+    if (rowIndices.includes(-1)) {
       continue;
     }
+
+    // Only consider columns that clear the per-cell minimum against all
+    // three rows. With ~100 tags a blind draw almost never does, so this
+    // filter is what makes the search productive.
+    const compatibleCols = colPool.filter((tag) => {
+      if (rows.some((row) => row.id === tag.id)) return false;
+      const colIndex = idToIndex.get(tag.id);
+      if (colIndex == null) return false;
+      return rowIndices.every(
+        (rowIndex) => matrix[rowIndex][colIndex] >= args.minCellMatches,
+      );
+    });
+    if (compatibleCols.length < 3) {
+      continue;
+    }
+    const cols = sampleN(compatibleCols, 3, random);
 
     // Reject boards that pick both a container type and a container material.
     if (countContainerTags([...rows, ...cols]) > 1) {
@@ -589,6 +609,13 @@ function findBoards(tags: Tag[], matrix: number[][], args: Args) {
     }
 
     const allTags = [...rows, ...cols];
+
+    // A child tag never shares a board with a parent that implies it
+    // (Region:Champagne + Country:Frankrike, Style:IPA + Beverage:Ale).
+    const boardIds = new Set(allTags.map((tag) => tag.id));
+    if (allTags.some((tag) => tag.conflicts?.some((id) => boardIds.has(id)))) {
+      continue;
+    }
 
     // At most one hard header (alcohol bucket or taste-clock number) per
     // board, and never more than one taste tag. Two obscure axes crossing
