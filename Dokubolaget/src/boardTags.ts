@@ -1,5 +1,30 @@
 export type Product = Record<string, unknown>;
 
+// Numeric bands for price, alcohol and volume, shared by the board generator
+// and the in-game matcher. Each band includes its upper bound, because players
+// read "10–13%" as including 13%, so a product on an edge fits both neighbours.
+export const RANGE_BANDS = {
+  price: {
+    budget: (value: number) => value < 100,
+    mid: (value: number) => value >= 100 && value <= 200,
+    premium: (value: number) => value >= 200 && value <= 350,
+    fancy: (value: number) => value >= 350 && value <= 700,
+  },
+  alcohol: {
+    light: (value: number) => value < 5,
+    medium: (value: number) => value >= 5 && value <= 10,
+    strong: (value: number) => value >= 10 && value <= 13,
+    veryStrong: (value: number) => value >= 13 && value <= 22,
+    liquor: (value: number) => value >= 22,
+  },
+  volume: {
+    small: (value: number) => value >= 50 && value <= 330,
+    standard: (value: number) => value >= 330 && value <= 500,
+    party: (value: number) => value >= 500 && value <= 750,
+    large: (value: number) => value >= 750 && value <= 1000,
+  },
+};
+
 export type BoardTagCandidate = {
   id: string;
   label: string;
@@ -427,21 +452,21 @@ export function buildCandidateTags(products: Product[]) {
       "price",
       "price",
       [
-        { key: "budget", label: "Price: < 100 SEK", test: (value) => value < 100 },
+        { key: "budget", label: "Price: < 100 SEK", test: RANGE_BANDS.price.budget },
         {
           key: "mid",
           label: "Price: 100-200 SEK",
-          test: (value) => value >= 100 && value < 200,
+          test: RANGE_BANDS.price.mid
         },
         {
           key: "premium",
           label: "Price: 200-350 SEK",
-          test: (value) => value >= 200 && value < 350,
+          test: RANGE_BANDS.price.premium
         },
         {
           key: "fancy",
           label: "Price: 350-700 SEK",
-          test: (value) => value >= 350 && value < 700,
+          test: RANGE_BANDS.price.fancy
         },
       ],
       0.05,
@@ -452,26 +477,26 @@ export function buildCandidateTags(products: Product[]) {
       "alcoholPercentage",
       "alcohol",
       [
-        { key: "light", label: "Alcohol: < 5%", test: (value) => value < 5 },
+        { key: "light", label: "Alcohol: < 5%", test: RANGE_BANDS.alcohol.light },
         {
           key: "medium",
           label: "Alcohol: 5-10%",
-          test: (value) => value >= 5 && value < 10,
+          test: RANGE_BANDS.alcohol.medium
         },
         {
           key: "strong",
           label: "Alcohol: 10-13%",
-          test: (value) => value >= 10 && value < 13,
+          test: RANGE_BANDS.alcohol.strong
         },
         {
           key: "veryStrong",
           label: "Alcohol: 13-22%",
-          test: (value) => value >= 13 && value < 22,
+          test: RANGE_BANDS.alcohol.veryStrong
         },
         {
           key: "liquor",
           label: "Alcohol: liquor (>=22%)",
-          test: (value) => value >= 22,
+          test: RANGE_BANDS.alcohol.liquor
         },
       ],
       0.03,
@@ -485,22 +510,22 @@ export function buildCandidateTags(products: Product[]) {
         {
           key: "small",
           label: "Volume: 50-330 ml",
-          test: (value) => value >= 50 && value < 330,
+          test: RANGE_BANDS.volume.small
         },
         {
           key: "standard",
           label: "Volume: 330-500 ml",
-          test: (value) => value >= 330 && value < 500,
+          test: RANGE_BANDS.volume.standard
         },
         {
           key: "party",
           label: "Volume: 500-750 ml",
-          test: (value) => value >= 500 && value < 750,
+          test: RANGE_BANDS.volume.party
         },
         {
           key: "large",
           label: "Volume: 750-1000 ml",
-          test: (value) => value >= 750 && value <= 1000,
+          test: RANGE_BANDS.volume.large
         },
       ],
       0.02,
@@ -674,38 +699,22 @@ function matchContainerMaterial(product: any, tagId: string) {
 function matchPrice(product: any, tagId: string) {
   const value = toFiniteNumber(product?.price);
   if (value == null) return false;
-  const rules: Record<string, (number: number) => boolean> = {
-    "price:budget": (number) => number < 100,
-    "price:mid": (number) => number >= 100 && number < 200,
-    "price:premium": (number) => number >= 200 && number < 350,
-    "price:fancy": (number) => number >= 350 && number < 700,
-  };
-  return rules[tagId]?.(value) ?? false;
+  const band = (RANGE_BANDS.price as Record<string, (value: number) => boolean>)[tagId.slice("price:".length)];
+  return band ? band(value) : false;
 }
 
 function matchAlcohol(product: any, tagId: string) {
   const value = toFiniteNumber(product?.alcoholPercentage);
   if (value == null) return false;
-  const rules: Record<string, (number: number) => boolean> = {
-    "alcohol:light": (number) => number < 5,
-    "alcohol:medium": (number) => number >= 5 && number < 10,
-    "alcohol:strong": (number) => number >= 10 && number < 13,
-    "alcohol:veryStrong": (number) => number >= 13 && number < 22,
-    "alcohol:liquor": (number) => number >= 22,
-  };
-  return rules[tagId]?.(value) ?? false;
+  const band = (RANGE_BANDS.alcohol as Record<string, (value: number) => boolean>)[tagId.slice("alcohol:".length)];
+  return band ? band(value) : false;
 }
 
 function matchVolume(product: any, tagId: string) {
   const value = toFiniteNumber(product?.volume);
   if (value == null) return false;
-  const rules: Record<string, (number: number) => boolean> = {
-    "volume:small": (number) => number >= 50 && number < 330,
-    "volume:standard": (number) => number >= 330 && number < 500,
-    "volume:party": (number) => number >= 500 && number < 750,
-    "volume:large": (number) => number >= 750 && number <= 1000,
-  };
-  return rules[tagId]?.(value) ?? false;
+  const band = (RANGE_BANDS.volume as Record<string, (value: number) => boolean>)[tagId.slice("volume:".length)];
+  return band ? band(value) : false;
 }
 
 function matchTaste(product: any, tagId: string) {
