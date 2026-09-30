@@ -62,7 +62,48 @@ function pickLocalBoardForToday() {
   };
 }
 
-const initialBoardPick = pickLocalBoardForToday();
+// Test hook for trying out generated boards locally: open the web app with
+// ?board=<n> (1-based) to play a specific bundled board, or ?board=random.
+// When set, the Firestore daily board is not loaded over it.
+function readBoardOverride(boardCount: number): number | null {
+  if (typeof window === "undefined" || !window.location || boardCount === 0) {
+    return null;
+  }
+  const raw = new URLSearchParams(window.location.search).get("board");
+  if (!raw) return null;
+  if (raw === "random") return Math.floor(Math.random() * boardCount);
+  const asNumber = Number(raw);
+  if (!Number.isInteger(asNumber) || asNumber < 1) return null;
+  return (asNumber - 1) % boardCount;
+}
+
+const bundledBoardCount = Array.isArray(generatedBoardsFile?.boards)
+  ? generatedBoardsFile.boards.length
+  : 0;
+const boardOverrideIndex = readBoardOverride(bundledBoardCount);
+
+function pickInitialBoard() {
+  if (boardOverrideIndex != null) {
+    return {
+      board: generatedBoardsFile.boards[boardOverrideIndex],
+      boardIndex: boardOverrideIndex,
+    };
+  }
+  return pickLocalBoardForToday();
+}
+
+const initialBoardPick = pickInitialBoard();
+
+export type GuessFeedback = {
+  kind: "correct" | "near" | "miss";
+  isCorrect: boolean;
+  message: string;
+  cell: number;
+  // For a near miss: the header that did match, so the board can light it up.
+  matchedTagId?: string;
+};
+
+const CORRECT_MESSAGES = ["Skål!", "Spot on!", "Nice pick!", "Great!", "Nailed it!"];
 
 function doesProductMatchTag(product: any, tag: BoardTag | undefined) {
   if (!tag || !product) {
@@ -106,6 +147,7 @@ export const model = {
   topCategories: initialBoardPick.board.cols,
   sideCategories: initialBoardPick.board.rows,
   currentBoardIndex: initialBoardPick.boardIndex,
+  bundledBoardCount,
   boardSource: "local" as "local" | "firestore",
   gameCells: [1, 2, 3, 4, 5, 6, 7, 8, 9],
   selectedProductsByCell: {} as Record<number, any>,
@@ -116,6 +158,11 @@ export const model = {
   // and replaces the locally-picked board. No-op if Firestore has nothing yet.
   // Safe to call repeatedly; later calls just overwrite topCategories/sideCategories.
   async loadDailyBoardFromFirestore() {
+    if (boardOverrideIndex != null) {
+      console.log("[BOARD] ?board override active; skipping Firestore board");
+      resolvePromise(Promise.resolve("local"), this.boardLoadPromiseState);
+      return;
+    }
     const dateKey = todayDateKey();
     console.log("[BOARD] loadDailyBoardFromFirestore start, dateKey=" + dateKey);
     const boardPromise = fetchBoardForDateACB(dateKey);
@@ -169,35 +216,62 @@ export const model = {
     const matchesRow = doesProductMatchTag(product, rowTag);
     const matchesCol = doesProductMatchTag(product, colTag);
 
-    if (!matchesRow || !matchesCol) {
+    if (matchesRow !== matchesCol) {
+      const matched = matchesRow ? rowTag : colTag;
+      const missing = matchesRow ? colTag : rowTag;
       return {
         isValid: false,
-        reason: `Must match both "${formatTagLabel(rowTag)}" and "${formatTagLabel(colTag)}"`,
+        kind: "near" as const,
+        matchedTagId: String(matched.id),
+        reason: `So close! ${formatTagLabel(matched)}, but not ${formatTagLabel(missing)}.`,
+      };
+    }
+
+    if (!matchesRow && !matchesCol) {
+      return {
+        isValid: false,
+        kind: "miss" as const,
+        reason: `Neither ${formatTagLabel(rowTag)} nor ${formatTagLabel(colTag)}.`,
       };
     }
 
     return {
       isValid: true,
+      kind: "correct" as const,
       reason: null,
     };
   },
 
-  lastFeedback: null as { isCorrect: boolean; message: string } | null,
+  lastFeedback: null as GuessFeedback | null,
+
+  // Wrong guesses per cell before it was solved. Drives the share grid
+  // (green = first try, yellow = got there eventually).
+  missesByCell: {} as Record<number, number>,
 
   setCellResult(cell: any, result: any) {
     const validation = this.validateCellResult(cell, result);
+    const asNumber = Number(cell);
+
     if (!validation.isValid) {
+      if (validation.kind === "near" || validation.kind === "miss") {
+        this.missesByCell = {
+          ...this.missesByCell,
+          [asNumber]: (this.missesByCell[asNumber] || 0) + 1,
+        };
+      }
       this.lastFeedback = {
+        kind: validation.kind === "near" ? "near" : "miss",
         isCorrect: false,
-        message: validation.reason,
+        message: String(validation.reason),
+        cell: asNumber,
+        matchedTagId: validation.kind === "near" ? validation.matchedTagId : undefined,
       };
       return {
         isValid: false,
+        kind: validation.kind,
         reason: validation.reason,
       };
     }
-
-    const asNumber = Number(cell);
 
     this.selectedProductsByCell = {
       ...this.selectedProductsByCell,
@@ -205,14 +279,44 @@ export const model = {
     };
 
     this.lastFeedback = {
+      kind: "correct",
       isCorrect: true,
-      message: "Great!",
+      message: CORRECT_MESSAGES[Math.floor(Math.random() * CORRECT_MESSAGES.length)],
+      cell: asNumber,
     };
 
     return {
       isValid: true,
+      kind: "correct" as const,
       reason: null,
     };
+  },
+
+  get filledCellCount() {
+    return Object.keys(this.selectedProductsByCell).length;
+  },
+
+  // Wordle-style grid for sharing a finished (or partial) board.
+  buildShareText() {
+    const rows: string[] = [];
+    for (let row = 0; row < 3; row += 1) {
+      let line = "";
+      for (let col = 0; col < 3; col += 1) {
+        const cell = row * 3 + col + 1;
+        if (!this.selectedProductsByCell[cell]) line += "⬜";
+        else line += (this.missesByCell[cell] || 0) === 0 ? "🟩" : "🟨";
+      }
+      rows.push(line);
+    }
+    const origin =
+      typeof window !== "undefined" && window.location?.origin
+        ? window.location.origin
+        : "https://dokubolaget.se";
+    return [
+      `Dokubolaget ${todayDateKey()} ${this.filledCellCount}/9`,
+      ...rows,
+      origin,
+    ].join("\n");
   },
 
   clearLastFeedback() {
@@ -229,9 +333,10 @@ export const model = {
 
     this.gameCells = [1, 2, 3, 4, 5, 6, 7, 8, 9];
     this.selectedProductsByCell = {};
+    this.missesByCell = {};
     this.score = 0;
 
-    const pickedBoard = pickLocalBoardForToday();
+    const pickedBoard = pickInitialBoard();
     this.currentBoardIndex = pickedBoard.boardIndex;
     this.topCategories = pickedBoard.board.cols;
     this.sideCategories = pickedBoard.board.rows;

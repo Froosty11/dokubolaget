@@ -7,6 +7,9 @@ import { formatTagLabel, getTagIconName, getTagImageUrl } from "../tagDisplay";
 import { AlertDialog, ScrollView, XStack, YStack } from "tamagui";
 import DokubolagetLogo from "../../assets/Dokubolaget3.svg";
 import InfoIcon from "../../assets/info.svg";
+import { Confetti } from "../components/Confetti";
+import { AnimatedCellSlot, AnimatedHeader, type HeaderRevealState } from "./boardAnimations";
+import type { GuessFeedback } from "../dokuModel";
 
 type BoardTag = {
   id: string;
@@ -21,12 +24,27 @@ type GameViewProps = {
   sideCategories: BoardTag[];
   gameCells: number[];
   selectedProductsByCell: Record<number, any>;
-  feedback: { isCorrect: boolean; message: string } | null;
+  feedback: GuessFeedback | null;
   feedbackFadeAnim: Animated.Value;
+
+  // Animation triggers, owned by the presenter.
+  flipNonceByCell: Record<number, number>;
+  shakeNonceByCell: Record<number, number>;
+  pulseNonceByTag: Record<string, number>;
+  headerReveal: HeaderRevealState;
+  bursts: Array<{ id: number; cell: number }>;
+  onBurstDone: (id: number) => void;
+  onFilledCellPressed: (cell: number) => void;
 
   tutorialOpen: boolean;
   openTutorialACB: () => void;
   closeTutorialACB: () => void;
+};
+
+const FEEDBACK_COLORS: Record<GuessFeedback["kind"], { background: string; text: string }> = {
+  correct: { background: "#d4edda", text: "#155724" },
+  near: { background: "#fff1c2", text: "#7a5a00" },
+  miss: { background: "#f8d7da", text: "#721c24" },
 };
 
 type CellContentProps = {
@@ -48,6 +66,13 @@ export function GameView(props: Readonly<GameViewProps>) {
     tutorialOpen,
     openTutorialACB,
     closeTutorialACB,
+    flipNonceByCell,
+    shakeNonceByCell,
+    pulseNonceByTag,
+    headerReveal,
+    bursts,
+    onBurstDone,
+    onFilledCellPressed,
   } = props;
   const { width: windowWidth, height: windowHeight } = useWindowDimensions();
   // Fit the board to whichever dimension is tighter. Laptops are wide but
@@ -130,9 +155,9 @@ export function GameView(props: Readonly<GameViewProps>) {
       position: "absolute",
       top: "50%",
       left: "50%",
-      marginLeft: -100,
+      marginLeft: -120,
       marginTop: -40,
-      width: 200,
+      width: 240,
       paddingVertical: 20,
       paddingHorizontal: 24,
       borderRadius: 12,
@@ -172,7 +197,7 @@ export function GameView(props: Readonly<GameViewProps>) {
           {/* top categories */}
           <View style={{flexDirection: "row", width: cellSize * 3}}>
             {topCategories.map((category, index) =>
-              categoryRenderCB(category, index)
+              categoryRenderCB(category, index, index)
             )}
           </View>
         </View>
@@ -181,7 +206,7 @@ export function GameView(props: Readonly<GameViewProps>) {
           {/* side categories */}
           <View style={{ width: cellSize }}>
             {sideCategories.map((category, index) =>
-              categoryRenderCB(category, index)
+              categoryRenderCB(category, index, 3 + index)
             )}
           </View>
 
@@ -193,20 +218,36 @@ export function GameView(props: Readonly<GameViewProps>) {
             scrollEnabled={false}
             style={board.board}
             keyExtractor={String}
+            extraData={[selectedProductsByCell, flipNonceByCell, shakeNonceByCell]}
           />
         </View>
 
+        {bursts.map((burst) => {
+          const col = (burst.cell - 1) % 3;
+          const row = Math.floor((burst.cell - 1) / 3);
+          return (
+            <Confetti
+              key={burst.id}
+              mode="burst"
+              seed={burst.id}
+              x={cellSize * (col + 1) + cellSize / 2}
+              y={cellSize * (row + 1) + cellSize / 2}
+              onDone={() => onBurstDone(burst.id)}
+            />
+          );
+        })}
+
         {feedback && (
-          <Animated.View style={[
+          <Animated.View pointerEvents="none" style={[
             board.feedbackOverlay,
             {
-              backgroundColor: feedback.isCorrect ? "#d4edda" : "#f8d7da",
+              backgroundColor: FEEDBACK_COLORS[feedback.kind].background,
               opacity: feedbackFadeAnim,
             }
           ]}>
             <Text style={[
               board.feedbackText,
-              { color: feedback.isCorrect ? "#155724" : "#721c24" }
+              { color: FEEDBACK_COLORS[feedback.kind].text }
             ]}>
               {feedback.message}
             </Text>
@@ -255,14 +296,20 @@ export function GameView(props: Readonly<GameViewProps>) {
   }
 
   // Render categories along top and side
-  function categoryRenderCB(category: BoardTag, index: number) {
+  function categoryRenderCB(category: BoardTag, index: number, revealOrder: number) {
     const imageUrl = getTagImageUrl(category);
     const iconName = imageUrl ? null : getTagIconName(category);
     const icon = iconName ? (
       <MaterialCommunityIcons name={iconName as any} size={28} color="#2D2926" style={board.categoryIcon} />
     ) : null;
     return (
-      <View key={category.id + "-" + String(index)} style={board.cellSlot}>
+      <AnimatedHeader
+        key={category.id + "-" + String(index)}
+        slotStyle={board.cellSlot}
+        reveal={headerReveal}
+        revealOrder={revealOrder}
+        pulseNonce={pulseNonceByTag[category.id] || 0}
+      >
         <View style={board.category}>
           {imageUrl ? (
             <Image source={{ uri: imageUrl }} style={board.categoryImage} />
@@ -271,7 +318,7 @@ export function GameView(props: Readonly<GameViewProps>) {
           ) : null}
           <Text numberOfLines={3} style={board.categoryLabel}>{formatTagLabel(category)}</Text>
         </View>
-      </View>
+      </AnimatedHeader>
     );
   }
 
@@ -282,17 +329,25 @@ export function GameView(props: Readonly<GameViewProps>) {
 
     function onCellPressedACB() {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium)
-      if (!selectedProduct) {
+      if (selectedProduct) {
+        onFilledCellPressed(item);
+      } else {
         onCellPressed(item);
       }
     }
 
     return (
-      <View style={board.cellSlot}>
-        <Pressable style={board.cell} onPress={onCellPressedACB} disabled={Boolean(selectedProduct)}>
-          <CellContent item={item} selectedProduct={selectedProduct} />
-        </Pressable>
-      </View>
+      <AnimatedCellSlot
+        slotStyle={board.cellSlot}
+        cellStyle={board.cell}
+        filled={Boolean(selectedProduct)}
+        flipNonce={flipNonceByCell[item] || 0}
+        shakeNonce={shakeNonceByCell[item] || 0}
+        index={item - 1}
+        onPress={onCellPressedACB}
+      >
+        <CellContent item={item} selectedProduct={selectedProduct} />
+      </AnimatedCellSlot>
     );
   }
 
