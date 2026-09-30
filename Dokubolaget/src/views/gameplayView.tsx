@@ -86,6 +86,14 @@ export function GameView(props: Readonly<GameViewProps>) {
   const slipFeedback = theme.flags.feedbackPlacement === "slip";
   // Midsommar: cross-stitched headers and a faint flower in empty cells.
   const stitched = theme.id === "midsommar";
+  // Speakeasy: stepped double gold frames on headers and solved cells.
+  const deco = theme.id === "speakeasy";
+  const decoFrame = deco ? (
+    <View
+      pointerEvents="none"
+      style={{ position: "absolute", top: 4, left: 4, right: 4, bottom: 4, borderWidth: 1, borderColor: "rgba(212, 175, 55, 0.45)" }}
+    />
+  ) : null;
   // Neon themes glow around headers and solved cells.
   const glowBox = theme.glow
     ? { shadowColor: theme.glow.color, shadowOpacity: 1, shadowRadius: theme.glow.radius, shadowOffset: { width: 0, height: 0 } }
@@ -359,7 +367,13 @@ export function GameView(props: Readonly<GameViewProps>) {
       <AlertDialog open={tutorialOpen} onOpenChange={(open)=>{if(!open) closeTutorialACB()}}>
         <AlertDialog.Trigger asChild>
           <Pressable onPress={openTutorialACB} /*style={Style.tutorialButton}*/>
-            <InfoIcon width={24} height={24} color={colors.icon} />
+            {deco ? (
+              <View style={{ width: 34, height: 34, borderWidth: 1.5, borderColor: colors.accent, transform: [{ rotate: "45deg" }], alignItems: "center", justifyContent: "center" }}>
+                <Text style={{ transform: [{ rotate: "-45deg" }], fontFamily: fonts.logo, fontSize: 18, color: colors.accent }}>?</Text>
+              </View>
+            ) : (
+              <InfoIcon width={24} height={24} color={colors.icon} />
+            )}
           </Pressable>
         </AlertDialog.Trigger>
         <AlertDialog.Portal>
@@ -413,6 +427,7 @@ export function GameView(props: Readonly<GameViewProps>) {
           glowBox ? { ...glowBox, shadowColor: axis === "col" ? colors.headerCol : colors.headerRow, shadowRadius: glowBox.shadowRadius * 0.8 } : null,
           ruled ? (axis === "col" ? { borderBottomWidth: borders.header } : { borderRightWidth: borders.header }) : null,
         ]}>
+          {decoFrame}
           {stitched ? (
             <View
               pointerEvents="none"
@@ -462,6 +477,7 @@ export function GameView(props: Readonly<GameViewProps>) {
           board.cell,
           selectedProduct && stitched ? { borderColor: colors.correct, borderWidth: 2.5 } : null,
           selectedProduct && glowBox ? { ...glowBox, borderColor: colors.correct, borderWidth: 1.5, backgroundColor: colors.correctBg } : null,
+          selectedProduct && deco ? { borderColor: colors.accent, borderWidth: 1, backgroundColor: colors.surfaceAlt } : null,
         ]}
         filled={Boolean(selectedProduct)}
         flipNonce={flipNonceByCell[item] || 0}
@@ -508,6 +524,21 @@ function CellContent({
         style={app.cellImage}
         onError={() => setImageFailed(true)}
       />
+    );
+  }
+
+  if (selectedProduct && deco) {
+    return (
+      <View style={[board.cellLabelWrap, { flex: 1, justifyContent: "flex-end" }]}>
+        {decoFrame}
+        <Text style={{ position: "absolute", top: 4, right: 6, fontSize: 14 }}>🥃</Text>
+        <Text numberOfLines={2} style={[board.cellLabel, { fontFamily: fonts.display, fontSize: Math.max(10, cellSize * 0.12), color: colors.inkStrong }]}>
+          {selectedProduct.name}
+        </Text>
+        <Text style={{ fontFamily: fonts.bodyStrong, fontSize: 11, letterSpacing: 1, color: colors.accent }}>
+          {formatKronor(selectedProduct.raw?.price)} KR
+        </Text>
+      </View>
     );
   }
 

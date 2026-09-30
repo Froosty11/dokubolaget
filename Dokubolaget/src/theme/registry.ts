@@ -3,9 +3,10 @@ import { modern } from "./themes/modern";
 import { prislista } from "./themes/prislista";
 import { midsommar } from "./themes/midsommar";
 import { cyberwave } from "./themes/cyberwave";
+import { speakeasy } from "./themes/speakeasy";
 
 // Order here is the order in the theme picker.
-export const THEMES: Theme[] = [prislista, midsommar, cyberwave, modern];
+export const THEMES: Theme[] = [prislista, midsommar, cyberwave, speakeasy, modern];
 
 export const DEFAULT_THEME_ID: ThemeId = "prislista";
 

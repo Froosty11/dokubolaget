@@ -13,6 +13,10 @@ import { Nunito_800ExtraBold } from "@expo-google-fonts/nunito/800ExtraBold";
 import { Monoton_400Regular } from "@expo-google-fonts/monoton/400Regular";
 import { Orbitron_700Bold } from "@expo-google-fonts/orbitron/700Bold";
 import { ShareTechMono_400Regular } from "@expo-google-fonts/share-tech-mono/400Regular";
+import { Limelight_400Regular } from "@expo-google-fonts/limelight/400Regular";
+import { PoiretOne_400Regular } from "@expo-google-fonts/poiret-one/400Regular";
+import { JosefinSans_400Regular } from "@expo-google-fonts/josefin-sans/400Regular";
+import { JosefinSans_700Bold } from "@expo-google-fonts/josefin-sans/700Bold";
 
 // Loaded at startup by app/_layout.tsx, so always safe to fall back to.
 export const FALLBACK_FONTS: ThemeFonts = {
@@ -29,6 +33,7 @@ export const THEME_FONT_LOADERS: Partial<Record<ThemeId, () => Record<string, an
   }),
   midsommar: () => ({ Fraunces_700Bold, Fraunces_900Black, Nunito_600SemiBold, Nunito_800ExtraBold }),
   cyberwave: () => ({ Monoton_400Regular, Orbitron_700Bold, ShareTechMono_400Regular }),
+  speakeasy: () => ({ Limelight_400Regular, PoiretOne_400Regular, JosefinSans_400Regular, JosefinSans_700Bold }),
 };
 
 export function useThemeFonts(id: ThemeId): boolean {
