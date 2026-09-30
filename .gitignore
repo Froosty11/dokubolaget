@@ -52,3 +52,6 @@ products.json
 
 # Firebase emulator logs
 *-debug.log
+
+# Brainstorm mockups
+.superpowers/
