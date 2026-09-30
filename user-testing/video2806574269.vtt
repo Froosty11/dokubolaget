@@ -1,0 +1,278 @@
+WEBVTT
+
+0
+00:00:00.030 --> 00:00:00.300
+Ian.
+
+1
+00:00:02.970 --> 00:00:04.260
+Okay, I'm trying to link.
+
+2
+00:00:07.320 --> 00:00:13.290
+It's not really working. Is the link not working? What about the QR code? I'll try the QR code instead, then.
+
+3
+00:00:15.670 --> 00:00:16.810
+Did I write wrong?
+
+4
+00:00:17.450 --> 00:00:23.030
+I mean, it's not HTTPS, so it might be that you… It's supposed to be XP, I think, or Expo.
+
+5
+00:00:25.420 --> 00:00:31.640
+Oh, did I not… Oh, maybe. Try the… try the QR code, let's see how that works.
+
+6
+00:00:33.110 --> 00:00:41.750
+The QR code… The instructions are, not there right now for, how to deploy, so I'm blaming this… Oh, no, it works okay.
+
+7
+00:00:42.730 --> 00:00:49.180
+This is development menu. It gives you access to useful tools in ExpoGo. That's the Expo, that's like the Expo pop-up.
+
+8
+00:00:53.200 --> 00:00:57.250
+But… How many guests? --
+
+9
+00:01:01.990 --> 00:01:02.110
+Whoa.
+
+10
+00:01:03.030 --> 00:01:03.660
+Very cool.
+
+11
+00:01:05.880 --> 00:01:09.300
+Whoa, you can click on the recipes, and you see an image.
+
+12
+00:01:11.370 --> 00:01:13.920
+The price? Price for 11 guests.
+
+13
+00:01:14.960 --> 00:01:16.340
+Ingredients…
+
+14
+00:01:19.630 --> 00:01:24.790
+Instructions, more info. Oh, okay, that's a link to the website. Very cool.
+
+15
+00:01:26.540 --> 00:01:27.500
+Add to menu…
+
+16
+00:01:32.010 --> 00:01:34.590
+The cancel button does not work.
+
+17
+00:01:36.090 --> 00:01:38.910
+They never gave us anything for the cancel button to do.
+
+18
+00:01:39.620 --> 00:01:42.980
+Okay. Add to menu, I guess that doesn't work when it's already in there.
+
+19
+00:01:43.640 --> 00:01:45.920
+Slow-cooked beef stew, that looks nice.
+
+20
+00:01:47.100 --> 00:01:51.120
+That's amazing. Oh, it takes you, it takes you back. That's nice.
+
+21
+00:01:51.690 --> 00:01:52.020
+Whoa.
+
+22
+00:01:52.520 --> 00:01:57.650
+Slow-cooked beef stew is way more expensive than the Tuscan white bean soup with olive oil and rosemary.
+
+23
+00:01:59.980 --> 00:02:03.640
+The summaries, summaries of all the ingredients.
+
+24
+00:02:04.140 --> 00:02:05.190
+Or both, I guess, right?
+
+25
+00:02:05.900 --> 00:02:07.640
+Yeah, for both dishes.
+
+26
+00:02:08.160 --> 00:02:08.910
+What details?
+
+27
+00:02:11.920 --> 00:02:14.530
+Sorry, that's gonna be awkward for the recording, huh?
+
+28
+00:02:18.670 --> 00:02:22.300
+This detail's the one that you were in there most recently? It is.
+
+29
+00:02:24.390 --> 00:02:24.990
+That's pretty cool.
+
+30
+00:02:26.740 --> 00:02:29.470
+Only main course, only desserts.
+
+31
+00:02:32.820 --> 00:02:36.560
+Yeah Is there… is there anything I should be trying to do?
+
+32
+00:02:38.100 --> 00:02:39.930
+I think,
+
+33
+00:02:40.790 --> 00:02:48.110
+You've, you've looked around a little bit. Is there any, usability problems you're finding in the app?
+
+34
+00:02:49.000 --> 00:02:52.950
+No, I mean…
+
+35
+00:02:53.600 --> 00:02:57.560
+I don't know if there is a way to get back to the home menu without using the back button.
+
+36
+00:03:00.220 --> 00:03:03.730
+Isn't there on the bottom? Oh, yeah, there is on the bottom.
+
+37
+00:03:04.730 --> 00:03:06.110
+I guess, yeah, that makes sense.
+
+38
+00:03:07.900 --> 00:03:13.690
+I mean, the cancel button is a bit awkward, but I think outside of that, it's pretty funny. But that's required, yeah, that's fair.
+
+39
+00:03:15.780 --> 00:03:20.730
+So, what would you want there to be? Do you want me to just remove the cancel button, if you were to…
+
+40
+00:03:21.720 --> 00:03:24.630
+Yeah, I think… I think make it a home button.
+
+41
+00:03:25.880 --> 00:03:29.090
+Otherwise, to be like, because… Four seats are out to home?
+
+42
+00:03:29.670 --> 00:03:36.120
+Yeah, because it's like, if it… I assume it's gonna route you to home, no? Like… I feel like it should route you to search.
+
+43
+00:03:36.820 --> 00:03:37.390
+Maybe.
+
+44
+00:03:38.990 --> 00:03:40.640
+Does that make sense? Yeah.
+
+45
+00:03:41.860 --> 00:03:44.110
+Do you have any other suggestions?
+
+46
+00:03:45.340 --> 00:03:48.160
+No… I don't know.
+
+47
+00:03:49.250 --> 00:03:57.810
+the summary list… Might be… I don't.
+
+48
+00:03:58.470 --> 00:04:02.760
+If there's a way to make it more clear that it's, like, total ingredients or something.
+
+49
+00:04:03.770 --> 00:04:07.630
+Because your summary is like… Yep.
+
+50
+00:04:08.160 --> 00:04:08.520
+I don't know.
+
+51
+00:04:09.750 --> 00:04:14.760
+At first, you're like, what, what, what do you want to call it? Shopping list?
+
+52
+00:04:15.530 --> 00:04:16.670
+Yeah, that sounds good.
+
+53
+00:04:17.970 --> 00:04:21.660
+Or, like, ingredients. I just have it, like…
+
+54
+00:04:22.200 --> 00:04:27.570
+When you click on the ingredients tab, you see for all ingredients, or, like, ingredients for all dishes.
+
+55
+00:04:28.700 --> 00:04:34.750
+Listening to… clarify it a bit. Are there other features you would want me to add?
+
+56
+00:04:36.560 --> 00:04:42.680
+I don't know, could maybe be nice to have for the summary part, that you can,
+
+57
+00:04:43.310 --> 00:04:46.490
+Increase the amount of servings as well, or the amount of guests.
+
+58
+00:04:47.640 --> 00:04:54.260
+Because then you… I feel like… because if you're looking at home, you can see the prices of stuff.
+
+59
+00:04:55.230 --> 00:04:57.810
+And then in the summary, you can see the ingredients.
+
+60
+00:04:58.500 --> 00:05:00.030
+Very interesting, yeah. Yeah.
+
+61
+00:05:01.790 --> 00:05:05.390
+You should also maybe include some kind of currency next to the…
+
+62
+00:05:06.800 --> 00:05:11.240
+the price is $49.70, what? Like, is it crowns? Dollars?
+
+63
+00:05:15.200 --> 00:05:16.040
+Very interesting.
+
+64
+00:05:17.590 --> 00:05:17.860
+Yeah?
+
+65
+00:05:18.890 --> 00:05:20.510
+I don't know, that just feels good.
+
+66
+00:05:21.640 --> 00:05:22.900
+Yeah, thank you.
+
+67
+00:05:23.530 --> 00:05:25.830
+Great, great meeting, Makam.
+
+68
+00:05:26.540 --> 00:05:29.030
+Great, thank you. I will… I will now stop recording.
+

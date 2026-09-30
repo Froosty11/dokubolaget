@@ -1,0 +1,27 @@
+{
+  "expo": {
+    "name": "Dokubolaget",
+    "slug": "dokubolaget",
+    "scheme": "dokubolaget",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "newArchEnabled": true,
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.dokubolaget.app"
+    },
+    "android": {
+      "package": "com.dokubolaget.app",
+      "adaptiveIcon": {
+        "backgroundColor": "#ffffff"
+      }
+    },
+    "web": {
+      "bundler": "metro",
+      "output": "static"
+    },
+    "plugins": [
+      "expo-router"
+    ]
+  }
+}

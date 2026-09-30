@@ -1,0 +1,44 @@
+{
+  "main": "expo-router/entry",
+  "version": "1.0.0",
+  "scripts": {
+    "dev": "expo start",
+    "dev_clear": "expo start --clear",
+    "dev_tunnel": "expo start --tunnel",
+    "proxy": "node devProxy.js",
+    "find:tags": "bun run scripts/findTags.ts",
+    "generate:board": "bun run scripts/generateBoard.ts",
+    "confirm:board": "bun run scripts/confirmBoard.ts",
+    "seed:firestore": "bun run scripts/seedFirestoreBoard.ts"
+  },
+  "dependencies": {
+    "@react-native-async-storage/async-storage": "^3.0.2",
+    "@tamagui/babel-plugin": "2.0.0-rc.7-1770543309730",
+    "@tamagui/config": "2.0.0-rc.7-1770543309730",
+    "expo": "~55.0.24",
+    "expo-haptics": "^55.0.14",
+    "expo-router": "~55.0.14",
+    "firebase": "latest",
+    "mobx": "latest",
+    "mobx-react-lite": "latest",
+    "react": "19.2.6",
+    "react-dom": "19.2.6",
+    "react-native": "~0.83.9",
+    "react-native-async-storage": "^0.0.1",
+    "react-native-safe-area-context": "~5.6.2",
+    "react-native-screens": "~4.23.0",
+    "react-native-svg": "^15.15.5",
+    "react-native-web": "~0.21.2",
+    "tamagui": "2.0.0-rc.7-1770543309730"
+  },
+  "devDependencies": {
+    "@babel/core": "~7.28.6",
+    "@types/react": "~19.2.14",
+    "babel-plugin-module-resolver": "~5.0.3",
+    "babel-preset-expo": "~55.0.21",
+    "firebase-admin": "^13.10.0",
+    "react-native-svg-transformer": "^1.5.0",
+    "typescript": "^5.9.3"
+  },
+  "private": true
+}

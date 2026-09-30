@@ -1,0 +1,38 @@
+import "@tamagui/native/setup-zeego";
+
+import { DefaultTheme, ThemeProvider } from "@react-navigation/native";
+import { Stack } from "expo-router";
+import { TamaguiProvider } from "tamagui";
+import { tamaguiConfig } from "../../tamagui.config";
+
+import { useFonts } from "expo-font";
+import { MaterialCommunityIcons } from "@expo/vector-icons";
+
+export default function RootLayout() {
+  useFonts({
+    ...MaterialCommunityIcons.font,
+    Monopol: require("../../assets/monopol.ttf"),
+    // MonopolItalic: require("../../assets/monopolItalic.ttf"),
+    BolagetMediumCondensed: require("../../assets/bolagetMediumCondensed.ttf"),
+    InterVariable: require("../../assets/interVariable.ttf"),
+    // InterVariableItalic: require("../../assets/interVariableItalic.ttf"),
+  });
+
+  return (
+    <TamaguiProvider config={tamaguiConfig} defaultTheme="light">
+      <ThemeProvider value={DefaultTheme}>
+        <Stack>
+          <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+          <Stack.Screen
+            name="search"
+            options={{
+              headerShown: false,
+              presentation: "transparentModal",
+              contentStyle: { backgroundColor: "transparent" },
+            }}
+          />
+        </Stack>
+      </ThemeProvider>
+    </TamaguiProvider>
+  );
+}
