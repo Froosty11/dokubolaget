@@ -10,9 +10,13 @@ function isAlwaysAvailable(id: ThemeId) {
   return THEMES.find((theme) => theme.id === id)?.unlock.kind === "always";
 }
 
+// Local test builds only: `EXPO_PUBLIC_UNLOCK_ALL_THEMES=true` at build time
+// offers every theme. Production builds never set it.
+const UNLOCK_ALL_FROM_BUILD = process.env.EXPO_PUBLIC_UNLOCK_ALL_THEMES === "true";
+
 // Theme choice and unlocks. A plain object with getters, merged into the MobX
 // model (see dokuModel.ts), so it stays testable without React or Firebase.
-export function createThemeState() {
+export function createThemeState({ unlockAll = UNLOCK_ALL_FROM_BUILD }: { unlockAll?: boolean } = {}) {
   return {
     themeId: DEFAULT_THEME_ID as ThemeId,
     unlockedThemes: [] as ThemeId[],
@@ -22,6 +26,7 @@ export function createThemeState() {
     pendingSources: {} as Partial<Record<ThemeId, UnlockSource>>,
 
     get availableThemeIds(): ThemeId[] {
+      if (unlockAll) return THEMES.map((theme) => theme.id);
       return availableThemeIds(THEMES, {
         unlocked: this.unlockedThemes,
         longestStreak: this.longestStreak,

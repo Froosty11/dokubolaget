@@ -41,3 +41,10 @@ test("board unlocks wait for the board; Home only takes streak unlocks", () => {
   expect(s.shiftPendingUnlock("streak")).toBeNull();
   expect(s.shiftPendingUnlock("board")).toBe("cyberwave");
 });
+
+test("a local build with unlockAll offers every theme", () => {
+  const s = createThemeState({ unlockAll: true });
+  expect(s.availableThemeIds.length).toBe(5);
+  expect(s.setThemeId("modern")).toBe(true);
+  expect(createThemeState().availableThemeIds).not.toContain("modern");
+});
