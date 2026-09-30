@@ -101,6 +101,17 @@ async function launch(vp, port) {
         await send("Input.dispatchMouseEvent", { type, x: box.x, y: box.y, button: "left", clickCount: 1 });
       return true;
     },
+    async hover(x, y) {
+      await send("Input.dispatchMouseEvent", { type: "mouseMoved", x, y });
+    },
+    async hoverText(text) {
+      const box = await evaluate(
+        `(() => { const e=[...document.querySelectorAll('body *')].find(e=>e.children.length===0&&e.textContent.trim()===${JSON.stringify(text)}&&e.getBoundingClientRect().width>0); if(!e) return null; const r=e.getBoundingClientRect(); return {x:r.x+r.width/2,y:r.y+r.height/2}; })()`,
+      );
+      if (!box) return false;
+      await send("Input.dispatchMouseEvent", { type: "mouseMoved", x: box.x, y: box.y });
+      return true;
+    },
     async shot(file) {
       const shot = await send("Page.captureScreenshot", { format: "png" });
       fs.writeFileSync(file, Buffer.from(shot.data, "base64"));
@@ -186,6 +197,24 @@ const STATES = {
     await sleep(300);
     await p.evaluate(fill([1, 2, 3, 4, 5, 6, 7, 8, 9], { 3: 1 }));
     await sleep(2800);
+  },
+  // Tap a solved cell: the revealed info sheet.
+  dossier: async (p) => {
+    await STATES.board(p);
+    await p.evaluate(fill([1, 5, 6], {}));
+    await sleep(600);
+    await p.clickText("Testvin Reserva 1");
+    await sleep(1200);
+  },
+  // Hover a search result (laptop): the classified info sheet beside the panel.
+  "dossier-hidden": async (p) => {
+    await STATES.search(p);
+    await p.evaluate(
+      `(() => { const e=[...document.querySelectorAll('[role=button]')].find(e=>/vol\.|%/.test(e.innerText)); if(!e) return; const r=e.getBoundingClientRect(); window.__hover={x:r.x+r.width/2,y:r.y+r.height/2}; })()`,
+    );
+    const at = await p.evaluate("window.__hover");
+    if (at) await p.hover(at.x, at.y);
+    await sleep(1200);
   },
   leaderboard: async (p) => {
     await p.evaluate(seed());

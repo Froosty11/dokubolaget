@@ -1,6 +1,9 @@
-import { useEffect, useMemo, useRef } from "react";
+import * as Font from "expo-font";
+import { createContext, useContext, useEffect, useMemo, useRef } from "react";
 import { Animated, Easing, Platform, StyleSheet, Text, View } from "react-native";
 import { USE_NATIVE_DRIVER, seededRandom } from "../animation";
+import { useTheme } from "../theme/ThemeProvider";
+import type { DossierLook } from "../theme/types";
 
 type Tag = { id?: string; family?: string };
 
@@ -83,6 +86,10 @@ function formatPrice(value: unknown) {
 
 type Line = { key: DossierFieldKey | null; label: string; value: string };
 
+type DossierStyles = ReturnType<typeof makeStyles>;
+const StylesContext = createContext<DossierStyles | null>(null);
+const useStyles = () => useContext(StylesContext)!;
+
 function buildLines(raw: any): Line[] {
   const grapes = Array.isArray(raw?.grapes) ? raw.grapes.join(", ") : "";
   const style = [raw?.categoryLevel2, raw?.categoryLevel3].filter(Boolean).join(" / ");
@@ -119,10 +126,12 @@ function buildLines(raw: any): Line[] {
 // A black bar the same width as the hidden text. The real value is never put
 // in the DOM while redacted, so it can't be read by selecting the text.
 function Bar({ length }: { length: number }) {
+  const styles = useStyles();
   return <Text style={styles.bar}>{"x".repeat(Math.max(4, Math.min(length, 26)))}</Text>;
 }
 
 function PeelingBar({ length, delay }: { length: number; delay: number }) {
+  const styles = useStyles();
   const progress = useRef(new Animated.Value(1)).current;
   useEffect(() => {
     Animated.timing(progress, {
@@ -158,6 +167,7 @@ function Value({
   revealed: boolean;
   delay: number;
 }) {
+  const styles = useStyles();
   if (redacted && !revealed) return <Bar length={text.length} />;
   return (
     <View style={styles.valueWrap}>
@@ -169,6 +179,7 @@ function Value({
 
 // Blacks out roughly a quarter of the descriptive words in a tasting note.
 function TasteNote({ text, seed, revealed }: { text: string; seed: number; revealed: boolean }) {
+  const styles = useStyles();
   const words = useMemo(() => {
     const random = seededRandom(seed);
     return text.split(/(\s+)/).map((word) => ({
@@ -200,6 +211,10 @@ type DossierProps = {
 };
 
 export function Dossier({ product, redact, revealed = false, width = 300 }: DossierProps) {
+  const { theme, copy } = useTheme();
+  const look = theme.dossier;
+  const font = look.font && Font.isLoaded(look.font) ? look.font : MONO;
+  const styles = useMemo(() => StyleSheet.create(makeStyles(look, font)), [look, font]);
   const lines = buildLines(product);
   const productNumber = String(product?.productNumber || product?.productId || "0000");
   const seed = Number(productNumber.replace(/\D/g, "").slice(-8)) || 7;
@@ -219,6 +234,7 @@ export function Dossier({ product, redact, revealed = false, width = 300 }: Doss
   let peelIndex = 0;
 
   return (
+    <StylesContext.Provider value={styles}>
     <Animated.View
       pointerEvents="none"
       style={[
@@ -228,16 +244,25 @@ export function Dossier({ product, redact, revealed = false, width = 300 }: Doss
           opacity: appear,
           transform: [
             { scale: appear.interpolate({ inputRange: [0, 1], outputRange: [0.92, 1] }) },
-            { rotate: "-1deg" },
+            { rotate: look.tilt },
           ],
         },
       ]}
     >
+      {look.ruledLines ? (
+        <View style={styles.ruledLines}>
+          {Array.from({ length: 40 }, (_, i) => (
+            <View key={i} style={styles.ruledLine} />
+          ))}
+        </View>
+      ) : null}
+      {look.marginRule ? <View style={styles.marginRule} /> : null}
+      {look.borderStyle === "double" ? <View style={styles.innerFrame} /> : null}
       <View style={styles.headerRow}>
-        <Text style={styles.caseNo}>CASE FILE #{productNumber}</Text>
+        <Text style={styles.caseNo}>{copy.dossierTitle}{productNumber}</Text>
       </View>
       <Text style={styles.subject} numberOfLines={2}>
-        SUBJECT: {name.toUpperCase()}
+        {copy.dossierSubject} {name.toUpperCase()}
       </Text>
       <View style={styles.rule} />
       {lines.map((line) => {
@@ -253,7 +278,7 @@ export function Dossier({ product, redact, revealed = false, width = 300 }: Doss
       {taste ? (
         <>
           <View style={styles.rule} />
-          <Text style={styles.label}>FIELD NOTES</Text>
+          <Text style={styles.label}>{copy.dossierNotes.toUpperCase()}</Text>
           {redact.has("taste") && !revealed ? (
             <Bar length={taste.length} />
           ) : (
@@ -263,64 +288,78 @@ export function Dossier({ product, redact, revealed = false, width = 300 }: Doss
       ) : null}
       <View style={[styles.stamp, revealed ? styles.stampOpen : null]}>
         <Text style={[styles.stampText, revealed ? styles.stampTextOpen : null]}>
-          {revealed ? "DECLASSIFIED" : "CLASSIFIED"}
+          {revealed ? copy.stampRevealed : copy.stampHidden}
         </Text>
       </View>
     </Animated.View>
+    </StylesContext.Provider>
   );
 }
 
-const styles = StyleSheet.create({
-  card: {
-    backgroundColor: "#f3e9d2",
-    borderRadius: 4,
-    borderWidth: 1,
-    borderColor: "#d8c9a3",
-    paddingVertical: 14,
-    paddingHorizontal: 16,
-    gap: 4,
-    shadowColor: "#000",
-    shadowOpacity: 0.25,
-    shadowRadius: 12,
-    shadowOffset: { width: 0, height: 6 },
-    elevation: 8,
-    overflow: "hidden",
-  },
-  headerRow: { flexDirection: "row", justifyContent: "space-between" },
-  caseNo: { fontFamily: MONO, fontSize: 11, color: "#6b5b3a", letterSpacing: 1 },
-  subject: { fontFamily: MONO, fontSize: 14, fontWeight: "700", color: "#1b1b1b", marginTop: 2 },
-  rule: { height: 1, backgroundColor: "#cbb98f", marginVertical: 6 },
-  line: { flexDirection: "row", alignItems: "flex-start", gap: 8 },
-  label: { fontFamily: MONO, fontSize: 11, color: "#6b5b3a", width: 96, flexShrink: 0, paddingTop: 1 },
-  valueWrap: { flexShrink: 1, alignSelf: "flex-start" },
-  value: { fontFamily: MONO, fontSize: 13, color: "#1b1b1b", flexShrink: 1 },
-  bar: {
-    fontFamily: MONO,
-    fontSize: 13,
-    color: "#111",
-    backgroundColor: "#111",
-    overflow: "hidden",
-  },
-  peel: { backgroundColor: "#111", overflow: "hidden" },
-  taste: { fontFamily: MONO, fontSize: 12, color: "#1b1b1b", lineHeight: 18 },
-  stamp: {
-    position: "absolute",
-    top: 14,
-    right: -6,
-    borderWidth: 2,
-    borderColor: "#c0392b",
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    transform: [{ rotate: "14deg" }],
-    opacity: 0.85,
-  },
-  stampOpen: { borderColor: "#1e7d45" },
-  stampText: {
-    fontFamily: MONO,
-    fontSize: 12,
-    fontWeight: "700",
-    color: "#c0392b",
-    letterSpacing: 2,
-  },
-  stampTextOpen: { color: "#1e7d45" },
-});
+function makeStyles(look: DossierLook, font: string) {
+  const glow = look.glow ? { textShadowColor: look.label, textShadowRadius: 6 } : {};
+  const barGlow = look.glow
+    ? { textShadowColor: look.bar, textShadowRadius: 8 }
+    : {};
+  return {
+    card: {
+      backgroundColor: look.paper,
+      borderRadius: look.radius,
+      borderWidth: look.borderStyle === "double" ? 1.5 : look.borderStyle === "dashed" ? 2 : 1,
+      borderStyle: look.borderStyle === "dashed" ? ("dashed" as const) : ("solid" as const),
+      borderColor: look.border,
+      paddingVertical: 14,
+      paddingHorizontal: 16,
+      paddingLeft: look.marginRule ? 34 : 16,
+      gap: 4,
+      shadowColor: look.glow ? look.border : "#000",
+      shadowOpacity: look.glow ? 0.8 : 0.25,
+      shadowRadius: look.glow ? 16 : 12,
+      shadowOffset: { width: 0, height: look.glow ? 0 : 6 },
+      elevation: 8,
+      overflow: "hidden" as const,
+    },
+    ruledLines: { position: "absolute" as const, left: 0, right: 0, top: 30, gap: 19 },
+    ruledLine: { height: 1, backgroundColor: look.rule },
+    marginRule: { position: "absolute" as const, top: 0, bottom: 0, left: 24, width: 1.5, backgroundColor: look.marginRule ?? "transparent" },
+    innerFrame: { position: "absolute" as const, top: 4, left: 4, right: 4, bottom: 4, borderWidth: 1, borderColor: look.border, opacity: 0.55 },
+    headerRow: { flexDirection: "row" as const, justifyContent: "space-between" as const },
+    caseNo: { fontFamily: font, fontSize: 11, color: look.label, letterSpacing: 1, ...glow },
+    subject: { fontFamily: font, fontSize: 14, fontWeight: "700" as const, color: look.ink, marginTop: 2 },
+    rule: { height: 1, backgroundColor: look.rule, marginVertical: 6 },
+    line: { flexDirection: "row" as const, alignItems: "flex-start" as const, gap: 8 },
+    label: { fontFamily: font, fontSize: 11, color: look.label, width: 96, flexShrink: 0, paddingTop: 1 },
+    valueWrap: { flexShrink: 1, alignSelf: "flex-start" as const },
+    value: { fontFamily: font, fontSize: 13, color: look.ink, flexShrink: 1 },
+    bar: {
+      fontFamily: font,
+      fontSize: 13,
+      color: look.bar,
+      backgroundColor: look.bar,
+      overflow: "hidden" as const,
+      ...barGlow,
+    },
+    peel: { backgroundColor: look.bar, overflow: "hidden" as const },
+    taste: { fontFamily: font, fontSize: 12, color: look.ink, lineHeight: 18 },
+    stamp: {
+      position: "absolute" as const,
+      top: 14,
+      right: -6,
+      borderWidth: 2,
+      borderColor: look.stampHidden,
+      paddingHorizontal: 6,
+      paddingVertical: 2,
+      transform: [{ rotate: "14deg" }],
+      opacity: 0.85,
+    },
+    stampOpen: { borderColor: look.stampRevealed },
+    stampText: {
+      fontFamily: font,
+      fontSize: 12,
+      fontWeight: "700" as const,
+      color: look.stampHidden,
+      letterSpacing: 2,
+    },
+    stampTextOpen: { color: look.stampRevealed },
+  };
+}

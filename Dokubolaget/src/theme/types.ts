@@ -30,6 +30,25 @@ export type ThemeCopy = {
   name: string; description: string; unlockHint: string;
   correctTitles: string[]; nearMissTitle: string; completeTitle: string; searchTitle: string;
   tabHome: string; tabPlay: string; tabLeaderboard: string;
+  // The product info sheet ("case file"): its header, subject line, notes
+  // heading and the stamp while hidden / once revealed.
+  dossierTitle: string; dossierSubject: string; dossierNotes: string;
+  stampHidden: string; stampRevealed: string;
+};
+
+// How the product info sheet looks in a theme. The redaction mechanic is the
+// same everywhere; only the paper, ink and ornament change.
+export type DossierLook = {
+  paper: string; ink: string; label: string; bar: string; rule: string;
+  border: string; borderStyle: "solid" | "dashed" | "double"; radius: number; tilt: string;
+  // Red margin line of an index card, when set.
+  marginRule: string | null;
+  // Horizontal ruled lines, like an index card.
+  ruledLines: boolean;
+  stampHidden: string; stampRevealed: string;
+  // null = the platform's typewriter font (Courier).
+  font: string | null;
+  glow: boolean;
 };
 
 export type Theme = {
@@ -50,4 +69,5 @@ export type Theme = {
   confetti: { shape: ConfettiShape; colors: string[] };
   unlock: UnlockRule;
   copy: Record<Lang, ThemeCopy>;
+  dossier: DossierLook;
 };

@@ -46,3 +46,21 @@ test("default theme is registered and always available", () => {
 test("themes appear in picker order", () => {
   expect(THEMES.map((t) => t.id)).toEqual(["prislista", "midsommar", "cyberwave", "speakeasy", "modern"]);
 });
+
+describe.each(THEMES.map((theme) => [theme.id, theme] as const))("info sheet for %s", (_id, theme) => {
+  test("text on the sheet meets AA", () => {
+    const d = theme.dossier;
+    expect(contrastRatio(d.ink, d.paper)).toBeGreaterThanOrEqual(4.5);
+    expect(contrastRatio(d.label, d.paper)).toBeGreaterThanOrEqual(4.5);
+    expect(contrastRatio(d.stampHidden, d.paper)).toBeGreaterThanOrEqual(3);
+    expect(contrastRatio(d.stampRevealed, d.paper)).toBeGreaterThanOrEqual(3);
+  });
+  test("has its own wording in both languages", () => {
+    for (const lang of ["sv", "en"] as const) {
+      const c = theme.copy[lang];
+      for (const key of ["dossierTitle", "dossierSubject", "dossierNotes", "stampHidden", "stampRevealed"] as const) {
+        expect(String(c[key]).trim().length).toBeGreaterThan(0);
+      }
+    }
+  });
+});
