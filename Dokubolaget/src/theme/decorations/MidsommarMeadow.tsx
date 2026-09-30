@@ -1,3 +1,4 @@
+import { useId } from "react";
 import { useWindowDimensions, View } from "react-native";
 import Svg, { Circle, Defs, LinearGradient, Path, Rect, Stop } from "react-native-svg";
 import type { DecorationProps } from "./registry";
@@ -5,18 +6,20 @@ import type { DecorationProps } from "./registry";
 // Summer sky, sun and rolling meadow across the top of the screen.
 export function MidsommarMeadow({ screen }: DecorationProps) {
   const { width, height } = useWindowDimensions();
+  // SVG ids are global on web and Home and Play are both mounted.
+  const skyId = `sky${useId().replace(/[^a-zA-Z0-9]/g, "")}`;
   const skyHeight = height * (screen === "board" ? 0.2 : 0.3);
   const hillHeight = Math.max(60, height * 0.09);
   return (
     <View style={{ width, height: skyHeight + hillHeight }}>
       <Svg width={width} height={skyHeight}>
         <Defs>
-          <LinearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+          <LinearGradient id={skyId} x1="0" y1="0" x2="0" y2="1">
             <Stop offset="0" stopColor="#bfe0f5" />
             <Stop offset="1" stopColor="#e3f1f9" />
           </LinearGradient>
         </Defs>
-        <Rect x={0} y={0} width={width} height={skyHeight} fill="url(#sky)" />
+        <Rect x={0} y={0} width={width} height={skyHeight} fill={`url(#${skyId})`} />
         <Circle cx={width - 64} cy={Math.min(90, skyHeight * 0.45)} r={42} fill="#ffd23f" opacity={0.15} />
         <Circle cx={width - 64} cy={Math.min(90, skyHeight * 0.45)} r={34} fill="#ffd23f" opacity={0.35} />
         <Circle cx={width - 64} cy={Math.min(90, skyHeight * 0.45)} r={26} fill="#ffd23f" />
