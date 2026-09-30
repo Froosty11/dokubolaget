@@ -33,11 +33,18 @@ export function ThemePickerView({ cards, streakLine, onPick, onClose }: Readonly
           return (
             <Pressable
               key={item.id}
-              disabled={locked}
-              onPress={() => onPick(item.id)}
+              // Locked cards stay focusable so keyboard and screen-reader
+              // users can reach the unlock condition; pressing does nothing.
+              onPress={() => {
+                if (!locked) onPick(item.id);
+              }}
               accessibilityRole="button"
-              accessibilityState={{ disabled: locked, selected: active }}
-              accessibilityLabel={`${copy.name}, ${locked ? copy.unlockHint : active ? "active" : "available"}`}
+              accessibilityState={{ selected: active }}
+              accessibilityLabel={[
+                `${copy.name}:`,
+                locked ? `locked. ${copy.unlockHint}` : active ? "active." : "available.",
+                card.progress ? `${card.progress.current} of ${card.progress.target} days.` : null,
+              ].filter(Boolean).join(" ")}
               style={[styles.card, active ? styles.cardActive : null]}
             >
               <View style={{ opacity: locked ? 0.35 : 1 }}>
