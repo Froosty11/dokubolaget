@@ -119,7 +119,13 @@ export const model = {
     const dateKey = todayDateKey();
     console.log("[BOARD] loadDailyBoardFromFirestore start, dateKey=" + dateKey);
     const boardPromise = fetchBoardForDateACB(dateKey);
-    resolvePromise(boardPromise, this.boardLoadPromiseState);
+    // SuspenseView treats a null result as "still loading", so a missing
+    // Firestore board would spin forever. Resolve the tracked promise with
+    // the source label instead: null → we keep the bundled local board.
+    resolvePromise(
+      boardPromise.then((board) => (board ? "firestore" : "local")),
+      this.boardLoadPromiseState,
+    );
 
     const board = await boardPromise;
     if (!board) {

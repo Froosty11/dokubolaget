@@ -531,6 +531,11 @@ function boardKey(rows: Tag[], cols: Tag[]) {
   return `${rowKey}__${colKey}`;
 }
 
+// Raw packaging strings ("Lättare glasflaska", "PET-flaska", "Burk") are
+// either unknowable to a player or duplicates of the normalised
+// ContainerType/ContainerMaterial tags. Keep them out of boards entirely.
+const BLACKLISTED_FAMILIES = new Set<string>(["container"]);
+
 const BLACKLISTED_TAG_IDS = new Set<string>([
   // Multipack is technically a container TYPE but in practice it's a packaging
   // detail that players don't reliably know per-product. Skip it entirely.
@@ -572,7 +577,10 @@ function findBoards(tags: Tag[], matrix: number[][], args: Args) {
   const seen = new Set<string>();
 
   const usableTags = tags.filter(
-    (tag) => !BLACKLISTED_TAG_IDS.has(tag.id) && tag.share <= MAX_TAG_SHARE,
+    (tag) =>
+      !BLACKLISTED_TAG_IDS.has(tag.id) &&
+      !BLACKLISTED_FAMILIES.has(tag.family) &&
+      tag.share <= MAX_TAG_SHARE,
   );
 
   const rowPool = usableTags.filter((tag) => tag.family !== "container");

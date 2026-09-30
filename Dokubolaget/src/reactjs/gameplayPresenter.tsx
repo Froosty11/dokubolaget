@@ -2,7 +2,6 @@ import { StyleSheet, Animated } from "react-native"
 import { SafeAreaView } from "react-native-safe-area-context"
 import { observer } from "mobx-react-lite"
 import { GameView } from "../views/gameplayView"
-import { SuspenseView } from "../views/suspenseView"
 import { router } from "expo-router"
 import { BoardTag } from "../dokuModel"
 import { useEffect, useState, useRef } from "react"
@@ -80,22 +79,23 @@ const Gameplay = observer(function GameRender({ model }: GameplayProps) {
 
     return (
       <SafeAreaView style={styles.container}>
-        <SuspenseView promiseState={model.boardLoadPromiseState}>
-          <GameView
-            score={model.score}
-            onCellPressed={handleCellPress}
-            topCategories={model.topCategories}
-            sideCategories={model.sideCategories}
-            gameCells={model.gameCells}
-            selectedProductsByCell={model.selectedProductsByCell}
-            feedback={feedback}
-            feedbackFadeAnim={fadeAnim}
+        {/* The model always has a board (bundled fallback, swapped for the
+            Firestore one when that lookup finishes), so don't gate the
+            game on the background refresh — on web it takes seconds. */}
+        <GameView
+          score={model.score}
+          onCellPressed={handleCellPress}
+          topCategories={model.topCategories}
+          sideCategories={model.sideCategories}
+          gameCells={model.gameCells}
+          selectedProductsByCell={model.selectedProductsByCell}
+          feedback={feedback}
+          feedbackFadeAnim={fadeAnim}
 
-            tutorialOpen={tutorialOpen}
-            openTutorialACB={openTutorialACB}
-            closeTutorialACB={closeTutorialACB}
-          />
-        </SuspenseView>
+          tutorialOpen={tutorialOpen}
+          openTutorialACB={openTutorialACB}
+          closeTutorialACB={closeTutorialACB}
+        />
       </SafeAreaView>
     )
 })
