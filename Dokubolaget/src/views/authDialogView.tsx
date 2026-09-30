@@ -6,6 +6,7 @@ import * as Haptics from "expo-haptics";
 import {
  handleLoginACB
 } from "../reactjs/authPresenter";
+import { useTheme } from "../theme/ThemeProvider";
 
 type Props = {
  open: boolean;
@@ -17,6 +18,13 @@ export default function AuthDialog({
  onOpenChange,
 }: Props) {
 
+ const { theme } = useTheme();
+ const text = { color: theme.colors.dialogInk, fontFamily: theme.fonts.body };
+ const inputColors = {
+   color: theme.colors.dialogInk,
+   backgroundColor: theme.colors.surfaceAlt,
+   borderColor: theme.colors.divider,
+ } as const;
  const [isSignUp, setIsSignUp] = useState(false);
  const [email, setEmail] = useState("");
  const [nickname, setNickname] = useState("");
@@ -79,19 +87,20 @@ function closeACB() {
          width={300}
          style={{
            borderWidth:1,
-           borderColor:"#ddd",
-           borderRadius:16,
-           backgroundColor:"#fff"
+           borderColor:theme.colors.divider,
+           borderRadius:theme.radii.card,
+           backgroundColor:theme.colors.dialogSurface
          }}
        >
          <YStack gap="$3">
 
-           <Dialog.Title>
+           <Dialog.Title style={{ color: theme.colors.dialogInk, fontFamily: theme.fonts.bodyStrong, fontWeight: "700" }}>
              {isSignUp ? "Sign Up" : "Login"}
            </Dialog.Title>
 
            {isSignUp && (
              <Input
+               style={inputColors}
                placeholder="Nickname (shown on the leaderboard)"
                value={nickname}
                onChangeText={setNickname}
@@ -101,6 +110,7 @@ function closeACB() {
            )}
 
            <Input
+             style={inputColors}
              placeholder="Email"
              value={email}
              onChangeText={setEmail}
@@ -108,6 +118,7 @@ function closeACB() {
            />
 
            <Input
+             style={inputColors}
              placeholder="Password"
              type="password"
              value={password}
@@ -116,14 +127,14 @@ function closeACB() {
            />
 
            {!!error && (
-             <Text>{error}</Text>
+             <Text style={text}>{error}</Text>
            )}
 
            <Pressable
              onPress={loginACB}
              disabled={loading}
            >
-             <Text>
+             <Text style={text}>
                {loading
                  ? "Loading..."
                  : isSignUp
@@ -136,7 +147,7 @@ function closeACB() {
            <Pressable
              onPress={toggleSignUpACB}
            >
-             <Text>
+             <Text style={text}>
               {isSignUp
                 ? "Already have account? Login"
                 : "Need account? Sign Up"
@@ -147,7 +158,7 @@ function closeACB() {
            <Pressable
              onPress={closeACB}
            >
-             <Text>Close</Text>
+             <Text style={text}>Close</Text>
            </Pressable>
 
          </YStack>

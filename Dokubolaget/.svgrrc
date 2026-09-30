@@ -1,0 +1,6 @@
+{
+  "replaceAttrValues": {
+    "#262626": "{props.color}",
+    "oklab(0.268617 0.000012286 0.00000536442 / 0.65)": "{props.color}"
+  }
+}

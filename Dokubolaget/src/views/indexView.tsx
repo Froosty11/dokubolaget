@@ -6,7 +6,10 @@ import { Pressable, StyleSheet, Text, View } from "react-native";
 import { Dialog, Input, YStack } from "tamagui";
 import { SvgProps } from "react-native-svg";
 import  Leaderboard  from "../reactjs/leaderboardPresenter";
-import { Style } from "../AppStyles"
+import { makeAppStyles } from "../AppStyles"
+import { useTheme, useThemedStyles } from "../theme/ThemeProvider";
+import { ThemeLogo } from "../theme/ThemeLogo";
+import type { Theme } from "../theme/types";
 import  AuthDialog from "./authDialogView";
 import DokubolagetLogo from "../../assets/Dokubolaget3.svg";
 import Chevron from "../../assets/chevron.svg";
@@ -23,30 +26,37 @@ interface IndexOptionProps {
 }
 
 function IndexOption({ Icon, text, onPress }: IndexOptionProps) {
+  const { theme } = useTheme();
+  const option = useThemedStyles(makeOptionStyles);
   return (
     <Pressable
       style={option.button}
       onPress={onPress}
+      accessibilityRole="button"
     >
-      <Icon width={32} height={32} />
+      <Icon width={32} height={32} color={theme.colors.icon} />
       <View style={option.text}>
-        <Text style={{fontFamily: "InterVariable"}}>{text}</Text>
-        <Chevron width={24} height={24} opacity={0.65} />
+        <Text style={option.label}>{text}</Text>
+        <Chevron width={24} height={24} opacity={0.65} color={theme.colors.inkMuted} />
       </View>
     </Pressable>
   )
 }
 
-const option = StyleSheet.create({
+const makeOptionStyles = (theme: Theme) => ({
   button: {
-    flexDirection: "row",
-    alignItems: "center",
+    flexDirection: "row" as const,
+    alignItems: "center" as const,
     gap: 12,
     paddingLeft: 6,
     paddingRight: 4,
     paddingVertical: 6,
-    borderRadius: 4,
-    backgroundColor: "#ffffff",
+    borderRadius: theme.radii.cell,
+    backgroundColor: theme.colors.surface,
+  },
+  label: {
+    fontFamily: theme.fonts.body,
+    color: theme.colors.ink,
   },
   icon: {
     width: 32,
@@ -55,17 +65,11 @@ const option = StyleSheet.create({
   },
   text: {
     flex: 5,
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
+    flexDirection: "row" as const,
+    justifyContent: "space-between" as const,
+    alignItems: "center" as const,
   },
-  chevron: {
-    width: 24,
-    height: 24,
-    resizeMode: "contain",
-    opacity: 0.65
-  }
-})
+});
 
 /* === INDEXVIEW === */
 
@@ -73,7 +77,9 @@ export function IndexView({ageGate}) {
   const [initializing, setInitializing] = useState(true);
   const [user, setUser] = useState(null);
   const [showLogin, setShowLogin] = useState(false);
-  const [showLeaderboard, setShowLeaderboard] = useState(false);  
+  const [showLeaderboard, setShowLeaderboard] = useState(false);
+  const { theme } = useTheme();
+  const app = useThemedStyles(makeAppStyles);
 
   function dailyPlayACB() {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium)
@@ -101,22 +107,22 @@ export function IndexView({ageGate}) {
   }, []);
 
   if (initializing) {
-    return <Text style={{fontFamily: "InterVariable"}}>Loading...</Text>;
+    return <Text style={{fontFamily: theme.fonts.body, color: theme.colors.ink}}>Loading...</Text>;
   }
 
 
   const isLoggedIn = !!user;
 
   return (
-    <View style={Style.body}>
+    <View style={app.body}>
 
       {/* Title */}
       <View style={{alignItems: "center"}}>
-        <View style={{marginVertical: 20, width: "40%", aspectRatio: 1}}>
-          <DokubolagetLogo width="100%" height="100%" />
+        <View style={{marginVertical: 20, width: "40%", aspectRatio: 1, alignItems: "center", justifyContent: "center"}}>
+          <ThemeLogo height={110} fill />
         </View>
-        <Text style={{fontFamily: "BolagetMediumCondensed", fontSize: 20}}>Welcome to</Text>
-        <Text style={{fontFamily: "Monopol", fontSize: 40}}>Dokubolaget</Text>
+        <Text style={{fontFamily: theme.fonts.condensed, fontSize: 20, color: theme.colors.ink}}>Welcome to</Text>
+        <Text style={{fontFamily: theme.fonts.display, fontSize: 40, color: theme.colors.ink}}>Dokubolaget</Text>
       </View>
 
       {/* Index menu */}
@@ -136,7 +142,7 @@ export function IndexView({ageGate}) {
           />
         ) : (
           <View style={{gap: 5}}>
-            <Text style={{fontFamily: "InterVariable"}}>Logged in as {user?.email || "Firebase user"}</Text>
+            <Text style={{fontFamily: theme.fonts.body, color: theme.colors.ink}}>Logged in as {user?.email || "Firebase user"}</Text>
             <IndexOption
               Icon={Smakprofil}
               text="Logout"
@@ -162,35 +168,6 @@ export function IndexView({ageGate}) {
   );
 }
 
-export const style = StyleSheet.create({
-  button: {
-    borderWidth: 5,
-    paddingVertical: 16,
-    paddingHorizontal: 40,
-    marginVertical: 10,
-    backgroundColor: "#0B634B",
-    borderColor: "#FFD400",
-    borderRadius: 8,
-    minWidth: 240,
-    alignItems: "center",
-    shadowColor: "#000",
-    shadowOffset: {
-        width: 2,
-        height: 4,
-    },
-    shadowOpacity: 0.3,
-    shadowRadius: 5,
-    elevation: 4,
-},
-    buttonText:{
-        color: "#FFD700",
-        fontFamily: "Monopol",
-        fontSize: 28,
-        fontWeight: "900",
-    },
-
-});
-
 /* === AGE VERIFICATION === */
 
 interface AgeVerificationDialogProps {
@@ -204,6 +181,7 @@ function AgeVerificationDialog({
   onAccept,
   onReject,
 }: AgeVerificationDialogProps) {
+  const age = useThemedStyles(makeAgeStyles);
   if (!isOpen) return null;
 
   return (
@@ -255,58 +233,58 @@ function AgeVerificationDialog({
   )
 }
 
-const age = StyleSheet.create({
+const makeAgeStyles = (theme: Theme) => ({
   overlay: {
     flex: 1,
-    backgroundColor: "#c7e5ce",
+    backgroundColor: theme.colors.dialogButton,
     opacity: 0.4, // Unsure whether to keep
   },
   content: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 20,
+    backgroundColor: theme.colors.dialogSurface,
+    borderRadius: theme.radii.card,
     maxWidth: 320,
     padding: 30,
-    justifyContent: "center",
-    alignItems: "center",
+    justifyContent: "center" as const,
+    alignItems: "center" as const,
     gap: 16,
   },
   title: {
-    fontFamily: "Monopol",
+    fontFamily: theme.fonts.display,
     fontSize: 28,
-    textAlign: "center",
-    color: "#262626",
+    textAlign: "center" as const,
+    color: theme.colors.dialogInk,
   },
   divider: {
     height: 1,
     width: 56,
-    backgroundColor: "#000000",
+    backgroundColor: theme.colors.dialogInk,
   },
   bodyText: {
-    fontFamily: "InterVariable",
+    fontFamily: theme.fonts.body,
     fontSize: 14,
     lineHeight: 20,
-    flexWrap: "wrap",
-    color: "#262626",
+    flexWrap: "wrap" as const,
+    color: theme.colors.dialogInk,
   },
   buttonRow: {
     gap: 12,
     paddingTop: 16,
-    width: "100%",
-    alignItems: "stretch",
+    width: "100%" as const,
+    alignItems: "stretch" as const,
   },
   button: {
-    width: "100%",
-    backgroundColor: "#c7e5ce",
+    width: "100%" as const,
+    backgroundColor: theme.colors.dialogButton,
     borderRadius: 999,  // <-- Guarantee round
     paddingVertical: 14,
     paddingHorizontal: 24,
-    alignItems: "center",
-    justifyContent: "center",
+    alignItems: "center" as const,
+    justifyContent: "center" as const,
   },
   buttonText: {
-    fontFamily: "InterVariable",
-    fontWeight: "600",
+    fontFamily: theme.fonts.bodyStrong,
+    fontWeight: "600" as const,
     fontSize: 16,
-    color: "#0a6149",
+    color: theme.colors.dialogButtonInk,
   },
-})
+});

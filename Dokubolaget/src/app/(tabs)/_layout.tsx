@@ -7,11 +7,14 @@ import Smakprofil from "../../../assets/smakprofil.svg";
 import Drinks from "../../../assets/drinks.svg";
 import LeaderboardIcon from "../../../assets/leaderboard.svg";
 import * as Haptics from "expo-haptics"
+import { useTheme } from "../../theme/ThemeProvider";
 
 export default observer(function TabsLayout() {
 
-  function TabIcon({ Icon }: { Icon: FC<SvgProps> }) {
-    return <Icon width={24} height={24} />;
+  const { theme, copy } = useTheme();
+
+  function TabIcon({ Icon, color }: { Icon: FC<SvgProps>; color: string }) {
+    return <Icon width={24} height={24} color={color} />;
   }
 
   const hapticListeners = {
@@ -23,7 +26,10 @@ export default observer(function TabsLayout() {
   return (
     <Tabs
       screenOptions={{
-        tabBarLabelStyle: { fontFamily: "InterVariable" },
+        tabBarLabelStyle: { fontFamily: theme.fonts.body },
+        tabBarActiveTintColor: theme.colors.accent,
+        tabBarInactiveTintColor: theme.colors.inkFaint,
+        tabBarStyle: { backgroundColor: theme.colors.surface, borderTopColor: theme.colors.divider },
         // tabBarPosition: "top",
       }}
     >
@@ -31,8 +37,8 @@ export default observer(function TabsLayout() {
         name="index"
         listeners={hapticListeners}
         options={{
-          title: "Home",
-          tabBarIcon: () => <TabIcon Icon={Smakprofil}/>,
+          title: copy.tabHome,
+          tabBarIcon: () => <TabIcon Icon={Smakprofil} color={theme.colors.icon} />,
           headerShown: false,
         }}
       />
@@ -40,8 +46,8 @@ export default observer(function TabsLayout() {
         name="gameplay"
         listeners={hapticListeners}
         options={{
-          title: "Play!",
-          tabBarIcon: () => <TabIcon Icon={Drinks}/>,
+          title: copy.tabPlay,
+          tabBarIcon: () => <TabIcon Icon={Drinks} color={theme.colors.icon} />,
           headerShown: false,
         }}
       />
@@ -49,8 +55,8 @@ export default observer(function TabsLayout() {
         name="leaderboard"
         listeners={hapticListeners}
         options={{
-          title: "Leaderboard",
-          tabBarIcon: () => <TabIcon Icon={LeaderboardIcon}/>,
+          title: copy.tabLeaderboard,
+          tabBarIcon: () => <TabIcon Icon={LeaderboardIcon} color={theme.colors.icon} />,
           headerShown: false,
         }}
       />
