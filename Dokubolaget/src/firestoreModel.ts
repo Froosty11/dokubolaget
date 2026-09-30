@@ -7,20 +7,11 @@ import {
   initializeAuth,
   onAuthStateChanged,
 } from "firebase/auth";
-import { deleteField, doc, getDoc, getFirestore, setDoc } from "firebase/firestore";
+import { doc, getDoc, getFirestore, setDoc } from "firebase/firestore";
 import { Platform } from "react-native";
 
 // uncomment the following lines when you have your firebaseConfig. Understand what the lines are doing!
 import { firebaseConfig } from "./firebaseConfig";
-
-// typescript type sh*t
-declare global {
-  interface Window {
-    db: any;
-    doc: any;
-    setDoc: any;
-  }
-}
 
 export const app = initializeApp(firebaseConfig);
 
@@ -33,13 +24,6 @@ export const auth =
       });
 
 const db = getFirestore(app);
-
-if (typeof window !== "undefined") {
-  window.db = db;
-  // make doc and setDoc available at the Console for testing
-  window.doc = doc;
-  window.setDoc = setDoc;
-}
 
 const USERS_COLLECTION = "users";
 const BOARDS_COLLECTION = "boards";
@@ -97,25 +81,6 @@ type ScoreHistoryEntry = {
   score: number;
 };
 
-type LeaderboardStats = {
-  scoreHistory: ScoreHistoryEntry[];
-  dailyScore: number;
-  weeklyScore: number;
-  monthlyScore: number;
-  totalScore: number;
-  currentStreak: number;
-  longestStreak: number;
-  uniquenessPercent: number;
-};
-
-function getDateKeyACB(date = new Date()) {
-  return date.toISOString().slice(0, 10);
-}
-
-function parseDateKeyACB(dateKey: string) {
-  return new Date(`${dateKey}T00:00:00.000Z`);
-}
-
 function normalizeHistoryACB(history: any): ScoreHistoryEntry[] {
   if (!Array.isArray(history)) {
     return [];
@@ -141,113 +106,26 @@ function normalizeHistoryACB(history: any): ScoreHistoryEntry[] {
     });
 }
 
-function deriveLeaderboardStatsACB(
-  history: ScoreHistoryEntry[],
-  currentScore: number,
-): LeaderboardStats {
-  const todayKey = getDateKeyACB();
-  const normalizedHistory = normalizeHistoryACB(history);
-  const historyByDate = new Map<string, number>();
+// Public display names must never be an email address: the users collection
+// is world-readable for the leaderboard.
+const DISPLAY_NAME_PATTERN = /^[^@<>]{2,24}$/;
 
-  normalizedHistory.forEach(function addHistoryEntryACB(entry) {
-    historyByDate.set(
-      entry.date,
-      (historyByDate.get(entry.date) || 0) +
-        Math.max(0, Number(entry.score) || 0),
-    );
-  });
+export function normalizeDisplayName(name: unknown): string | null {
+  if (typeof name !== "string") return null;
+  const trimmed = name.trim().replace(/\s+/g, " ");
+  return DISPLAY_NAME_PATTERN.test(trimmed) ? trimmed : null;
+}
 
-  const scoreHistory = Array.from(historyByDate.entries())
-    .map(function toHistoryEntryACB([date, score]) {
-      return { date, score };
-    })
-    .sort(function sortHistoryACB(a, b) {
-      return a.date.localeCompare(b.date);
-    });
+function fallbackDisplayName(uid: string) {
+  return "Spelare " + uid.slice(0, 4).toUpperCase();
+}
 
-  const todayDate = parseDateKeyACB(todayKey);
-  const last7DaysStart = new Date(todayDate);
-  last7DaysStart.setUTCDate(last7DaysStart.getUTCDate() - 6);
-  const last30DaysStart = new Date(todayDate);
-  last30DaysStart.setUTCDate(last30DaysStart.getUTCDate() - 29);
+// Set by the sign-up flow just before the account is created, so the first
+// profile write already carries the chosen nickname.
+let pendingNickname: string | null = null;
 
-  let dailyScore = 0;
-  let weeklyScore = 0;
-  let monthlyScore = 0;
-  let totalScore = 0;
-  let longestStreak = 0;
-  let currentStreak = 0;
-  let previousDate = null as Date | null;
-  let lastScoringDate = null as Date | null;
-
-  scoreHistory.forEach(function accumulateScoresACB(entry) {
-    const entryDate = parseDateKeyACB(entry.date);
-    const score = Math.max(0, Number(entry.score) || 0);
-
-    totalScore += score;
-
-    if (entry.date === todayKey) {
-      dailyScore += score;
-    }
-
-    if (entryDate >= last7DaysStart) {
-      weeklyScore += score;
-    }
-
-    if (entryDate >= last30DaysStart) {
-      monthlyScore += score;
-    }
-
-    const isConsecutiveDay =
-      previousDate !== null &&
-      (entryDate.getTime() - previousDate.getTime()) / 86400000 === 1;
-    if (score > 0 && (previousDate === null || isConsecutiveDay)) {
-      currentStreak += 1;
-    } else if (score > 0) {
-      currentStreak = 1;
-    } else {
-      currentStreak = 0;
-    }
-
-    if (currentStreak > longestStreak) {
-      longestStreak = currentStreak;
-    }
-
-    if (score > 0) {
-      lastScoringDate = entryDate;
-    }
-
-    previousDate = entryDate;
-  });
-
-  const currentStreakGapDays =
-    lastScoringDate === null
-      ? Number.POSITIVE_INFINITY
-      : Math.floor(
-          (todayDate.getTime() - lastScoringDate.getTime()) / 86400000,
-        );
-
-  const currentStreakValue = currentStreakGapDays <= 1 ? currentStreak : 0;
-
-  const uniquenessPercent =
-    scoreHistory.length === 0
-      ? 0
-      : (scoreHistory.filter(function scoredEntriesACB(entry) {
-          return Number(entry.score) > 0;
-        }).length /
-          scoreHistory.length) *
-        100;
-
-  return {
-    scoreHistory,
-    dailyScore,
-    weeklyScore,
-    monthlyScore,
-    totalScore,
-    currentStreak: currentStreakValue,
-    longestStreak,
-    uniquenessPercent,
-  };
+export function setPendingNickname(name: string | null) {
+  pendingNickname = normalizeDisplayName(name);
 }
 
 export function connectToPersistence(model: any, watchFunction: any) {
@@ -255,27 +133,15 @@ export function connectToPersistence(model: any, watchFunction: any) {
   let privateDocACB: any = null;
 
   function checkACB() {
-    return [model.gameCells, model.scoreHistory];
+    return [model.gameCells, model.currentCell];
   }
+  // Only private game progress is written from the client. Leaderboard stats
+  // (scores, streaks) are read-only here; the Firestore rules reject client
+  // writes to them so scores can't be forged from the browser.
   function effectACB() {
-    if (!model.ready || !publicDocACB || !privateDocACB) {
+    if (!model.ready || !privateDocACB || model.practiceBoard) {
       return;
     }
-    const stats = deriveLeaderboardStatsACB(model.scoreHistory, model.score);
-    setDoc(
-      publicDocACB,
-      {
-        scoreHistory: stats.scoreHistory,
-        dailyScore: stats.dailyScore,
-        weeklyScore: stats.weeklyScore,
-        monthlyScore: stats.monthlyScore,
-        totalScore: stats.totalScore,
-        currentStreak: stats.currentStreak,
-        longestStreak: stats.longestStreak,
-        uniquenessPercent: stats.uniquenessPercent,
-      },
-      { merge: true },
-    ).catch(errorACB);
     setDoc(
       privateDocACB,
       {
@@ -314,6 +180,29 @@ export function connectToPersistence(model: any, watchFunction: any) {
     effectACB();
   }
 
+  // Picks the public name: a nickname from sign-up, then the auth profile name,
+  // then whatever valid name is already stored, then an anonymous fallback.
+  // Replaces any stored name that is an email address.
+  function syncDisplayNameACB(user: any, publicDoc: any) {
+    return getDoc(publicDoc).then(function chooseNameACB(snapshot: any) {
+      const stored = snapshot.exists() ? snapshot.data()?.displayName : undefined;
+      const wanted =
+        pendingNickname ||
+        normalizeDisplayName(user.displayName) ||
+        normalizeDisplayName(stored) ||
+        fallbackDisplayName(user.uid);
+      pendingNickname = null;
+      if (wanted !== stored) {
+        return setDoc(publicDoc, { displayName: wanted }, { merge: true }).then(
+          function rereadACB() {
+            return getDoc(publicDoc);
+          },
+        );
+      }
+      return snapshot;
+    });
+  }
+
   watchFunction(checkACB, effectACB);
   model.ready = false;
 
@@ -329,28 +218,8 @@ export function connectToPersistence(model: any, watchFunction: any) {
     publicDocACB = doc(db, USERS_COLLECTION, user.uid);
     privateDocACB = doc(db, USERS_COLLECTION, user.uid, "private", "profile");
 
-    const publicSeed = setDoc(
-      publicDocACB,
-      {
-        displayName: user.displayName || user.email || "",
-        // Scrub fields written by older clients before the public/private split.
-        email: deleteField(),
-        gameCells: deleteField(),
-        currentCell: deleteField(),
-        score: deleteField(),
-      },
-      { merge: true },
-    ).then(function readPublicACB() {
-      return getDoc(publicDocACB).then(applyPublicACB);
-    });
-
-    const privateSeed = setDoc(
-      privateDocACB,
-      { email: user.email || "" },
-      { merge: true },
-    ).then(function readPrivateACB() {
-      return getDoc(privateDocACB).then(applyPrivateACB);
-    });
+    const publicSeed = syncDisplayNameACB(user, publicDocACB).then(applyPublicACB);
+    const privateSeed = getDoc(privateDocACB).then(applyPrivateACB);
 
     Promise.all([publicSeed, privateSeed])
       .catch(errorACB)

@@ -149,6 +149,9 @@ export const model = {
   currentBoardIndex: initialBoardPick.boardIndex,
   bundledBoardCount,
   boardSource: "local" as "local" | "firestore",
+  // True when ?board= picked a test board. Progress on it is never saved, so
+  // it can't overwrite today's real board in the player's profile.
+  practiceBoard: boardOverrideIndex != null,
   gameCells: [1, 2, 3, 4, 5, 6, 7, 8, 9],
   selectedProductsByCell: {} as Record<number, any>,
   score: 0,

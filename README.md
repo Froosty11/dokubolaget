@@ -43,19 +43,37 @@ bun run dev
 
 ## Deploying (Docker, one container)
 
-The whole thing runs as a single container: the static web build, the Systembolaget proxy (same origin, `/proxy?url=`, locked to `systembolaget.se` hosts) and the nightly board pipeline that writes tomorrow's board to Firestore. See `Dokubolaget/server.js`.
+The whole thing runs as a single container: the static web build, the Systembolaget proxy (same origin, `/proxy?url=`, limited to the few Systembolaget URLs the app needs; see `Dokubolaget/proxyPolicy.js`) and the nightly board pipeline that writes tomorrow's board to Firestore. See `Dokubolaget/server.js`.
 
 ```bash
 cp .env.example .env      # paste the Firebase service account JSON on one line
 docker compose up -d --build
 ```
 
-The container listens on port 8080 (change the host port with `PORT` in `.env`). Put a TLS reverse proxy such as Caddy in front of it for `https://dokubolaget.se`.
+The container listens on port 8080, bound to `127.0.0.1` on the host by default (change with `PORT` and `BIND_ADDRESS` in `.env`). Put a TLS reverse proxy such as Caddy in front of it for `https://dokubolaget.se`, and keep `TRUST_PROXY=true` so the proxy rate limit sees real client addresses.
 
 - With no `FIREBASE_SERVICE_ACCOUNT_KEY` set, the app still runs and plays the bundled fallback boards.
-- On boot the container seeds today's and tomorrow's board, then runs every night at 00:05 UTC. `GET /healthz` shows the last run.
+- On boot the container seeds today's and tomorrow's board, then runs every night at 00:05 UTC. `GET /healthz` reports liveness; seed run details are in the container logs.
 - After moving domains, add the new domain under **Authentication → Settings → Authorized domains** in the Firebase console or login will fail.
 - To point the web build at a different Firebase project, set the `EXPO_PUBLIC_FIREBASE_*` build args in `.env` and rebuild.
+
+### Firestore security rules
+
+The rules live in `firestore.rules` at the repo root and are the only thing standing between the public web API key and the database, so deploy them whenever they change:
+
+```bash
+npx firebase-tools deploy --only firestore:rules --project dokubolaget
+```
+
+In short: boards are readable once their day has started; public `users/{uid}` profiles are readable for the leaderboard, but players may only set their own display name (never an email address), not scores or streaks; `users/{uid}/private/*` is owner-only; everything else is closed.
+
+Tests run the rules in the Firestore emulator (needs Java):
+
+```bash
+cd firestore-tests && bun install && bun run test
+```
+
+`Dokubolaget/scripts/scrubPublicProfiles.ts` is a one-off Admin SDK cleanup that replaces email-address display names and removes stale public fields (dry run unless `--apply`).
 
 ## File structure (with `Dokubolaget` as root)
 
@@ -77,6 +95,7 @@ The 3-step (+1) board pipeline run nightly by `server.js` inside the Docker cont
 - `generateBoard.ts` - Step 2: picks 3x3 boards from viable tags and writes `data/generated-boards.json`
 - `confirmBoard.ts` - Step 3 (dev only): recomputes and prints the exact solution count for each of the 9 cells of a generated board
 - `seedFirestoreBoard.ts` - Step 4: uploads the generated board(s) to Firestore at `boards/{YYYY-MM-DD}` (used by CI and ad-hoc seeding)
+- `scrubPublicProfiles.ts` - one-off cleanup of public user profiles (email display names, stale fields, seeded test users)
 - `README.md` - script-by-script usage, flags, and recommended daily run
 - `SEED-BOARD-PROD-SETUP.md` - end-to-end checklist for enabling the nightly cron in production
 - In production the pipeline is scheduled by `server.js`; check `GET /healthz` or the container logs for the last run.

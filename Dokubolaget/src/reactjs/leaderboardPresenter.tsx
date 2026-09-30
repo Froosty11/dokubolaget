@@ -8,11 +8,12 @@ import {
 } from "firebase/firestore";
 import { useEffect, useState } from "react";
 import { StyleSheet, View } from "react-native";
-import { app } from "../firestoreModel";
+import { app, normalizeDisplayName } from "../firestoreModel";
 import { LeaderBoardFormView } from "../views/leaderboardFormView";
 import { LeaderBoardResultView } from "../views/leaderboardResultView";
 
 type LeaderboardEntry = {
+  key?: string;
   label: string;
   value: string | number;
   detail?: string;
@@ -121,14 +122,15 @@ function Leaderboard({limit = 20 }: leaderboardProps) {
         .then(function toTopUsersACB(snapshot) {
           const rows = snapshot.docs.map(function docToRowACB(doc) {
             const data = doc.data() as any;
+            // Older accounts stored their email as the name; never show one.
             const label =
-              (typeof data.displayName === "string" && data.displayName.trim()) ||
-              "Player " + (doc.id ? doc.id.slice(0, 6) : "????");
+              normalizeDisplayName(data.displayName) ||
+              "Spelare " + (doc.id ? doc.id.slice(0, 4).toUpperCase() : "????");
 
             return {
+              key: doc.id,
               label,
               value: filterMeta.displayValue(data),
-              detail: doc.id,
             };
           });
 

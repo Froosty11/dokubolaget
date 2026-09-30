@@ -49,3 +49,6 @@ yarn-error.*
 expo-env.d.ts
 # @end expo-cli
 products.json
+
+# Firebase emulator logs
+*-debug.log

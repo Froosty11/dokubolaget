@@ -19,6 +19,7 @@ export default function AuthDialog({
 
  const [isSignUp, setIsSignUp] = useState(false);
  const [email, setEmail] = useState("");
+ const [nickname, setNickname] = useState("");
  const [password, setPassword] = useState("");
  const [error, setError] = useState("");
  const [loading, setLoading] = useState(false);
@@ -33,13 +34,15 @@ export default function AuthDialog({
      await handleLoginACB(
        email,
        password,
-       isSignUp
+       isSignUp,
+       nickname
      );
 
      onOpenChange(false);
 
      setEmail("");
      setPassword("");
+     setNickname("");
      setIsSignUp(false);
 
    } catch (error:any) {
@@ -86,6 +89,16 @@ function closeACB() {
            <Dialog.Title>
              {isSignUp ? "Sign Up" : "Login"}
            </Dialog.Title>
+
+           {isSignUp && (
+             <Input
+               placeholder="Nickname (shown on the leaderboard)"
+               value={nickname}
+               onChangeText={setNickname}
+               autoCapitalize="none"
+               maxLength={24}
+             />
+           )}
 
            <Input
              placeholder="Email"

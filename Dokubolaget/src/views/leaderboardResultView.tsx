@@ -2,6 +2,7 @@ import React from "react";
 import { FlatList, StyleSheet, Text, View } from "react-native";
 
 type LeaderboardEntry = {
+  key?: string;
   label: string;
   value: string | number;
   detail?: string;
@@ -19,7 +20,7 @@ export function LeaderBoardResultView({
   rows,
 }: LeaderboardResultViewProps) {
   function keyExtractorACB(item: LeaderboardEntry, index: number) {
-    return String(item.detail || item.label || index);
+    return String(item.key || item.label || index);
   }
 
   function renderItemACB({ item }: { item: LeaderboardEntry }) {
