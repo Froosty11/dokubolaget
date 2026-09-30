@@ -116,16 +116,12 @@ When `--days N` is set, the script writes one document per consecutive date star
 Output:
 - Firestore documents `boards/{YYYY-MM-DD}` with `rows`, `cols`, `score`, `counts`, `seed`, `generatedAt`.
 
-## Cron via GitHub Actions
+## Nightly run in production
 
-A workflow lives at `.github/workflows/seed-board.yml`. It runs nightly at 22:00 UTC (~midnight Europe/Stockholm) and writes tomorrow's board to Firestore. It can also be triggered manually from the Actions tab.
+`server.js` (the process inside the Docker container) runs this pipeline on a timer: on boot it seeds today's and tomorrow's boards, then every night at 00:05 UTC it seeds tomorrow's. Each run:
 
-Each run:
-1. Fetches a fresh `products.json` from the community catalog mirror at `https://susbolaget.emrik.org/v1/products` (CORS-open, no auth, ~100MB).
-2. Runs Step 1 (`find:tags`) and Step 2 (`generate:board`) in CI.
+1. Downloads a fresh `products.json` from the community catalog mirror at `https://susbolaget.emrik.org/v1/products` (CORS-open, no auth, ~100MB).
+2. Runs Step 1 (`find:tags`) and Step 2 (`generate:board`).
 3. Runs Step 4 (`seed:firestore`) to write `boards/{YYYY-MM-DD}` in Firestore.
 
-The workflow is configured for github.com Actions runners.
-
-Repository secret required:
-- `FIREBASE_SERVICE_ACCOUNT_KEY` — raw JSON of a Firebase service account. Scope it to Firestore writes on the `boards` collection if your IAM allows.
+It only runs when `FIREBASE_SERVICE_ACCOUNT_KEY` (raw JSON of a Firebase service account) is set in the container's environment. `GET /healthz` reports the last run and the next scheduled one. See `SEED-BOARD-PROD-SETUP.md` for the full checklist.

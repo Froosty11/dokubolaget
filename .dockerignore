@@ -1,0 +1,15 @@
+**/node_modules
+**/dist
+**/.expo
+**/web-build
+**/ios
+**/android
+**/.DS_Store
+products.json
+*.tmp
+.git
+.github
+user-testing
+.env
+.env.*
+!.env.example

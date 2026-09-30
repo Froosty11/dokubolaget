@@ -1,21 +1,21 @@
 # Daily Board Cron — Production Setup
 
-End-to-end checklist to get `.github/workflows/seed-board.yml` running nightly against the production Firestore. Assumes you're starting from a fresh clone with no automation set up yet.
+End-to-end checklist to get the nightly board pipeline (run by `server.js` inside the Docker container) writing to the production Firestore. Assumes you're starting from a fresh clone with no automation set up yet.
 
 Time estimate: 15–20 minutes the first time.
 
 ---
 
-## 1. Host the repo on github.com
+## 1. Build the container
 
-The workflow runs on `ubuntu-latest`, a github.com-hosted runner, so the repo needs to live on github.com (or be mirrored there).
+From the repo root:
 
 ```bash
-# Create an empty repo on github.com first (UI → "New repository").
-# Then, from the project root:
-git remote add github https://github.com/<your-user>/<your-repo>.git
-git push github main
+cp .env.example .env
+docker compose up -d --build
 ```
+
+The container serves the app on port 8080 and, once the secret in step 3 is in place, runs the board pipeline itself. No external scheduler is needed.
 
 ---
 
@@ -31,28 +31,21 @@ This is the credential the workflow uses to write to Firestore.
 
 ---
 
-## 3. Add the secret to github.com
+## 3. Give the container the secret
 
-1. github.com repo → **Settings** → **Secrets and variables** → **Actions** → **New repository secret**.
-2. Name: `FIREBASE_SERVICE_ACCOUNT_KEY` (exact spelling — the workflow references this name).
-3. Value: open the JSON file from step 2 in a text editor, copy the **entire** contents (including the outer `{` and `}`), paste it into the value field.
-4. Click **Add secret**.
+1. Open the JSON file from step 2 and collapse it to a single line (e.g. `jq -c . key.json`).
+2. In `.env` next to `docker-compose.yml`, set `FIREBASE_SERVICE_ACCOUNT_KEY=` followed by that one-line JSON.
+3. `docker compose up -d` to restart with the new environment. Never commit `.env`.
 
 ---
 
-## 4. Trigger a manual run to verify
+## 4. Verify the first run
 
-Before letting cron loose, run it once by hand to catch any setup mistakes.
+The container seeds today's and tomorrow's boards as soon as it starts with credentials.
 
-1. github.com repo → **Actions** tab.
-2. Left sidebar → **Seed daily board to Firestore**.
-3. **Run workflow** button (top right) → leave inputs blank → **Run workflow**.
-4. Watch the logs. The four steps to watch:
-   - **Fetch fresh products.json** → should report a ~100 MB file size.
-   - **Find candidate tags** → prints tag counts, ends with "Saved tags file: …board-tags.json".
-   - **Generate board for target date** → prints one board with rows/cols/cell samples.
-   - **Upload board to Firestore** → prints `Wrote boards/<tomorrow's date> (score N)`.
-5. If all green, open the [Firestore console](https://console.firebase.google.com/) → **Firestore Database** → `boards` collection. There should be a doc at `boards/<tomorrow-YYYY-MM-DD>` with `rows`, `cols`, `counts`, `score`, `seed`, `generatedAt`.
+1. `docker compose logs -f` and watch for the `[seed]` lines: catalog download size (~100 MB), tag counts, one board per day with rows/cols, then `Wrote boards/<date>`.
+2. `curl localhost:8080/healthz` shows `lastResult` and `nextRunAt`.
+3. Open the [Firestore console](https://console.firebase.google.com/) → **Firestore Database** → `boards`. There should be docs for today and tomorrow with `rows`, `cols`, `counts`, `score`, `seed`, `difficulty`, `generatedAt`.
 
 ---
 
@@ -74,16 +67,9 @@ To verify it's actually swapping:
 
 ---
 
-## 6. Let cron take over
+## 6. Let the timer take over
 
-Already done — `schedule: 0 22 * * *` is enabled in the workflow. Every day at 22:00 UTC the workflow:
-
-1. Spins up an `ubuntu-latest` runner.
-2. Curl-fetches `https://susbolaget.emrik.org/v1/products`.
-3. Runs `find:tags` → `generate:board --boards 1 --seed <tomorrow>`.
-4. Runs `seed:firestore --date <tomorrow>` to write `boards/<tomorrow>`.
-
-You should see one run per day in the Actions tab. If a run fails, GitHub emails you (assuming you have notifications on for the repo).
+Nothing more to do. Every night at 00:05 UTC (configurable with `SEED_HOUR_UTC` / `SEED_MINUTE_UTC`) the server downloads the catalog, generates tomorrow's board and writes `boards/<tomorrow>`. A failed run is retried once after 30 minutes and shows up in `/healthz` as `lastError`. The app always falls back to the bundled boards if a day is missing.
 
 ---
 
@@ -114,8 +100,8 @@ The service account bypasses these rules (it's authenticated through the Admin S
 
 | Symptom | Likely cause |
 |---|---|
-| Workflow fails at "Fetch fresh products.json" | susbolaget.emrik.org is down. Rerun in an hour; if persistent, fall back to a committed snapshot for the day. |
-| Workflow fails at "Upload board to Firestore" with `permission-denied` | The service account doesn't have Cloud Datastore User. Re-check IAM in step 2. |
-| Workflow fails with "FIREBASE_SERVICE_ACCOUNT_KEY is not defined" | Secret name typo, or the secret is set at the **organization** level when the workflow expects a **repository** secret. |
-| Workflow runs green but Firestore stays empty | The Firebase project ID embedded in `FIREBASE_SERVICE_ACCOUNT_KEY` doesn't match the project Firestore is in. |
+| `/healthz` shows `Catalog download failed` | susbolaget.emrik.org is down. The run retries after 30 minutes and again next night. |
+| `/healthz` shows `permission-denied` | The service account doesn't have Cloud Datastore User. Re-check IAM in step 2. |
+| Logs say "No Firebase credentials found" | `FIREBASE_SERVICE_ACCOUNT_KEY` is missing from `.env`, or the container wasn't restarted after editing it. |
+| Runs report ok but Firestore stays empty | The Firebase project ID embedded in `FIREBASE_SERVICE_ACCOUNT_KEY` doesn't match the project Firestore is in. |
 | App's `boardSource` stays `"local"` even after a seed | The current-day doc is missing. The workflow seeds **tomorrow's** board — today's only exists if someone backfilled it (e.g. `seed:firestore --date <today>` from local). |
