@@ -237,6 +237,8 @@ export function GameView(props: Readonly<GameViewProps>) {
               key={burst.id}
               mode="burst"
               seed={burst.id}
+              shape={theme.confetti.shape}
+              colors={theme.confetti.colors}
               x={cellSize * (col + 1) + cellSize / 2}
               y={cellSize * (row + 1) + cellSize / 2}
               onDone={() => onBurstDone(burst.id)}

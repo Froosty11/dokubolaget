@@ -3,17 +3,23 @@ import { Animated, Easing, Pressable, StyleSheet, Text, View, useWindowDimension
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { USE_NATIVE_DRIVER } from "../animation";
 import { Confetti } from "../components/Confetti";
+import { useTheme, useThemedStyles } from "../theme/ThemeProvider";
+import type { Theme } from "../theme/types";
 
 type BoardCompleteViewProps = {
   filledCount: number;
   shareGrid: string[];
   shareStatus: "idle" | "shared" | "copied" | "failed";
+  // "A1 7412 Marqués de Vargas" per solved cell, for the receipt layout.
+  receiptLines: string[];
   onShare: () => void;
   onClose: () => void;
 };
 
 export function BoardCompleteView(props: Readonly<BoardCompleteViewProps>) {
   const { width, height } = useWindowDimensions();
+  const { theme, copy } = useTheme();
+  const styles = useThemedStyles(makeStyles);
   const card = useRef(new Animated.Value(0)).current;
   const count = useRef(new Animated.Value(0)).current;
   const [shownCount, setShownCount] = useState(0);
@@ -48,7 +54,14 @@ export function BoardCompleteView(props: Readonly<BoardCompleteViewProps>) {
 
   return (
     <View style={styles.backdrop}>
-      <Confetti mode="rain" width={width} height={height} seed={confettiSeed} />
+      <Confetti
+        mode="rain"
+        width={width}
+        height={height}
+        seed={confettiSeed}
+        shape={theme.confetti.shape}
+        colors={theme.confetti.colors}
+      />
       <Animated.View
         style={[
           styles.card,
@@ -62,7 +75,7 @@ export function BoardCompleteView(props: Readonly<BoardCompleteViewProps>) {
         ]}
       >
         <Text style={styles.kicker}>DAGENS BRÄDE</Text>
-        <Text style={styles.title}>Board complete!</Text>
+        <Text style={styles.title}>{copy.completeTitle}</Text>
         <Text style={styles.count}>
           {shownCount}
           <Text style={styles.countOf}>/9</Text>
@@ -76,7 +89,7 @@ export function BoardCompleteView(props: Readonly<BoardCompleteViewProps>) {
           ))}
         </View>
         <Pressable style={styles.shareButton} onPress={props.onShare}>
-          <MaterialCommunityIcons name="share-variant" size={18} color="#ffd400" />
+          <MaterialCommunityIcons name="share-variant" size={18} color={theme.colors.accentInk} />
           <Text style={styles.shareText}>{shareLabel}</Text>
         </Pressable>
         <Pressable onPress={props.onClose} hitSlop={10}>
@@ -87,60 +100,60 @@ export function BoardCompleteView(props: Readonly<BoardCompleteViewProps>) {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (theme: Theme) => ({
   backdrop: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: "rgba(0, 40, 18, 0.55)",
-    alignItems: "center",
-    justifyContent: "center",
+    backgroundColor: theme.colors.celebrationOverlay,
+    alignItems: "center" as const,
+    justifyContent: "center" as const,
     padding: 24,
     zIndex: 50,
   },
   card: {
-    width: "100%",
+    width: "100%" as const,
     maxWidth: 360,
-    backgroundColor: "#f3f3f1",
-    borderRadius: 18,
-    borderWidth: 4,
-    borderColor: "#ffd400",
+    backgroundColor: theme.colors.surface,
+    borderRadius: theme.radii.card,
+    borderWidth: theme.borders.card,
+    borderColor: theme.colors.highlight,
     paddingVertical: 24,
     paddingHorizontal: 20,
-    alignItems: "center",
+    alignItems: "center" as const,
     gap: 6,
-    shadowColor: "#000",
-    shadowOpacity: 0.3,
+    shadowColor: theme.glow?.color ?? "#000",
+    shadowOpacity: theme.glow ? 0.9 : 0.3,
     shadowRadius: 20,
-    shadowOffset: { width: 0, height: 10 },
+    shadowOffset: { width: 0, height: theme.glow ? 0 : 10 },
     elevation: 12,
   },
   kicker: {
-    fontFamily: "BolagetMediumCondensed",
+    fontFamily: theme.fonts.condensed,
     fontSize: 14,
     letterSpacing: 2,
-    color: "#007a33",
+    color: theme.colors.accent,
   },
-  title: { fontFamily: "Monopol", fontSize: 30, color: "#1b1b1b", textAlign: "center" },
-  count: { fontFamily: "Monopol", fontSize: 64, color: "#007a33", lineHeight: 70 },
-  countOf: { fontSize: 28, color: "#6b6b6b" },
-  subtitle: { fontFamily: "InterVariable", fontSize: 14, color: "#555", marginTop: -4 },
-  grid: { marginVertical: 10, alignItems: "center" },
+  title: { fontFamily: theme.fonts.display, fontSize: 30, color: theme.colors.inkStrong, textAlign: "center" as const },
+  count: { fontFamily: theme.fonts.display, fontSize: 64, color: theme.colors.accent, lineHeight: 70 },
+  countOf: { fontSize: 28, color: theme.colors.inkMuted },
+  subtitle: { fontFamily: theme.fonts.body, fontSize: 14, color: theme.colors.inkMuted, marginTop: -4 },
+  grid: { marginVertical: 10, alignItems: "center" as const },
   gridLine: { fontSize: 26, lineHeight: 30, letterSpacing: 2 },
   shareButton: {
-    flexDirection: "row",
-    alignItems: "center",
+    flexDirection: "row" as const,
+    alignItems: "center" as const,
     gap: 8,
-    backgroundColor: "#007a33",
+    backgroundColor: theme.colors.accent,
     paddingVertical: 12,
     paddingHorizontal: 22,
-    borderRadius: 24,
+    borderRadius: theme.radii.button,
     marginTop: 4,
   },
-  shareText: { fontFamily: "InterVariable", fontSize: 16, fontWeight: "600", color: "#fff" },
+  shareText: { fontFamily: theme.fonts.bodyStrong, fontSize: 16, fontWeight: "600" as const, color: theme.colors.accentInk },
   close: {
-    fontFamily: "InterVariable",
+    fontFamily: theme.fonts.body,
     fontSize: 14,
-    color: "#555",
-    textDecorationLine: "underline",
+    color: theme.colors.inkMuted,
+    textDecorationLine: "underline" as const,
     marginTop: 8,
   },
 });

@@ -38,8 +38,3 @@ export function makeAppStyles(theme: Theme) {
   };
 }
 
-// Legacy static styles for views not yet on theme tokens; removed once the
-// last one migrates.
-import { StyleSheet } from "react-native";
-import { modern } from "./theme/themes/modern";
-export const Style = StyleSheet.create(makeAppStyles(modern));

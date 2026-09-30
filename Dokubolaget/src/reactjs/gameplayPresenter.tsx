@@ -12,6 +12,7 @@ import { useEffect, useState, useRef } from "react"
 import * as Haptics from "expo-haptics"
 import { useTheme } from "../theme/ThemeProvider"
 import { composeFeedbackText } from "../theme/feedbackText"
+import { receiptLines } from "../searchHelpers"
 
 let tutorialShownForSession = false;
 
@@ -237,6 +238,7 @@ const Gameplay = observer(function GameRender({ model }: GameplayProps) {
             filledCount={model.filledCellCount}
             shareGrid={shareGrid}
             shareStatus={shareStatus}
+            receiptLines={receiptLines(model.selectedProductsByCell)}
             onShare={onShareACB}
             onClose={() => setBoardCompleteOpen(false)}
           />

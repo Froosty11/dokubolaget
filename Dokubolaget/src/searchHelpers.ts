@@ -37,3 +37,16 @@ export function groupResultsByType<T extends { raw?: any }>(results: T[]): Array
   );
   return types.flatMap((type) => [{ kind: "header" as const, id: `h-${type}`, label: type }, ...groups.get(type)!]);
 }
+
+// "A1 7412 Marqués de Vargas" per solved cell, in board order. Columns are
+// A–C left to right, rows 1–3 top to bottom.
+export function receiptLines(selectedProductsByCell: Record<number, any>): string[] {
+  return Object.keys(selectedProductsByCell)
+    .map(Number)
+    .sort((a, b) => a - b)
+    .map((cell) => {
+      const product = selectedProductsByCell[cell];
+      const name = "ABC"[(cell - 1) % 3] + String(Math.floor((cell - 1) / 3) + 1);
+      return [name, product?.raw?.productNumber, product?.name].filter(Boolean).join(" ");
+    });
+}

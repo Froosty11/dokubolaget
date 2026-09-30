@@ -1,4 +1,6 @@
 import React from "react";
+import { useTheme, useThemedStyles } from "../theme/ThemeProvider";
+import type { Theme } from "../theme/types";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { Label, XStack, YStack } from "tamagui";
 import * as Haptics from "expo-haptics"
@@ -42,6 +44,9 @@ export function LeaderBoardFormView({
   categoryFilter,
   onCategoryFilterChange,
 }: LeaderBoardFormViewProps) {
+  const style = useThemedStyles(makeStyle);
+  const { theme } = useTheme();
+  const labelStyle = { color: theme.colors.ink, fontFamily: theme.fonts.bodyStrong };
   return (
     <View style={style.formContainer}>
         <Text style={style.title}>Leaderboards</Text>
@@ -55,6 +60,7 @@ export function LeaderBoardFormView({
             htmlFor="time-select"
             fontWeight="600"
             marginBottom="$1"
+            style={labelStyle}
           >
             Time
           </Label>
@@ -73,6 +79,7 @@ export function LeaderBoardFormView({
             htmlFor="category-select"
             fontWeight="600"
             marginBottom="$1"
+            style={labelStyle}
           >
             Category
           </Label>
@@ -105,6 +112,7 @@ function LeaderboardSelect({
   items: SelectItemLike[];
   placeholder: string;
 }) {
+  const style = useThemedStyles(makeStyle);
   const [open, setOpen] = React.useState(false);
   const selectedLabel =
     items.find((item) => item.value === value)?.label || placeholder;
@@ -152,97 +160,105 @@ function LeaderboardSelect({
   );
 }
 
-const style = StyleSheet.create({
+const makeStyle = (theme: Theme) => ({
   formContainer: {
     padding: 16,
     paddingBottom: 8,
-    backgroundColor: "#fff",
-    position: "relative",
+    backgroundColor: theme.colors.surface,
+    position: "relative" as const,
     zIndex: 40,
   },
   title: {
+    fontFamily: theme.fonts.bodyStrong,
+    color: theme.colors.inkStrong,
     fontSize: 28,
-    fontWeight: "700",
+    fontWeight: "700" as const,
     marginBottom: 4,
     paddingTop: 40,
   },
   subtitle: {
+    fontFamily: theme.fonts.body,
     fontSize: 14,
-    color: "#666",
+    color: theme.colors.inkMuted,
     marginBottom: 16,
   },
   selectWrapper: {
-    position: "relative",
+    position: "relative" as const,
     zIndex: 200,
   },
   trigger: {
     minHeight: 40,
     borderWidth: 1,
-    borderColor: "#ddd",
+    borderColor: theme.colors.divider,
     borderRadius: 12,
-    backgroundColor: "#fff",
+    backgroundColor: theme.colors.surface,
     paddingHorizontal: 12,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
+    flexDirection: "row" as const,
+    alignItems: "center" as const,
+    justifyContent: "space-between" as const,
   },
   triggerText: {
+    fontFamily: theme.fonts.body,
     fontSize: 14,
-    color: "#111",
+    color: theme.colors.inkStrong,
     flexShrink: 1,
   },
   chevron: {
+    fontFamily: theme.fonts.body,
     fontSize: 14,
-    color: "#555",
+    color: theme.colors.inkMuted,
     marginLeft: 8,
   },
   dropdown: {
-    position: "absolute",
+    position: "absolute" as const,
     top: 44,
     left: 0,
     right: 0,
     borderWidth: 1,
-    borderColor: "#ddd",
+    borderColor: theme.colors.divider,
     borderRadius: 12,
-    backgroundColor: "#fff",
+    backgroundColor: theme.colors.surface,
     zIndex: 9999,
     elevation: 8,
-    overflow: "hidden",
+    overflow: "hidden" as const,
   },
   dropdownItem: {
     minHeight: 40,
     paddingHorizontal: 12,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
+    flexDirection: "row" as const,
+    alignItems: "center" as const,
+    justifyContent: "space-between" as const,
     borderBottomWidth: 1,
-    borderBottomColor: "#f0f0f0",
+    borderBottomColor: theme.colors.divider,
   },
   dropdownItemText: {
+    fontFamily: theme.fonts.body,
     fontSize: 14,
-    color: "#111",
+    color: theme.colors.inkStrong,
   },
   itemCheck: {
+    fontFamily: theme.fonts.bodyStrong,
     fontSize: 14,
-    fontWeight: "700",
-    color: "#111",
+    fontWeight: "700" as const,
+    color: theme.colors.inkStrong,
   },
   friendsTag: {
     minWidth: 68,
     height: 40,
     borderWidth: 1,
-    borderColor: "#ddd",
+    borderColor: theme.colors.divider,
     borderRadius: 12,
-    backgroundColor: "#f9f9f9",
-    justifyContent: "center",
-    alignItems: "center",
-    alignSelf: "flex-end",
+    backgroundColor: theme.colors.surfaceAlt,
+    justifyContent: "center" as const,
+    alignItems: "center" as const,
+    alignSelf: "flex-end" as const,
     opacity: 0.5,
     paddingHorizontal: 8,
   },
   friendsTagText: {
+    fontFamily: theme.fonts.bodyStrong,
     fontSize: 12,
-    fontWeight: "600",
-    color: "#999",
+    fontWeight: "600" as const,
+    color: theme.colors.inkFaint,
   },
 });

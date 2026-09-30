@@ -1,4 +1,6 @@
 import React from "react";
+import { useThemedStyles } from "../theme/ThemeProvider";
+import type { Theme } from "../theme/types";
 import { FlatList, StyleSheet, Text, View } from "react-native";
 
 type LeaderboardEntry = {
@@ -19,6 +21,7 @@ export function LeaderBoardResultView({
   subtitle,
   rows,
 }: LeaderboardResultViewProps) {
+  const style = useThemedStyles(makeStyle);
   function keyExtractorACB(item: LeaderboardEntry, index: number) {
     return String(item.key || item.label || index);
   }
@@ -54,15 +57,15 @@ export function LeaderBoardResultView({
   );
 }
 
-const style = StyleSheet.create({
+const makeStyle = (theme: Theme) => ({
   resultsRoot: {
     flex: 1,
     marginHorizontal: 16,
     marginBottom: 12,
     borderWidth: 1,
-    borderColor: "#ddd",
+    borderColor: theme.colors.divider,
     borderRadius: 12,
-    backgroundColor: "#fafafa",
+    backgroundColor: theme.colors.surfaceAlt,
     zIndex: 1,
   },
   sectionHeader: {
@@ -70,12 +73,15 @@ const style = StyleSheet.create({
     paddingBottom: 6,
   },
   sectionTitle: {
+    fontFamily: theme.fonts.bodyStrong,
+    color: theme.colors.inkStrong,
     fontSize: 18,
-    fontWeight: "700",
+    fontWeight: "700" as const,
   },
   sectionSubtitle: {
+    fontFamily: theme.fonts.body,
     fontSize: 12,
-    color: "#666",
+    color: theme.colors.inkMuted,
     marginTop: 2,
   },
   list: {
@@ -85,27 +91,30 @@ const style = StyleSheet.create({
     paddingBottom: 8,
   },
   row: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
+    flexDirection: "row" as const,
+    justifyContent: "space-between" as const,
+    alignItems: "center" as const,
     paddingVertical: 10,
     paddingHorizontal: 12,
     borderBottomWidth: 1,
-    borderBottomColor: "#eee",
+    borderBottomColor: theme.colors.divider,
   },
   rowLabel: {
+    fontFamily: theme.fonts.bodyStrong,
     fontSize: 14,
-    fontWeight: "600",
-    color: "#111",
+    fontWeight: "600" as const,
+    color: theme.colors.inkStrong,
   },
   rowDetail: {
+    fontFamily: theme.fonts.body,
     fontSize: 12,
-    color: "#999",
+    color: theme.colors.inkFaint,
     marginTop: 2,
   },
   rowValue: {
+    fontFamily: theme.fonts.bodyStrong,
     fontSize: 14,
-    fontWeight: "700",
-    color: "#111",
+    fontWeight: "700" as const,
+    color: theme.colors.inkStrong,
   },
 });

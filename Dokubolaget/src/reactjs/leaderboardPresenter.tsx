@@ -6,6 +6,8 @@ import {
   query,
   limit as limitQuery,
 } from "firebase/firestore";
+import { useThemedStyles } from "../theme/ThemeProvider";
+import type { Theme } from "../theme/types";
 import { useEffect, useState } from "react";
 import { StyleSheet, View } from "react-native";
 import { app, normalizeDisplayName } from "../firestoreModel";
@@ -97,6 +99,7 @@ function getFilterMetadataACB(
 }
 
 function Leaderboard({limit = 20 }: leaderboardProps) {
+  const style = useThemedStyles(makeStyle);
   const [timeFilter, setTimeFilter] = useState<TimeFilter>("TODAY");
   const [categoryFilter, setCategoryFilter] =
     useState<CategoryFilter>("TOTAL_SCORE");
@@ -192,9 +195,9 @@ function Leaderboard({limit = 20 }: leaderboardProps) {
 
 export default Leaderboard;
 
-const style = StyleSheet.create({
+const makeStyle = (theme: Theme) => ({
   page: {
     flex: 1,
-    backgroundColor: "#fff",
+    backgroundColor: theme.colors.surface,
   },
 });

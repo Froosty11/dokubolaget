@@ -1,8 +1,10 @@
 import { useEffect, useMemo, useRef } from "react";
 import { Animated, Easing, StyleSheet, View } from "react-native";
 import { USE_NATIVE_DRIVER, seededRandom } from "../animation";
+import { useReducedMotion } from "../theme/ThemeProvider";
+import type { ConfettiShape } from "../theme/types";
 
-const COLORS = ["#007a33", "#ffd400", "#ff5a5f", "#2d9cdb", "#ff9f1c", "#9b5de5"];
+const DEFAULT_COLORS = ["#007a33", "#ffd400", "#ff5a5f", "#2d9cdb", "#ff9f1c", "#9b5de5"];
 
 type Particle = {
   startX: number;
@@ -19,8 +21,13 @@ type Particle = {
   duration: number;
 };
 
-export type ConfettiProps =
-  | {
+type ConfettiLook = {
+  shape?: ConfettiShape;
+  colors?: string[];
+};
+
+export type ConfettiProps = ConfettiLook &
+  ({
       mode: "burst";
       // Burst origin, relative to the parent the confetti is rendered in.
       x: number;
@@ -36,11 +43,12 @@ export type ConfettiProps =
       count?: number;
       seed: number;
       onDone?: () => void;
-    };
+    });
 
 function buildParticles(props: ConfettiProps): Particle[] {
   const random = seededRandom(props.seed);
   const count = props.count ?? (props.mode === "burst" ? 28 : 110);
+  const colors = props.colors?.length ? props.colors : DEFAULT_COLORS;
   const particles: Particle[] = [];
 
   for (let index = 0; index < count; index += 1) {
@@ -48,7 +56,7 @@ function buildParticles(props: ConfettiProps): Particle[] {
     const base = {
       size,
       round: random() < 0.3,
-      color: COLORS[Math.floor(random() * COLORS.length)],
+      color: colors[Math.floor(random() * colors.length)],
       rotation: (random() < 0.5 ? -1 : 1) * (240 + random() * 480),
     };
 
@@ -84,9 +92,41 @@ function buildParticles(props: ConfettiProps): Particle[] {
   return particles;
 }
 
+// Each theme picks a particle shape: dots, flower petals, neon sparks, gold
+// flecks or little paper price tags.
+function shapeStyle(shape: ConfettiShape, particle: Particle): Record<string, any> {
+  const size = particle.size;
+  switch (shape) {
+    case "petals":
+      return {
+        width: size * 1.3, height: size * 0.85,
+        borderTopLeftRadius: size, borderBottomRightRadius: size,
+        borderTopRightRadius: size * 0.2, borderBottomLeftRadius: size * 0.2,
+      };
+    case "sparks":
+      return { width: 2.5, height: size * 1.8, borderRadius: 2, shadowColor: particle.color, shadowOpacity: 1, shadowRadius: 6 };
+    case "flecks":
+      return { width: size * 0.55, height: size * 0.55, borderRadius: 1 };
+    case "priceTags":
+      return { width: size * 2.2, height: size * 1.25, borderRadius: 2, borderTopRightRadius: size, borderBottomRightRadius: size };
+    default:
+      return { width: size, height: particle.round ? size : size * 0.45, borderRadius: particle.round ? size / 2 : 1 };
+  }
+}
+
 // Lightweight confetti built on the core Animated API so it runs the same on
-// web, iOS and Android without extra native dependencies.
+// web, iOS and Android without extra native dependencies. Skipped entirely
+// when the player prefers reduced motion.
 export function Confetti(props: ConfettiProps) {
+  const reducedMotion = useReducedMotion();
+  useEffect(() => {
+    if (reducedMotion) props.onDone?.();
+  }, [reducedMotion]);
+  if (reducedMotion) return null;
+  return <ConfettiParticles {...props} />;
+}
+
+function ConfettiParticles(props: ConfettiProps) {
   const particles = useMemo(() => buildParticles(props), [props.seed]);
   const progress = useRef(particles.map(() => new Animated.Value(0))).current;
 
@@ -142,9 +182,7 @@ export function Confetti(props: ConfettiProps) {
               position: "absolute",
               left: particle.startX,
               top: particle.startY,
-              width: particle.size,
-              height: particle.round ? particle.size : particle.size * 0.45,
-              borderRadius: particle.round ? particle.size / 2 : 1,
+              ...shapeStyle(props.shape ?? "dots", particle),
               backgroundColor: particle.color,
               opacity,
               transform: [{ translateX }, { translateY }, { rotate }],

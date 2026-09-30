@@ -31,3 +31,15 @@ describe("groupResultsByType", () => {
     ]);
   });
 });
+
+import { receiptLines } from "./searchHelpers";
+
+describe("receiptLines", () => {
+  test("one line per solved cell in board order, named A1..C3", () => {
+    const p = (n: string, name: string) => ({ name, raw: { productNumber: n } });
+    expect(receiptLines({ 5: p("7719", "Chablis"), 1: p("7412", "Marqués de Vargas") })).toEqual([
+      "A1 7412 Marqués de Vargas",
+      "B2 7719 Chablis",
+    ]);
+  });
+});
