@@ -61,9 +61,9 @@ export function useTheme(): ThemeContextValue {
 
 // `factory` must be a module-level function so styles rebuild only when the
 // theme changes.
-export function useThemedStyles<T extends StyleSheet.NamedStyles<T>>(factory: (theme: Theme) => T): T {
+export function useThemedStyles<T extends Record<string, any>>(factory: (theme: Theme) => T): T {
   const { theme } = useTheme();
-  return useMemo(() => StyleSheet.create(factory(theme)), [theme, factory]);
+  return useMemo(() => StyleSheet.create(factory(theme) as any) as T, [theme, factory]);
 }
 
 export function useReducedMotion(): boolean {

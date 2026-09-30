@@ -1,11 +1,13 @@
 import { useEffect, useState } from "react"
 import { Image, Keyboard, Platform, Pressable, StyleSheet, Text, TextInput, View, FlatList, useWindowDimensions } from "react-native"
 import Svg, { SvgUri, Path } from 'react-native-svg'
-import { Style } from "../AppStyles"
 import { categories } from "../categories"
 import * as Haptics from "expo-haptics"
 import { formatTagLabel } from "../tagDisplay"
 import { Dossier, redactionKeysForTags } from "../components/Dossier"
+import { useTheme, useThemedStyles } from "../theme/ThemeProvider"
+import type { Theme } from "../theme/types"
+import { formatKronor, groupResultsByType, type GroupHeader } from "../searchHelpers"
 
 const SEARCH_PLACEHOLDER_IMAGE = "https://www.systembolaget.se/_next/static/media/placeholder-wine-bottle.30edbfb9.png"
 
@@ -36,35 +38,35 @@ type SearchViewProps = {
 	onClose: () => void
 	topCategories: BoardTag[]
 	sideCategories: BoardTag[]
+	// Products already guessed wrong for this cell.
+	rejectedIds: string[]
 }
 
 type SearchResultRowProps = {
 	result: SearchResultItem
+	tried: boolean
 	onPress: (result: SearchResultItem) => void
 	onPeek: (result: SearchResultItem | null, pinned: boolean) => void
 }
 
 function SearchResultRow(props: Readonly<SearchResultRowProps>) {
-	const { result, onPress, onPeek } = props
+	const { result, tried, onPress, onPeek } = props
+	const { theme } = useTheme()
+	const row = useThemedStyles(makeRowStyles)
 	const [imageUri, setImageUri] = useState(result.image || SEARCH_PLACEHOLDER_IMAGE)
 
 	useEffect(() => {
 		setImageUri(result.image || SEARCH_PLACEHOLDER_IMAGE)
 	}, [result.id, result.image])
 
-	// Format price helper function
-	function formatPrice(price: number): string {
-		const hasDecimals = price % 1 !== 0
-		const decimals = hasDecimals ? 2 : 0
-		const [integer, fraction] = price.toFixed(decimals).split(".")
-		const spacedInteger = integer.replace(/\B(?=(\d{3})+(?!\d))/g, " ")
-		return hasDecimals ? `${spacedInteger}:${fraction}` : spacedInteger
-	}
-
 	function onPressACB() {
 		Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium)
 		onPress(result)
 	}
+
+	// Wine type first ("Rött vin"), then the finer style if there is one.
+	const typeLine = [result.raw?.categoryLevel2, result.raw?.categoryLevel3].filter(Boolean).join(" · ")
+	const triedLabel = theme.id === "prislista" ? "REDAN PRÖVAD" : "TRIED"
 
 	return (
 		<Pressable
@@ -80,100 +82,171 @@ function SearchResultRow(props: Readonly<SearchResultRowProps>) {
 				onPeek(result, true)
 			}}
 			delayLongPress={380}
+			accessibilityRole="button"
+			accessibilityLabel={`${result.raw?.productNameBold ?? result.name}${tried ? ", already tried" : ""}`}
 		>
-			<Image
-				source={{ uri: imageUri }}
-				style={row.image}
-				onError={() => setImageUri(SEARCH_PLACEHOLDER_IMAGE)}
-			/>
-			<View style={row.resultTextWrap}>
-				{/* TODO: Determine how to render multiple categories? */}
-				<Text style={row.category} >{result.raw.categoryLevel3}</Text>
-				<Text style={row.name}>{result.raw.productNameBold}</Text>
-				<Text style={row.nameThin}>{result.raw.productNameThin}</Text>
-				<View style={{flexDirection:'row', justifyContent: "space-between"}}>
-					<View style={row.metaRow}>
-						{/* <SvgUri
-							width={20}
-							height={12}
-							uri={"https://yourserver.com/flags.sprite.svg#"+result.country}
-							role="img"
-							accessibilityLabel={"Flagga " + result.country}
-						/> */}
-						<Text style={row.metaText}>{result.country}</Text>
-						<Text style={row.metaText}>{result.raw.volumeText}</Text>
-						<Text style={row.metaText}>{result.raw.alcoholPercentage} % vol.</Text>
+			{theme.flags.dottedLeaderPrices ? (
+				<View style={row.resultTextWrap}>
+					<View style={row.leaderLine}>
+						<Text style={row.leaderNumber}>{result.raw?.productNumber}</Text>
+						<Text style={row.leaderName} numberOfLines={1}>{result.raw?.productNameBold ?? result.name}</Text>
+						<View style={row.leaderDots} />
+						<Text style={row.leaderPrice}>{formatKronor(result.raw?.price)}:-</Text>
 					</View>
-					<Text style={row.price}>{formatPrice(result.raw.price)}</Text>
+					<Text style={row.leaderSub}>
+						{[result.raw?.categoryLevel2, result.country, result.raw?.volumeText, result.raw?.alcoholPercentage != null ? `${result.raw.alcoholPercentage} %` : null].filter(Boolean).join(" · ")}
+					</Text>
 				</View>
-			</View>
+			) : (
+				<>
+					<Image
+						source={{ uri: imageUri }}
+						style={row.image}
+						onError={() => setImageUri(SEARCH_PLACEHOLDER_IMAGE)}
+					/>
+					<View style={row.resultTextWrap}>
+						{typeLine ? <Text style={row.category}>{typeLine}</Text> : null}
+						<Text style={row.name}>{result.raw?.productNameBold}</Text>
+						<Text style={row.nameThin}>{result.raw?.productNameThin}</Text>
+						<View style={{flexDirection:'row', justifyContent: "space-between"}}>
+							<View style={row.metaRow}>
+								<Text style={row.metaText}>{result.country}</Text>
+								<Text style={row.metaText}>{result.raw?.volumeText}</Text>
+								<Text style={row.metaText}>{result.raw?.alcoholPercentage} % vol.</Text>
+							</View>
+							<Text style={row.price}>{formatKronor(result.raw?.price)}</Text>
+						</View>
+					</View>
+				</>
+			)}
+			{tried ? (
+				<View pointerEvents="none" style={row.tried}>
+					<Text style={row.triedText}>{triedLabel}</Text>
+				</View>
+			) : null}
 		</Pressable>
 	)
 }
 
-const row = StyleSheet.create({
+const makeRowStyles = (theme: Theme) => ({
 	resultItem: {
-		flexDirection: "row",
-		alignItems: "center",
+		flexDirection: "row" as const,
+		alignItems: "center" as const,
 		paddingVertical: 12,
 		paddingHorizontal: 16,
 		borderBottomWidth: 1,
-		borderBottomColor: "#e0e0e0",
-		backgroundColor: "#fff",
+		borderBottomColor: theme.colors.divider,
+		backgroundColor: theme.flags.dottedLeaderPrices ? "transparent" : theme.colors.surface,
 		gap: 12,
-		borderRadius: 5,
-		marginVertical: 8
+		borderRadius: Math.min(5, theme.radii.card),
+		marginVertical: theme.flags.dottedLeaderPrices ? 0 : 8,
 	},
 	resultItemHovered: {
-		backgroundColor: "#fbfaf4",
-		borderBottomColor: "#cbb98f",
+		backgroundColor: theme.colors.surfaceAlt,
+		borderBottomColor: theme.colors.highlight,
 	},
 	image: {
 		width: 53,
 		height: 104,
-		resizeMode: "contain",
+		resizeMode: "contain" as const,
 	},
 	resultTextWrap: {
 		flex: 1,
 		gap: 3,
 	},
 	category: {
-		fontFamily: "BolagetMediumCondensed",
+		fontFamily: theme.fonts.condensed,
 		fontSize: 14,
-		textTransform: "uppercase",
-		letterSpacing: 0.5
+		color: theme.colors.ink,
+		textTransform: "uppercase" as const,
+		letterSpacing: 0.5,
 	},
 	name: {
-		fontFamily: "Monopol",
+		fontFamily: theme.fonts.display,
 		fontSize: 20,
-		color: "#111",
+		color: theme.colors.inkStrong,
 	},
 	nameThin: {
-		fontFamily: "Monopol",
+		fontFamily: theme.fonts.display,
 		fontSize: 20,
-		color: "#676767"
+		color: theme.colors.inkMuted,
 	},
 	metaRow: {
 		flex: 1,
-		flexDirection: "row",
-		flexWrap: "wrap",
+		flexDirection: "row" as const,
+		flexWrap: "wrap" as const,
 		gap: 6,
 		marginTop: 4,
 	},
 	metaText: {
-		fontFamily: "InterVariable",
+		fontFamily: theme.fonts.body,
 		fontSize: 14,
-		color: "#111",
+		color: theme.colors.inkStrong,
 	},
 	price: {
-		fontFamily: "InterVariable",
+		fontFamily: theme.fonts.bodyStrong,
 		fontSize: 14,
-		fontWeight: "600",
-		color: "#111",
-		alignSelf:	"flex-end",
+		fontWeight: "600" as const,
+		color: theme.colors.inkStrong,
+		alignSelf: "flex-end" as const,
 		flexShrink: 0,
 	},
-})
+	leaderLine: {
+		flexDirection: "row" as const,
+		alignItems: "flex-end" as const,
+	},
+	leaderNumber: {
+		fontFamily: theme.fonts.mono,
+		fontSize: 13,
+		width: 46,
+		color: theme.colors.ink,
+	},
+	leaderName: {
+		fontFamily: theme.fonts.display,
+		fontSize: 15,
+		color: theme.colors.ink,
+		flexShrink: 1,
+	},
+	leaderDots: {
+		flex: 1,
+		minWidth: 16,
+		borderBottomWidth: 2,
+		borderStyle: "dotted" as const,
+		borderColor: theme.colors.ink,
+		marginHorizontal: 6,
+		marginBottom: 5,
+	},
+	leaderPrice: {
+		fontFamily: theme.fonts.mono,
+		fontSize: 14,
+		fontWeight: "600" as const,
+		color: theme.colors.ink,
+	},
+	leaderSub: {
+		marginLeft: 46,
+		fontFamily: theme.fonts.mono,
+		fontSize: 11,
+		color: theme.colors.inkMuted,
+	},
+	tried: {
+		position: "absolute" as const,
+		right: 10,
+		top: 8,
+		borderWidth: 1.5,
+		borderColor: theme.colors.miss,
+		borderRadius: theme.radii.pill,
+		paddingHorizontal: 6,
+		paddingVertical: 1,
+		transform: [{ rotate: "-6deg" }],
+		backgroundColor: theme.colors.missBg,
+	},
+	triedText: {
+		fontFamily: theme.fonts.condensed,
+		fontSize: 11,
+		letterSpacing: 1,
+		color: theme.colors.miss,
+	},
+});
 
 export function SearchView(props: Readonly<SearchViewProps>) {
 	const {
@@ -188,7 +261,10 @@ export function SearchView(props: Readonly<SearchViewProps>) {
 		onClose,
 		topCategories,
 		sideCategories,
+		rejectedIds,
 	} = props
+	const { theme, copy } = useTheme()
+	const search = useThemedStyles(makeSearchStyles)
 
 	function keyExtractorCB(item: any) { return item.id }
 
@@ -206,7 +282,16 @@ export function SearchView(props: Readonly<SearchViewProps>) {
 		setPeek({ result, pinned })
 	}
 
-	function searchResultRowRenderCB ({item}: any) { return <SearchResultRow result={item} onPress={onResultPress} onPeek={onPeekACB}/> }
+	function searchResultRowRenderCB ({item}: { item: SearchResultItem | GroupHeader }) {
+		if ("kind" in item && item.kind === "header") {
+			return <Text style={search.groupHeader}>— {item.label.toUpperCase()} —</Text>
+		}
+		const result = item as SearchResultItem
+		return <SearchResultRow result={result} tried={rejectedIds.includes(result.id)} onPress={onResultPress} onPeek={onPeekACB}/>
+	}
+
+	const shownResults = results.slice(0, 20)
+	const listData = theme.flags.groupResultsByType ? groupResultsByType(shownResults) : shownResults
 
 	function getCategoryLabels(): { row: string; col: string } | null {
 		if (selectedCell === null || selectedCell < 1 || selectedCell > 9) {
@@ -235,7 +320,7 @@ export function SearchView(props: Readonly<SearchViewProps>) {
 		<View style={search.overlay}>
 			<Pressable style={search.backdrop} onPress={onClose} />
 			<View style={search.body}>
-				<Text style={search.rubric}>Make your guess</Text>
+				<Text style={search.rubric}>{copy.searchTitle}</Text>
 				{categoryLabels && (
 					<Text style={search.status}>{categoryLabels.row} / {categoryLabels.col}</Text>
 				)}
@@ -248,10 +333,11 @@ export function SearchView(props: Readonly<SearchViewProps>) {
 								fillRule="evenodd"
 								clipRule="evenodd"
 								d="M14.8572 16.3572C13.5105 17.3877 11.8267 18 10 18C5.58172 18 2 14.4183 2 10C2 5.58172 5.58172 2 10 2C14.4183 2 18 5.58172 18 10C18 11.8267 17.3877 13.5105 16.3572 14.8572L22 20.5L20.5 22L14.8572 16.3572ZM16 10C16 13.3137 13.3137 16 10 16C6.68629 16 4 13.3137 4 10C4 6.68629 6.68629 4 10 4C13.3137 4 16 6.68629 16 10Z"
-								fill="#333"
+								fill={theme.colors.icon}
 							/>
 						</Svg>
 						<TextInput
+							placeholderTextColor={theme.colors.inkFaint}
 							style={search.input}
 							value={query}
 							onChangeText={onQueryChange}
@@ -259,11 +345,11 @@ export function SearchView(props: Readonly<SearchViewProps>) {
 							autoFocus
 						/>
 					</View>
-					<Pressable style={search.closeButton} onPress={onClose}>
+					<Pressable style={search.closeButton} onPress={onClose} accessibilityRole="button" accessibilityLabel="Close search">
 						<Svg width={18} height={18} viewBox="0 0 24 24">
 							<Path
 								d="M6.4 19L5 17.6L10.6 12L5 6.4L6.4 5L12 10.6L17.6 5L19 6.4L13.4 12L19 17.6L17.6 19L12 13.4L6.4 19Z"
-								fill="#333"
+								fill={theme.colors.icon}
 							/>
 						</Svg>
 					</Pressable>	
@@ -278,7 +364,7 @@ export function SearchView(props: Readonly<SearchViewProps>) {
 						<FlatList
 							style={search.resultList}
 							showsVerticalScrollIndicator={false}
-							data={results.slice(0,20)}
+							data={listData}
 							keyExtractor={keyExtractorCB}
 							renderItem={searchResultRowRenderCB}
 						/>
@@ -302,70 +388,72 @@ export function SearchView(props: Readonly<SearchViewProps>) {
 	)
 }
 
-const search = StyleSheet.create({
+const makeSearchStyles = (theme: Theme) => ({
 	overlay: {
 		flex: 1,
-		justifyContent: "center",
-		alignItems: "center",
+		justifyContent: "center" as const,
+		alignItems: "center" as const,
 		padding: 5,
 		paddingTop: 50,
 		paddingBottom: 30,
 	},
 	backdrop: {
-		position: "absolute",
+		position: "absolute" as const,
 		top: 0,
 		right: 0,
 		bottom: 0,
 		left: 0,
-		backgroundColor: "rgba(0, 0, 0, 0.35)",
+		backgroundColor: theme.colors.overlay,
 	},
 	body: {
 		flex: 1,
-		width: "100%",
+		width: "100%" as const,
 		maxWidth: 500,
 		padding: 15,
 		gap: 8,
-		backgroundColor: "#f3f3f1",
-		borderRadius: 20
+		backgroundColor: theme.colors.page,
+		borderRadius: Math.min(20, theme.radii.card + 2),
+		borderWidth: theme.flags.ruledTable ? theme.borders.card : 0,
+		borderColor: theme.colors.ink
 	},
 	rubric: {
-		fontFamily: "Monopol",
+		fontFamily: theme.fonts.display,
 		fontSize: 26,
-		textAlign: "center"
+		color: theme.colors.inkStrong,
+		textAlign: "center" as const
 	},
 	searchContainer: {
-		flexDirection: "row",
-		alignItems: "center",
+		flexDirection: "row" as const,
+		alignItems: "center" as const,
 		gap: 5,
 	},
 	inputContainer: {
 		flex: 1,
-		flexDirection: "row",
+		flexDirection: "row" as const,
 		columnGap: 8,
 		height: 36,
 		borderRadius: 18,
-		borderColor: "#fff",
-		backgroundColor:"#fff",
+		borderColor: theme.colors.divider,
+		backgroundColor: theme.colors.surface,
 		padding: 8,
 		paddingLeft: 10
 	},
 	input: {
-		fontFamily: "InterVariable",
+		fontFamily: theme.fonts.body,
 		flex: 1,
 		fontSize: 16,
 		padding: 0,
 		margin: 0,
 		includeFontPadding: false,
-		color: "#262626",
-
+		color: theme.colors.ink,
 	},
 	closeButton: {
 		width: 36,
 		height: 36,
 		borderRadius: 18,
-		backgroundColor: "#fff",
-		alignItems: "center",
-		justifyContent: "center",
+		backgroundColor: theme.colors.surface,
+		alignItems: "center" as const,
+		justifyContent: "center" as const,
 	},
 	resultContainer: {
 		flex: 1,
@@ -374,41 +462,50 @@ const search = StyleSheet.create({
 	},
 	resultList: {
 		gap: 20,
-		overflow: "hidden"
+		overflow: "hidden" as const
 	},
 	hint: {
-		fontFamily: "InterVariable",
+		fontFamily: theme.fonts.body,
 		fontSize: 12,
-		color: "#8a7a55",
-		textAlign: "center",
+		color: theme.colors.hint,
+		textAlign: "center" as const,
 	},
 	peekBackdrop: {
-		position: "absolute",
+		position: "absolute" as const,
 		top: 0,
 		right: 0,
 		bottom: 0,
 		left: 0,
 		borderRadius: 20,
-		backgroundColor: "rgba(0, 0, 0, 0.45)",
-		alignItems: "center",
-		justifyContent: "center",
+		backgroundColor: theme.colors.overlay,
+		alignItems: "center" as const,
+		justifyContent: "center" as const,
 		gap: 12,
 		zIndex: 20,
 	},
 	peekDismiss: {
-		fontFamily: "InterVariable",
+		fontFamily: theme.fonts.body,
 		fontSize: 13,
-		color: "#fff",
+		color: "#ffffff",
 	},
 	peekSide: {
-		position: "absolute",
+		position: "absolute" as const,
 		top: 110,
 	},
 	status: {
-		fontFamily: "Monopol",
+		fontFamily: theme.fonts.display,
 		fontSize: 16,
-		color: "#262626",
-		textAlign: "center",
+		color: theme.colors.ink,
+		textAlign: "center" as const,
 		padding: 5,
+	},
+	groupHeader: {
+		fontFamily: theme.fonts.display,
+		fontSize: 13,
+		letterSpacing: 4,
+		textAlign: "center" as const,
+		color: theme.colors.inkMuted,
+		marginTop: 14,
+		marginBottom: 4,
 	},
 })

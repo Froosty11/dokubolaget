@@ -97,6 +97,7 @@ const Search = observer(function SearchRender(props: any) {
 					: null
 			}
 			results={model.searchResultsPromiseState.data ?? []}
+			rejectedIds={model.rejectedByCell?.[selectedCell] || []}
 			onResultPress={onResultPress}
 			onQueryChange={onQueryChange}
 			onSearch={onSearch}

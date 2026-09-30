@@ -10,6 +10,7 @@ import { fetchBoardForDateACB } from "./firestoreModel";
 import { createThemeState } from "./theme/themeState";
 import { THEMES } from "./theme/registry";
 import { unlocksForBoard } from "./theme/unlocks";
+import { addRejected } from "./searchHelpers";
 
 export type BoardTag = {
   id: string;
@@ -252,6 +253,9 @@ const modelBody = {
   // (green = first try, yellow = got there eventually).
   missesByCell: {} as Record<number, number>,
 
+  // Product ids guessed wrong per cell, so search can mark them as tried.
+  rejectedByCell: {} as Record<number, string[]>,
+
   setCellResult(cell: any, result: any) {
     const validation = this.validateCellResult(cell, result);
     const asNumber = Number(cell);
@@ -262,6 +266,11 @@ const modelBody = {
           ...this.missesByCell,
           [asNumber]: (this.missesByCell[asNumber] || 0) + 1,
         };
+        this.rejectedByCell = addRejected(
+          this.rejectedByCell,
+          asNumber,
+          String(result?.id ?? result?.raw?.productId ?? ""),
+        );
       }
       this.lastFeedback = {
         kind: validation.kind === "near" ? "near" : "miss",
@@ -339,6 +348,7 @@ const modelBody = {
     this.gameCells = [1, 2, 3, 4, 5, 6, 7, 8, 9];
     this.selectedProductsByCell = {};
     this.missesByCell = {};
+    this.rejectedByCell = {};
     this.score = 0;
 
     const pickedBoard = pickInitialBoard();
