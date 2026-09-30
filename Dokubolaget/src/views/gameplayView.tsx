@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { FlatList, Image, Pressable, StyleSheet, Text, View, useWindowDimensions, Animated } from "react-native";
+import { FlatList, Image, Pressable, ScrollView as RNScrollView, StyleSheet, Text, View, useWindowDimensions, Animated } from "react-native";
 import { Style } from "../AppStyles"
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics"
@@ -49,8 +49,15 @@ export function GameView(props: Readonly<GameViewProps>) {
     openTutorialACB,
     closeTutorialACB,
   } = props;
-  const { width: windowWidth } = useWindowDimensions();
-  const boardSize = Math.min(windowWidth, 720);
+  const { width: windowWidth, height: windowHeight } = useWindowDimensions();
+  // Fit the board to whichever dimension is tighter. Laptops are wide but
+  // short, so sizing from width alone pushed the bottom row off-screen.
+  const TAB_BAR_AND_PADDING = 56 + 32 + 10;
+  const logoHeight = Math.round(Math.min(110, Math.max(56, windowHeight * 0.12)));
+  const boardSize = Math.max(
+    280,
+    Math.min(windowWidth - 16, 720, windowHeight - TAB_BAR_AND_PADDING - logoHeight),
+  );
   const cellSize = boardSize / 4;
 
   // Gameboard stylesheet
@@ -143,13 +150,16 @@ export function GameView(props: Readonly<GameViewProps>) {
   // console.log(gameCells)
 
   return (
-    <View style={Style.body}>
-        <View style={{flex: 1, width: "40%", marginTop: "10%"}}>
+    <RNScrollView
+      style={{ flex: 1, backgroundColor: Style.body.backgroundColor }}
+      contentContainerStyle={[Style.body, { height: undefined, flexGrow: 1 }]}
+    >
+        <View style={{ height: logoHeight, width: (logoHeight * 496) / 283 }}>
           <DokubolagetLogo width="100%" height="100%" />
         </View>
 
       {/* game window */}
-      <View style={{flex: 5, alignSelf: "center", width: boardSize, height: boardSize, position: "relative"}}>
+      <View style={{alignSelf: "center", width: boardSize, height: boardSize, position: "relative"}}>
 
         <View style={{flexDirection: "row", height: cellSize}}>
           {/* top left */}
@@ -203,7 +213,7 @@ export function GameView(props: Readonly<GameViewProps>) {
           </Animated.View>
         )}
       </View>
-    </View>
+    </RNScrollView>
   );
 
   // Tutorial

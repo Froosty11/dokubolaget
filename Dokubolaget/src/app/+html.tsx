@@ -7,7 +7,10 @@ import type { PropsWithChildren } from "react";
 // no-op service worker (see public/sw.js).
 export default function Root({ children }: PropsWithChildren) {
   return (
-    <html lang="sv">
+    // t_light on <html>: Tamagui's light-theme CSS is keyed to :root.t_light.
+    // Without it, an OS in dark mode turns portal-rendered dialogs dark while
+    // the rest of the (light-only) app stays light.
+    <html lang="sv" className="t_light">
       <head>
         <meta charSet="utf-8" />
         <meta httpEquiv="X-UA-Compatible" content="IE=edge" />
