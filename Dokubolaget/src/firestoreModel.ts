@@ -12,6 +12,7 @@ import { Platform } from "react-native";
 
 // uncomment the following lines when you have your firebaseConfig. Understand what the lines are doing!
 import { firebaseConfig } from "./firebaseConfig";
+import { parseThemeId, parseUnlocked } from "./theme/unlocks";
 
 export const app = initializeApp(firebaseConfig);
 
@@ -133,28 +134,32 @@ export function connectToPersistence(model: any, watchFunction: any) {
   let privateDocACB: any = null;
 
   function checkACB() {
-    return [model.gameCells, model.currentCell];
+    return [model.gameCells, model.currentCell, model.themeId, model.unlockedThemes.join(",")];
   }
   // Only private game progress is written from the client. Leaderboard stats
   // (scores, streaks) are read-only here; the Firestore rules reject client
   // writes to them so scores can't be forged from the browser.
   function effectACB() {
-    if (!model.ready || !privateDocACB || model.practiceBoard) {
+    if (!model.ready || !privateDocACB) {
       return;
     }
-    setDoc(
-      privateDocACB,
-      {
-        gameCells: model.gameCells,
-        currentCell: model.currentCell || null,
-      },
-      { merge: true },
-    ).catch(errorACB);
+    // Theme choice and unlocks follow the player to other devices. Progress
+    // on a ?board= practice board is never saved.
+    const update: Record<string, unknown> = {
+      theme: model.themeId,
+      unlockedThemes: model.unlockedThemes,
+    };
+    if (!model.practiceBoard) {
+      update.gameCells = model.gameCells;
+      update.currentCell = model.currentCell || null;
+    }
+    setDoc(privateDocACB, update, { merge: true }).catch(errorACB);
   }
 
   function applyPublicACB(snapshot: any) {
     const data = snapshot.data() || {};
     model.scoreHistory = normalizeHistoryACB(data.scoreHistory);
+    model.applyStreak(Number(data.longestStreak) || 0);
   }
 
   function applyPrivateACB(snapshot: any) {
@@ -166,6 +171,11 @@ export function connectToPersistence(model: any, watchFunction: any) {
       : [1, 2, 3, 4, 5, 6, 7, 8, 9];
     model.currentCell = !data.currentCell ? null : data.currentCell;
     model.score = 0;
+    // Merge unlocks from both devices first, so an account theme earned
+    // elsewhere is selectable here.
+    model.addUnlocks(parseUnlocked(data.unlockedThemes), false);
+    const accountTheme = parseThemeId(data.theme);
+    if (accountTheme) model.setThemeId(accountTheme);
   }
 
   function errorACB(error: any) {
@@ -208,6 +218,7 @@ export function connectToPersistence(model: any, watchFunction: any) {
 
   onAuthStateChanged(auth, function authStateACB(user) {
     if (!user) {
+      model.setLoggedIn(false);
       model.ready = false;
       publicDocACB = null;
       privateDocACB = null;
@@ -215,6 +226,7 @@ export function connectToPersistence(model: any, watchFunction: any) {
     }
 
     model.ready = false;
+    model.setLoggedIn(true);
     publicDocACB = doc(db, USERS_COLLECTION, user.uid);
     privateDocACB = doc(db, USERS_COLLECTION, user.uid, "private", "profile");
 

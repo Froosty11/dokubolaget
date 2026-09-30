@@ -99,6 +99,13 @@ describe("users/{uid}/private", () => {
     await assertFails(getDoc(doc(bob(), "users", "alice", "private", "profile")));
     await assertFails(getDoc(doc(anon(), "users", "alice", "private", "profile")));
   });
+  test("theme prefs accept known ids only", async () => {
+    const ref = doc(alice(), "users", "alice", "private", "profile");
+    await assertSucceeds(setDoc(ref, { theme: "cyberwave", unlockedThemes: ["cyberwave", "speakeasy"] }, { merge: true }));
+    await assertFails(setDoc(ref, { theme: "hacker" }, { merge: true }));
+    await assertFails(setDoc(ref, { unlockedThemes: ["cyberwave", "free-money"] }, { merge: true }));
+    await assertFails(setDoc(ref, { unlockedThemes: "cyberwave" }, { merge: true }));
+  });
   test("unknown private fields are rejected", async () => {
     await assertFails(
       setDoc(doc(alice(), "users", "alice", "private", "profile"), { totalScore: 1 }, { merge: true }),
