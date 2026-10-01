@@ -11,6 +11,7 @@ import { createThemeState } from "./theme/themeState";
 import { THEMES } from "./theme/registry";
 import { unlocksForBoard } from "./theme/unlocks";
 import { addRejected, cellUsingProduct } from "./searchHelpers";
+import { boardKey, type BoardProgress } from "./progress";
 
 export type BoardTag = {
   id: string;
@@ -32,7 +33,7 @@ type GeneratedBoardFile = {
 
 const generatedBoardsFile = generatedBoards as GeneratedBoardFile;
 
-function todayDateKey() {
+export function todayDateKey() {
   return new Date().toISOString().slice(0, 10);
 }
 
@@ -187,9 +188,34 @@ const modelBody = {
       );
       return;
     }
+    // Swapping in the daily board: progress made on the bundled fallback
+    // board doesn't belong to it. Saved progress for this board is restored
+    // by the persistence reaction (mobxReactiveModel.ts).
+    const before = boardKey(this);
     this.topCategories = board.cols;
     this.sideCategories = board.rows;
     this.boardSource = "firestore";
+    if (boardKey(this) !== before) this.clearProgress();
+  },
+
+  // The UTC day this board belongs to; the app rolls over when it changes.
+  boardDate: todayDateKey(),
+
+  // Set when progress was restored from storage, so the presenter doesn't
+  // celebrate a board that was finished earlier. The presenter clears it.
+  justRestored: false,
+
+  applyProgress(progress: BoardProgress) {
+    this.selectedProductsByCell = progress.selectedProductsByCell;
+    this.missesByCell = progress.missesByCell;
+    this.rejectedByCell = progress.rejectedByCell;
+    this.justRestored = true;
+  },
+
+  clearProgress() {
+    this.selectedProductsByCell = {};
+    this.missesByCell = {};
+    this.rejectedByCell = {};
   },
 
   setCurrentCell(cell: any) {
@@ -351,6 +377,7 @@ const modelBody = {
   },
 
   generateGame() {
+    this.boardDate = todayDateKey();
     if (this.score > 0) {
       this.scoreHistory = [
         ...this.scoreHistory,

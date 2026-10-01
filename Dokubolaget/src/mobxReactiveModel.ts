@@ -3,6 +3,10 @@ import { model } from "./dokuModel";
 
 import { connectToPersistence } from "./firestoreModel"
 import { loadDeviceThemePrefs, saveDeviceThemePrefs } from "./theme/themeStorage"
+import AsyncStorage from "@react-native-async-storage/async-storage"
+import { AppState, Platform } from "react-native"
+import { todayDateKey } from "./dokuModel"
+import { boardKey, restoreProgress, serializeProgress } from "./progress"
 
 
 configure({ enforceActions: "never" });
@@ -23,6 +27,59 @@ reaction(
         if (themePrefsLoaded) saveDeviceThemePrefs(reactiveModel.themeId, reactiveModel.unlockedThemes);
     },
 );
+
+// Today's board progress survives reloads and app switches (device only).
+const PROGRESS_KEY = "dokubolaget.progress";
+const canUseStorage = Platform.OS !== "web" || typeof window !== "undefined";
+
+// Whenever the board changes (startup, Firestore swap, new day), restore any
+// saved progress for exactly that board.
+reaction(
+    () => boardKey(reactiveModel),
+    (key) => {
+        if (!canUseStorage || reactiveModel.practiceBoard || reactiveModel.filledCellCount > 0) return;
+        AsyncStorage.getItem(PROGRESS_KEY)
+            .then((raw) => {
+                const progress = restoreProgress(raw, reactiveModel.boardDate, key);
+                if (progress && boardKey(reactiveModel) === key) reactiveModel.applyProgress(progress);
+            })
+            .catch((error) => console.warn("Progress read failed:", error));
+    },
+    { fireImmediately: true },
+);
+
+reaction(
+    () => [
+        reactiveModel.selectedProductsByCell,
+        reactiveModel.missesByCell,
+        reactiveModel.rejectedByCell,
+    ],
+    () => {
+        if (!canUseStorage || reactiveModel.practiceBoard) return;
+        const raw = serializeProgress(reactiveModel.boardDate, boardKey(reactiveModel), {
+            selectedProductsByCell: reactiveModel.selectedProductsByCell,
+            missesByCell: reactiveModel.missesByCell,
+            rejectedByCell: reactiveModel.rejectedByCell,
+        });
+        AsyncStorage.setItem(PROGRESS_KEY, raw).catch((error) => console.warn("Progress write failed:", error));
+    },
+);
+
+// A new day while the app is open (or resumed from the background): start
+// the new board instead of staying on yesterday's.
+function rollOverIfNewDay() {
+    if (!reactiveModel.practiceBoard && reactiveModel.boardDate !== todayDateKey()) {
+        reactiveModel.generateGame();
+    }
+}
+AppState.addEventListener("change", (state) => {
+    if (state === "active") rollOverIfNewDay();
+});
+if (Platform.OS === "web" && typeof document !== "undefined") {
+    document.addEventListener("visibilitychange", () => {
+        if (document.visibilityState === "visible") rollOverIfNewDay();
+    });
+}
 
 if (__DEV__ && typeof window !== "undefined") {
     (window as any).__doku = reactiveModel; // screenshot tool + console debugging

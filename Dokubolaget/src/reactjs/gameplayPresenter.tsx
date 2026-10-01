@@ -37,6 +37,7 @@ type GameplayProps = {
     lastFeedback: GuessFeedback | null
     clearLastFeedback: () => void
     recordBoardComplete: () => ThemeId[]
+    justRestored: boolean
     shiftPendingUnlock: (source?: "board" | "streak") => ThemeId | null
   }
 }
@@ -127,6 +128,11 @@ const Gameplay = observer(function GameRender({ model }: GameplayProps) {
     useEffect(() => {
       const previous = previousFilledRef.current;
       previousFilledRef.current = model.filledCellCount;
+      // A board restored as already finished was celebrated when it happened.
+      if (model.justRestored) {
+        model.justRestored = false;
+        return;
+      }
       if (previous < 9 && model.filledCellCount === 9) {
         model.recordBoardComplete();
         setShareStatus("idle");
