@@ -12,7 +12,7 @@
     "seed:firestore": "bun run scripts/seedFirestoreBoard.ts",
     "build:web": "expo export --platform web",
     "start": "bun run server.js",
-    "test": "bun test src"
+    "test": "bun test src server"
   },
   "dependencies": {
     "@expo-google-fonts/barlow-condensed": "0.4.1",
