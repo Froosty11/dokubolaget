@@ -4,6 +4,8 @@ import { USE_NATIVE_DRIVER } from "../animation";
 import { ClubLogo } from "../components/ClubLogo";
 import { Confetti } from "../components/Confetti";
 import { useReducedMotion } from "../theme/ThemeProvider";
+import { useThemeFonts } from "../theme/fonts";
+import { themeWithFonts } from "../theme/fontKits";
 import { UI_LANG } from "../theme/registry";
 import type { ClubInfo } from "../theme/packSchema";
 import type { Theme } from "../theme/types";
@@ -19,7 +21,9 @@ type Props = {
 
 // "Stamp collected": the club's logo stamps down onto a screen in the club's
 // own colours, with confetti.
-export function ClubUnlockView({ theme, club, logoUrl, onWear, onLater }: Props) {
+export function ClubUnlockView({ theme: clubTheme, club, logoUrl, onWear, onLater }: Props) {
+  // The club's fonts aren't loaded yet (its theme isn't active), so load them here.
+  const theme = themeWithFonts(clubTheme, useThemeFonts(clubTheme));
   const { width } = useWindowDimensions();
   const reducedMotion = useReducedMotion();
   const stamp = useRef(new Animated.Value(reducedMotion ? 1 : 0)).current;

@@ -26,7 +26,7 @@ export function ClubLogo({ club, logoUrl, theme, size, dimmed }: Props) {
       }}
     >
       {logoUrl ? (
-        <Image source={{ uri: logoUrl }} resizeMode="contain" style={{ width: size * 0.78, height: size * 0.78, ...(dimmed ? { tintColor: "#777777" } : null) }} />
+        <Image source={{ uri: logoUrl }} resizeMode="contain" style={{ width: size * 0.78, height: size * 0.78 }} />
       ) : (
         <Text style={{ fontFamily: theme.fonts.display, fontSize: size * 0.42, color: dimmed ? "#777777" : theme.colors.accent }}>{initial}</Text>
       )}

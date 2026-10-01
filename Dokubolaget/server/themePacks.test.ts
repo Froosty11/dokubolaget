@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, test } from "bun:test";
-import { cpSync, mkdtempSync, readFileSync, writeFileSync, renameSync, rmSync } from "fs";
+import { cpSync, mkdtempSync, readFileSync, readdirSync, renameSync, rmSync, statSync, writeFileSync } from "fs";
 import { tmpdir } from "os";
 import { join } from "path";
 import { openDb } from "./db";
@@ -111,5 +111,14 @@ describe("loadThemePacks", () => {
 
   test("a missing folder loads nothing without throwing", () => {
     expect(loadThemePacks(db, join(dir, "nope"), quiet).loaded).toEqual([]);
+  });
+});
+
+describe("the club themes in club-themes/", () => {
+  const CLUB_DIR = join(import.meta.dir, "..", "..", "club-themes");
+  const folders = readdirSync(CLUB_DIR).filter((name) => statSync(join(CLUB_DIR, name)).isDirectory());
+  test("there are club themes to check", () => expect(folders.length).toBeGreaterThan(0));
+  test.each(folders)("%s passes every check", (folder) => {
+    expect(checkThemeFolder(join(CLUB_DIR, folder)).errors).toEqual([]);
   });
 });
