@@ -1,6 +1,6 @@
 # Pub themes: club themes unlocked by scanning
 
-Status: draft for review, 2026-10-01
+Status: approved 2026-10-01
 
 ## Goal
 
@@ -17,6 +17,14 @@ These ship in the same piece of work:
 - the unlock moment
 - the pub stamp collection
 - event codes (codes that expire or have a use limit)
+
+## Mockups
+
+![The six club themes on the board screen](assets/2026-10-01-pub-themes.jpg)
+
+![Scan flow: poster, unlock moment, pub stamps, themes screen](assets/2026-10-01-pub-themes-scan-flow.jpg)
+
+Club logos in the mockups are placeholders. PR and FISQ colours are provisional.
 
 ## Decisions already made
 
