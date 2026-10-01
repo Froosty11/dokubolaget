@@ -96,3 +96,9 @@ export function rowFields(raw: any, redact: ReadonlySet<string>): RowField[] {
       return { key, text: hidden ? "" : text, hidden, length: text.length };
     });
 }
+
+// Search results without a product photo are dropped: they're hard to tell
+// apart and rarely the bottle the player has in mind.
+export function withImagesOnly<T extends { image?: string | null }>(results: T[]): T[] {
+  return results.filter((result) => Boolean(result.image));
+}

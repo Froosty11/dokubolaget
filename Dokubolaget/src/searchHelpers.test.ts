@@ -74,3 +74,10 @@ describe("rowFields hides what the cell asks about", () => {
     expect(fields.find((f) => f.key === "price")).toEqual({ key: "price", text: "", hidden: true, length: 3 });
   });
 });
+
+import { withImagesOnly } from "./searchHelpers";
+
+test("withImagesOnly drops results without a product photo", () => {
+  const results = [{ id: "a", image: "https://x/a.webp" }, { id: "b", image: null }, { id: "c" }, { id: "d", image: "" }];
+  expect(withImagesOnly(results).map((r) => r.id)).toEqual(["a"]);
+});

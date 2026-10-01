@@ -10,7 +10,7 @@ import { fetchBoardForDateACB } from "./firestoreModel";
 import { createThemeState } from "./theme/themeState";
 import { THEMES } from "./theme/registry";
 import { unlocksForBoard } from "./theme/unlocks";
-import { addRejected, cellUsingProduct } from "./searchHelpers";
+import { addRejected, cellUsingProduct, withImagesOnly } from "./searchHelpers";
 import { boardKey, type BoardProgress } from "./progress";
 
 export type BoardTag = {
@@ -464,9 +464,9 @@ const modelBody = {
       return;
     }
 
-    const searchPromise = searchByName(query, { pageSize: 30 }).then(
-      this.normalizeSearchResults,
-    );
+    const searchPromise = searchByName(query, { pageSize: 30 })
+      .then(this.normalizeSearchResults)
+      .then(withImagesOnly);
 
     resolvePromise(searchPromise, this.searchResultsPromiseState);
   },
