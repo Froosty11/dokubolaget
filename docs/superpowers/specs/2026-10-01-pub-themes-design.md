@@ -9,8 +9,8 @@ Student pub clubs ("klubbmästerier") get their own Dokubolaget theme. A player 
 Success means:
 - A first-time visitor scans a poster, gets through the ID check, sees the unlock moment and lands in the new theme.
 - Someone who isn't at the pub can't guess a code.
-- A new club can be added without an app release.
-- No club names, logos or codes end up in this public repository.
+- A new club can be added with a server deploy, without an app release.
+- No unlock codes end up in this public repository. Club names, logos and theme files may be committed: the owner confirmed they may be public.
 
 These ship in the same piece of work:
 - vibration patterns per theme, with a setting to turn vibration off
@@ -22,8 +22,9 @@ These ship in the same piece of work:
 
 - **Scanning opens a link.** The QR code holds `PUBLIC_URL/scan/<code>`, which any phone camera can open. There's no in-app scanner. Once the store apps exist, the same link can open the app through universal/app links.
 - **One fixed code per club, which can be replaced.** Replacing a code means revoking it and creating a new one. Players who already unlocked keep the theme.
-- **Club themes are data the server delivers**, not code in this repo. The app ships a kit (fonts, decorations, vibration patterns). Each club theme is a small file that picks from that kit and adds its own colours, copy and logo.
-- **Club material stays private.** It lives on the container's data volume, and its source files live outside this public repo.
+- **Club themes are data the server delivers**, not app code. The app ships a kit (fonts, decorations, vibration patterns). Each club theme is a small file that picks from that kit and adds its own colours, copy and logo.
+- **Club theme files live in `club-themes/<slug>/` in this repo** (`theme.json` + `logo.png`). They're copied into the image, and the server loads them into the database at startup. Adding or changing a club is a commit and a deploy, not a store release.
+- **The launch clubs** are TMEIT, QMISK, DKM, MKM, PR and FISQ. Their concepts, colours and sources are in `club-themes/README.md`.
 - **Postponed:** codes that change every minute, grouping players by club, sounds per theme, and an app icon per theme.
 
 ## How unlocking works
@@ -94,7 +95,7 @@ A player who isn't logged in keeps the unlock on the device, and it reaches thei
 
 ### Theme file
 
-Each club theme is a JSON file, validated on the server when it's imported and again in the app when it's cached:
+Each club theme is a JSON file, validated on the server when it loads it and again in the app when it's cached:
 
 ```
 {
@@ -111,15 +112,16 @@ Each club theme is a JSON file, validated on the server when it's imported and a
   haptics: HapticPatternId,
   copy: { en: ThemeCopy, sv: ThemeCopy },
   dossier: DossierLook,
-  logo: { width, height }           // the image itself is uploaded separately
+  logo: { width, height }           // the image is logo.png (or .webp) next to it
 }
 ```
 
-**On import** (`importThemePack(dir)`):
+**At startup** (`loadThemePack(dir)`):
 - Runs the same WCAG AA contrast checks as `theme.test.ts`, using `src/theme/contrast.ts`.
 - Rejects unknown font kits, decorations and haptic patterns.
 - Accepts only PNG or WebP logos, at most 300 KB and 1024 px. No SVG, since an SVG can carry scripts.
-- Bumps `version` on every re-import.
+- When the file's `version` is newer than the stored one, it replaces it. The same or an older version is left alone.
+- A file that fails validation is logged and skipped; the server still starts, and the previous stored version stays in use.
 
 **Table `theme_packs`:** `id`, `version`, `data` (the JSON), `logo` (BLOB), `logo_type`, `hidden_at`, `updated_at`. Club themes therefore end up in the nightly backups with everything else.
 
@@ -215,7 +217,7 @@ docker exec dokubolaget bun run admin <command>
 
 | Command | What it does |
 |---|---|
-| `themes import <dir>` | Imports `theme.json` and the logo from a folder, after `docker cp` into the container. Prints the result, or every validation error. |
+| `themes check [<dir>]` | Validates club theme files (defaults to every folder in `club-themes/`) and prints every error. Also runs in the test suite. |
 | `themes list` | Lists club themes with id, version, hidden state and unlock count. |
 | `themes hide <id>` / `themes show <id>` | Hides a theme or shows it again. Hidden themes leave the list, but players who already unlocked keep theirs. |
 | `codes create <themeId> --label "<text>" [--expires <ISO>] [--max-uses N]` | Prints the link and writes a QR SVG to `/data/qr/<id>.svg`, which you copy out with `docker cp`. |
@@ -224,7 +226,7 @@ docker exec dokubolaget bun run admin <command>
 
 QR images come from the `qrcode` package, which joins nodemailer as a container-only dependency.
 
-Club source material (theme files, logos and the concept notes) lives in `club-themes/` at the repo root. That folder is in `.gitignore`, and a private repo is recommended as its long-term home. This public repo only has a made-up sample theme under `server/fixtures/` for tests.
+Club source material (theme files, logos and the concept notes) lives in `club-themes/` at the repo root, and the Dockerfile copies it into the image. A made-up sample theme under `server/fixtures/` is used by the tests, so they don't depend on real club files.
 
 ## Errors and edge cases
 
@@ -251,10 +253,12 @@ Club source material (theme files, logos and the concept notes) lives in `club-t
 - haptic pattern choice and the off switch
 - themeState with club ids
 
-**Admin script:** `themes import` with the made-up sample theme, then `codes create` printing a working link.
+**Admin script:** `themes check` passes on every folder in `club-themes/`, and `codes create` prints a working link.
+
+**Startup loading:** a newer file version replaces the stored one, the same version is left alone, and a broken file is skipped without stopping the server.
 
 **End to end:**
-1. Import the sample club theme into the dev database and create a code.
+1. Start the dev API (which loads `club-themes/`) and create a code.
 2. A fresh browser profile opens `/scan/<code>`, goes through the ID check and sees the unlock moment.
 3. The theme becomes active.
 4. The stamps screen shows it as collected.
