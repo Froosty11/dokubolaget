@@ -209,6 +209,12 @@ const modelBody = {
   // when the server has none). Account progress waits for it.
   boardSettled: false,
 
+  // "Support Dokubolaget" page (Ko-fi), when the server has one configured.
+  supportUrl: null as string | null,
+  setSupportUrl(url: string | null) {
+    this.supportUrl = url;
+  },
+
   // The logged-in player, or null.
   account: null as Account | null,
   setAccount(account: Account | null) {

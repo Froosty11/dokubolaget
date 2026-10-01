@@ -4,7 +4,7 @@ import { useTheme } from "../theme/ThemeProvider";
 // Alkoholhjälpen (formerly Alkohollinjen) is the national, free and anonymous
 // support line, run by Beroendecentrum Stockholm for Folkhälsomyndigheten.
 export const SUPPORT_URL = "https://alkoholhjalpen.se/";
-export const SUPPORT_PHONE = "020-84 44 48";
+export const SUPPORT_PHONE = "020-84\u00A044\u00A048";
 
 type Props = { color?: string };
 

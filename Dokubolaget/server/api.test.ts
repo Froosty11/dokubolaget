@@ -245,3 +245,16 @@ describe("account deletion", () => {
     expect(res.status).toBe(403);
   });
 });
+
+describe("support link", () => {
+  test("is null until configured", async () => {
+    expect(json(await api(req("GET", "/api/config")))).toEqual({ supportUrl: null });
+  });
+  test("passes https links and drops anything else", async () => {
+    const make = (supportUrl: string) =>
+      createApi({ db, mail: { sendReset: async () => {} }, sbKey: { get: async () => "" }, supportUrl });
+    expect(json(await make("https://ko-fi.com/dokubolaget")(req("GET", "/api/config"))).supportUrl).toBe("https://ko-fi.com/dokubolaget");
+    expect(json(await make("javascript:alert(1)")(req("GET", "/api/config"))).supportUrl).toBeNull();
+    expect(json(await make("http://ko-fi.com/x")(req("GET", "/api/config"))).supportUrl).toBeNull();
+  });
+});

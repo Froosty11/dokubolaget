@@ -2,6 +2,7 @@ import { observable, reaction, configure } from "mobx";
 import { model } from "./dokuModel";
 
 import { connectToServer } from "./serverSync"
+import { api } from "./api"
 import { loadDeviceThemePrefs, saveDeviceThemePrefs } from "./theme/themeStorage"
 import AsyncStorage from "@react-native-async-storage/async-storage"
 import { AppState, Platform } from "react-native"
@@ -88,6 +89,12 @@ if (Platform.OS === "web" && typeof document !== "undefined") {
     document.addEventListener("visibilitychange", () => {
         if (document.visibilityState === "visible") rollOverIfNewDay();
     });
+}
+
+if (typeof window !== "undefined") {
+    api.config()
+        .then(({ supportUrl }) => reactiveModel.setSupportUrl(supportUrl))
+        .catch(() => {});
 }
 
 if (__DEV__ && typeof window !== "undefined") {

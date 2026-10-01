@@ -79,5 +79,6 @@ export const api = {
     }
   },
   sbKey: () => request<{ key: string }>("GET", "/api/sb-key"),
+  config: () => request<{ supportUrl: string | null }>("GET", "/api/config"),
   leaderboard: () => request<{ rows: Array<{ nickname: string; score: number }> }>("GET", "/api/leaderboard"),
 };

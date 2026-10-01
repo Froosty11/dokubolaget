@@ -38,6 +38,7 @@ type GameplayProps = {
     clearLastFeedback: () => void
     recordBoardComplete: () => ThemeId[]
     justRestored: boolean
+    supportUrl: string | null
     shiftPendingUnlock: (source?: "board" | "streak") => ThemeId | null
   }
 }
@@ -251,6 +252,7 @@ const Gameplay = observer(function GameRender({ model }: GameplayProps) {
             shareGrid={shareGrid}
             shareStatus={shareStatus}
             receiptLines={receiptLines(model.selectedProductsByCell)}
+            supportUrl={model.supportUrl}
             onShare={onShareACB}
             onClose={() => {
               setBoardCompleteOpen(false);

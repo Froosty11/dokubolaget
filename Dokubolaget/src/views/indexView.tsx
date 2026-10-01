@@ -12,6 +12,7 @@ import { useTheme, useThemedStyles } from "../theme/ThemeProvider";
 import { ThemeLogo } from "../theme/ThemeLogo";
 import { ThemeBackdrop } from "../theme/decorations/ThemeBackdrop";
 import { ResponsibleNote } from "../components/ResponsibleNote";
+import { SupportLink } from "../components/SupportLink";
 import type { Theme } from "../theme/types";
 import  AuthDialog from "./authDialogView";
 import DokubolagetLogo from "../../assets/Dokubolaget3.svg";
@@ -81,9 +82,10 @@ type IndexViewProps = {
   ageGate: { isOpen: boolean; acceptAgeACB: () => void; rejectAgeACB: () => void };
   // The logged-in player, or null.
   account: Account | null;
+  supportUrl: string | null;
 };
 
-export function IndexView({ ageGate, account }: IndexViewProps) {
+export function IndexView({ ageGate, account, supportUrl }: IndexViewProps) {
   const [showLogin, setShowLogin] = useState(false);
   const [showLeaderboard, setShowLeaderboard] = useState(false);
   const { theme } = useTheme();
@@ -160,7 +162,8 @@ export function IndexView({ ageGate, account }: IndexViewProps) {
         )}
       </View>
 
-      <View style={{marginBottom: 56}}>
+      <View style={{marginBottom: 56, gap: 18}}>
+        <SupportLink url={supportUrl} />
         <ResponsibleNote />
       </View>
 

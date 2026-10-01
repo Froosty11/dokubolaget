@@ -6,6 +6,7 @@ import { Confetti } from "../components/Confetti";
 import { useTheme, useThemedStyles } from "../theme/ThemeProvider";
 import type { Theme } from "../theme/types";
 import { ThemeCelebrationArt } from "../theme/decorations/ThemeBackdrop";
+import { SupportLink } from "../components/SupportLink";
 
 type BoardCompleteViewProps = {
   filledCount: number;
@@ -13,6 +14,8 @@ type BoardCompleteViewProps = {
   shareStatus: "idle" | "shared" | "copied" | "failed";
   // "A1 7412 Marqués de Vargas" per solved cell, for the receipt layout.
   receiptLines: string[];
+  // Ko-fi page, or null when none is configured.
+  supportUrl: string | null;
   onShare: () => void;
   onClose: () => void;
 };
@@ -111,6 +114,9 @@ export function BoardCompleteView(props: Readonly<BoardCompleteViewProps>) {
             </Pressable>
           </>
         )}
+        <View style={{ marginTop: 14 }}>
+          <SupportLink url={props.supportUrl} color={theme.colors.inkMuted} />
+        </View>
       </Animated.View>
     </View>
   );

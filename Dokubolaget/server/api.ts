@@ -26,7 +26,20 @@ export type ApiDeps = {
   devOrigins?: boolean;
   // Base for links in emails; defaults to the request's own origin.
   publicUrl?: string;
+  // Ko-fi (or similar) page shown as "Support Dokubolaget"; https only.
+  supportUrl?: string;
 };
+
+// Only plain https links reach the page, whatever ends up in the env file.
+export function safeSupportUrl(value: string | undefined): string | null {
+  if (!value) return null;
+  try {
+    const url = new URL(value.trim());
+    return url.protocol === "https:" ? url.toString() : null;
+  } catch {
+    return null;
+  }
+}
 
 export const MAX_BODY_BYTES = 64 * 1024;
 const COOKIE = "doku_session";
@@ -75,6 +88,7 @@ export function createApi(deps: ApiDeps) {
   // The public address, when configured: the only trusted origin and the only
   // base for links in emails (request headers can be forged).
   const publicOrigin = deps.publicUrl ? new URL(deps.publicUrl).origin : null;
+  const supportUrl = safeSupportUrl(deps.supportUrl);
 
   function isHttps(req: ApiRequest) {
     return deps.trustProxy === true && String(req.headers["x-forwarded-proto"] ?? "").split(",")[0].trim() === "https";
@@ -270,6 +284,9 @@ export function createApi(deps: ApiDeps) {
     }
     if (method === "GET" && path === "/api/sb-key") {
       return respond(200, { key: await deps.sbKey.get() });
+    }
+    if (method === "GET" && path === "/api/config") {
+      return respond(200, { supportUrl }, { "cache-control": "public, max-age=300" });
     }
     if (method === "GET" && path === "/api/leaderboard") {
       return respond(200, { rows: [] });
