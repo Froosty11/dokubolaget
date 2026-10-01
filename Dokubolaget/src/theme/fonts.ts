@@ -38,6 +38,7 @@ import { SpaceGrotesk_700Bold } from "@expo-google-fonts/space-grotesk/700Bold";
 import { AlfaSlabOne_400Regular } from "@expo-google-fonts/alfa-slab-one/400Regular";
 import { Bitter_400Regular } from "@expo-google-fonts/bitter/400Regular";
 import { Bitter_700Bold } from "@expo-google-fonts/bitter/700Bold";
+import { PirataOne_400Regular } from "@expo-google-fonts/pirata-one/400Regular";
 
 export { FALLBACK_FONTS } from "./fontKits";
 
@@ -57,6 +58,7 @@ export const FONT_KIT_LOADERS: Record<FontKitId, () => Record<string, any>> = {
   broadcast: () => ({ Oswald_400Regular, Oswald_600SemiBold, Oswald_700Bold }),
   grotesk: () => ({ SpaceGrotesk_400Regular, SpaceGrotesk_600SemiBold, SpaceGrotesk_700Bold }),
   slab: () => ({ AlfaSlabOne_400Regular, Bitter_400Regular, Bitter_700Bold }),
+  pirate: () => ({ PirataOne_400Regular, Poppins_400Regular, Poppins_600SemiBold, IBMPlexMono_400Regular }),
 };
 
 // True once the theme's fonts are loaded. Stays false if loading fails, so

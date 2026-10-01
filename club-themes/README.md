@@ -6,7 +6,7 @@ Facts come from a web pass on 2026-10-01, using the clubs' own sites (sources be
 
 | id | Club | Section, campus | Pub | Colours found | Overall |
 |---|---|---|---|---|---|
-| club-tmeit | TMEIT (TraditionsMEsterIT) | IT-sektionen, Kista | Fridays at Kistan 2.0 (owner confirmed Friday) | site bg `#443355` plum, Poppins; section laser violet ≈ `#cc99ff` | laser violet (section) |
+| club-tmeit | TMEIT (TraditionsMEsterIT) | IT-sektionen, Kista | Fridays at Kistan 2.0 (owner confirmed Friday) | site bg `#443355` plum, Poppins; section laser violet ≈ `#cc99ff` (theme: laser violet pirates) | laser violet (section) |
 | club-qmisk | QMISK (Qlubbmästeriet IT-sektionen Kista) | IT-sektionen, Kista | Thursdays from 17:00 at Kistan 2.0 | `#C91A25`, darker `#B31220` | ockraröd (ochre red) |
 | club-dkm | DKM (Datas Klubbmästeri) | Datasektionen, Valhallavägen | Wednesdays 17:17 at META | official: cerise `#EE2A7B` / `#E83D84` / `#EC5F99`, `#212121`, yellow `#FCDA04`, `#F7F7F7`, Lato | cerise |
 | club-mkm | MKM (Medias Klubbmästeri) | Medieteknik, Valhallavägen | Thursdays at META | site: yellow `#EEC912` on `#121212`; section colours RGB | B-frack, no overall (*uncertain*) |
@@ -17,13 +17,12 @@ Facts come from a web pass on 2026-10-01, using the clubs' own sites (sources be
 
 Each concept lists its look, decoration, fonts, vibration pattern, a copy idea and a dossier note.
 
-### TMEIT: "Tentagasque"
-- **Look:** a dark plum page with laser violet accents and warm candle-gold highlights. It's a tradition club with exam parties ("tentagasquer") and an overall gasque, so the theme is a gasque table.
-- **Decoration:** `candlelight`.
-- **Fonts:** a Poppins kit.
-- **Vibration:** `toast`.
-- **Copy:** the board header reads like a songbook page. Correct answers get song-line titles ("Helan går" style, but about the bottle, not about drinking).
-- **Dossier:** songbook paper with numbered verses.
+### TMEIT: "Laser Pirates"
+- **Look:** laser violet night seas with treasure gold. TMEIT's logo is a parrot on a bottle, so the theme is pirates, not candles (the owner's correction).
+- **Decoration:** `seas`: rolling violet waves, a pirate ship sailing the horizon, stars.
+- **Fonts:** the `pirate` set (Pirata One titles, Poppins text).
+- **Vibration:** `bass` (cannon).
+- **Copy:** "Arr!", "Land ho!", "X marks the spot!"; the info sheet is a treasure map.
 
 ### QMISK: "Boomis"
 - **Look:** QMISK red on near-black, with a lit dance floor. Boomis, their giant speaker on wheels, appears in the celebration.

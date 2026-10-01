@@ -40,6 +40,10 @@ export const FONT_KIT_FONTS: Record<FontKitId, ThemeFonts> = {
     logo: "SpaceGrotesk_700Bold", display: "SpaceGrotesk_700Bold", body: "SpaceGrotesk_400Regular",
     bodyStrong: "SpaceGrotesk_600SemiBold", condensed: "SpaceGrotesk_600SemiBold", mono: "SpaceGrotesk_400Regular",
   },
+  pirate: {
+    logo: "PirataOne_400Regular", display: "PirataOne_400Regular", body: "Poppins_400Regular",
+    bodyStrong: "Poppins_600SemiBold", condensed: "Poppins_600SemiBold", mono: "IBMPlexMono_400Regular",
+  },
   slab: {
     logo: "AlfaSlabOne_400Regular", display: "AlfaSlabOne_400Regular", body: "Bitter_400Regular",
     bodyStrong: "Bitter_700Bold", condensed: "Bitter_700Bold", mono: "Bitter_400Regular",

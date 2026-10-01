@@ -56,6 +56,13 @@ describe("validatePack", () => {
     expect(errors.length).toBeGreaterThanOrEqual(2);
   });
 
+  test("accepts the pirate font set and the seas decoration", () => {
+    const pack = fixture();
+    pack.fontKit = "pirate";
+    pack.decoration = { kind: "seas", colors: ["#b45cff"] };
+    expect(validatePack(pack).ok).toBe(true);
+  });
+
   test("accepts a theme without a logo", () => {
     const pack = fixture();
     pack.logo = null;

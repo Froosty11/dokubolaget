@@ -11,6 +11,7 @@ import { Cellar } from "./kit/Cellar";
 import { Circuit } from "./kit/Circuit";
 import { ColorBars } from "./kit/ColorBars";
 import { Dancefloor } from "./kit/Dancefloor";
+import { Seas } from "./kit/Seas";
 
 BACKDROPS.prislista = PaperGrain;
 BACKDROPS.midsommar = MidsommarMeadow;
@@ -24,3 +25,4 @@ DECORATIONS.colorbars = ColorBars;
 DECORATIONS.circuit = Circuit;
 DECORATIONS.candlelight = Candlelight;
 DECORATIONS.cellar = Cellar;
+DECORATIONS.seas = Seas;
