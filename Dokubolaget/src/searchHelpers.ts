@@ -65,3 +65,34 @@ export function cellUsingProduct(
   }
   return null;
 }
+
+export type RowFieldKey = "type" | "country" | "volume" | "strength" | "price";
+export type RowField = { key: RowFieldKey; text: string; hidden: boolean; length: number };
+
+// Which info-sheet redaction key hides each search-row fact.
+const ROW_FIELD_REDACTION: Record<RowFieldKey, string[]> = {
+  type: ["style"],
+  country: ["country", "region"],
+  volume: ["volume"],
+  strength: ["strength"],
+  price: ["price"],
+};
+
+// The facts a search row shows, with the ones the cell asks about hidden.
+// Hidden fields drop their text entirely (only its length is kept for the
+// bar), so the answer can't be read from the page.
+export function rowFields(raw: any, redact: ReadonlySet<string>): RowField[] {
+  const values: Array<[RowFieldKey, string]> = [
+    ["type", [raw?.categoryLevel2, raw?.categoryLevel3].filter(Boolean).join(" · ")],
+    ["country", String(raw?.country ?? "")],
+    ["volume", String(raw?.volumeText ?? "")],
+    ["strength", raw?.alcoholPercentage != null ? `${raw.alcoholPercentage} %` : ""],
+    ["price", formatKronor(raw?.price)],
+  ];
+  return values
+    .filter(([, text]) => text)
+    .map(([key, text]) => {
+      const hidden = ROW_FIELD_REDACTION[key].some((redactionKey) => redact.has(redactionKey));
+      return { key, text: hidden ? "" : text, hidden, length: text.length };
+    });
+}

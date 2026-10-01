@@ -7,7 +7,7 @@ import { formatTagLabel } from "../tagDisplay"
 import { Dossier, redactionKeysForTags } from "../components/Dossier"
 import { useTheme, useThemedStyles } from "../theme/ThemeProvider"
 import type { Theme } from "../theme/types"
-import { formatKronor, groupResultsByType, type GroupHeader } from "../searchHelpers"
+import { formatKronor, groupResultsByType, rowFields, type GroupHeader, type RowField } from "../searchHelpers"
 
 const SEARCH_PLACEHOLDER_IMAGE = "https://www.systembolaget.se/_next/static/media/placeholder-wine-bottle.30edbfb9.png"
 
@@ -47,12 +47,14 @@ type SearchViewProps = {
 type SearchResultRowProps = {
 	result: SearchResultItem
 	tried: boolean
+	// Facts this cell asks about (from the info-sheet redaction rules).
+	redact: ReadonlySet<string>
 	onPress: (result: SearchResultItem) => void
 	onPeek: (result: SearchResultItem | null, pinned: boolean) => void
 }
 
 function SearchResultRow(props: Readonly<SearchResultRowProps>) {
-	const { result, tried, onPress, onPeek } = props
+	const { result, tried, redact, onPress, onPeek } = props
 	const { theme } = useTheme()
 	const row = useThemedStyles(makeRowStyles)
 	const [imageUri, setImageUri] = useState(result.image || SEARCH_PLACEHOLDER_IMAGE)
@@ -66,8 +68,17 @@ function SearchResultRow(props: Readonly<SearchResultRowProps>) {
 		onPress(result)
 	}
 
-	// Wine type first ("Rött vin"), then the finer style if there is one.
-	const typeLine = [result.raw?.categoryLevel2, result.raw?.categoryLevel3].filter(Boolean).join(" · ")
+	// The facts this cell asks about are blacked out, so the answer has to come
+	// from the player, not the result row.
+	const fields = Object.fromEntries(rowFields(result.raw, redact).map((field) => [field.key, field])) as Partial<Record<RowField["key"], RowField>>
+	const masked = (field: RowField | undefined, style: any, suffix = "") =>
+		field ? (
+			field.hidden ? (
+				<Text style={[style, row.bar]} accessibilityLabel="hidden">{"x".repeat(Math.max(3, Math.min(field.length, 12)))}</Text>
+			) : (
+				<Text style={style}>{field.text}{suffix}</Text>
+			)
+		) : null
 	const triedLabel = theme.id === "prislista" ? "REDAN PRÖVAD" : "TRIED"
 
 	return (
@@ -93,11 +104,18 @@ function SearchResultRow(props: Readonly<SearchResultRowProps>) {
 						<Text style={row.leaderNumber} numberOfLines={1}>{result.raw?.productNumber}</Text>
 						<Text style={row.leaderName} numberOfLines={1}>{result.raw?.productNameBold ?? result.name}</Text>
 						<View style={row.leaderDots} />
-						<Text style={row.leaderPrice}>{formatKronor(result.raw?.price)}:-</Text>
+						{masked(fields.price, row.leaderPrice, ":-")}
 					</View>
-					<Text style={row.leaderSub}>
-						{[result.raw?.categoryLevel2, result.country, result.raw?.volumeText, result.raw?.alcoholPercentage != null ? `${result.raw.alcoholPercentage} %` : null].filter(Boolean).join(" · ")}
-					</Text>
+					<View style={row.leaderSubRow}>
+						{(["type", "country", "volume", "strength"] as const)
+							.filter((key) => fields[key])
+							.map((key, index) => (
+								<View key={key} style={row.leaderSubItem}>
+									{index > 0 ? <Text style={row.leaderSub}>·</Text> : null}
+									{masked(fields[key], row.leaderSub)}
+								</View>
+							))}
+					</View>
 				</View>
 			) : (
 				<>
@@ -107,16 +125,16 @@ function SearchResultRow(props: Readonly<SearchResultRowProps>) {
 						onError={() => setImageUri(SEARCH_PLACEHOLDER_IMAGE)}
 					/>
 					<View style={row.resultTextWrap}>
-						{typeLine ? <Text style={row.category}>{typeLine}</Text> : null}
+						{masked(fields.type, row.category)}
 						<Text style={row.name}>{result.raw?.productNameBold}</Text>
 						<Text style={row.nameThin}>{result.raw?.productNameThin}</Text>
 						<View style={{flexDirection:'row', justifyContent: "space-between"}}>
 							<View style={row.metaRow}>
-								<Text style={row.metaText}>{result.country}</Text>
-								<Text style={row.metaText}>{result.raw?.volumeText}</Text>
-								<Text style={row.metaText}>{result.raw?.alcoholPercentage} % vol.</Text>
+								{masked(fields.country, row.metaText)}
+								{masked(fields.volume, row.metaText)}
+								{masked(fields.strength, row.metaText, " vol.")}
 							</View>
-							<Text style={row.price}>{formatKronor(result.raw?.price)}</Text>
+							{masked(fields.price, row.price)}
 						</View>
 					</View>
 				</>
@@ -224,8 +242,25 @@ const makeRowStyles = (theme: Theme) => ({
 		fontWeight: "600" as const,
 		color: theme.colors.ink,
 	},
-	leaderSub: {
+	leaderSubRow: {
 		marginLeft: 62,
+		flexDirection: "row" as const,
+		flexWrap: "wrap" as const,
+		alignItems: "center" as const,
+	},
+	leaderSubItem: {
+		flexDirection: "row" as const,
+		alignItems: "center" as const,
+		gap: 4,
+		marginRight: 4,
+	},
+	// A blacked-out fact: same ink as background, so nothing shows through.
+	bar: {
+		color: theme.dossier.bar,
+		backgroundColor: theme.dossier.bar,
+		alignSelf: "flex-start" as const,
+	},
+	leaderSub: {
 		fontFamily: theme.fonts.mono,
 		fontSize: 11,
 		color: theme.colors.inkMuted,
@@ -285,16 +320,26 @@ export function SearchView(props: Readonly<SearchViewProps>) {
 		setPeek({ result, pinned })
 	}
 
+	function cellTagsForGrouping() {
+		return selectedCell != null && selectedCell >= 1 && selectedCell <= 9
+			? [sideCategories[Math.floor((selectedCell - 1) / 3)], topCategories[(selectedCell - 1) % 3]]
+			: []
+	}
+
 	function searchResultRowRenderCB ({item}: { item: SearchResultItem | GroupHeader }) {
 		if ("kind" in item && item.kind === "header") {
 			return <Text style={search.groupHeader}>— {item.label.toUpperCase()} —</Text>
 		}
 		const result = item as SearchResultItem
-		return <SearchResultRow result={result} tried={rejectedIds.includes(result.id)} onPress={onResultPress} onPeek={onPeekACB}/>
+		return <SearchResultRow result={result} tried={rejectedIds.includes(result.id)} redact={redactKeys} onPress={onResultPress} onPeek={onPeekACB}/>
 	}
 
 	const shownResults = results.slice(0, 20)
-	const listData = theme.flags.groupResultsByType ? groupResultsByType(shownResults) : shownResults
+	// Grouping by type would give the answer away when the cell asks about type.
+	const listData =
+		theme.flags.groupResultsByType && !redactionKeysForTags(cellTagsForGrouping()).has("style")
+			? groupResultsByType(shownResults)
+			: shownResults
 
 	function getCategoryLabels(): { row: string; col: string } | null {
 		if (selectedCell === null || selectedCell < 1 || selectedCell > 9) {

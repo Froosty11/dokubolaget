@@ -52,3 +52,25 @@ describe("cellUsingProduct", () => {
   test("ignores the cell being guessed", () => expect(cellUsingProduct(board, "p1", 2)).toBeNull());
   test("null when unused", () => expect(cellUsingProduct(board, "p3", 5)).toBeNull());
 });
+
+import { rowFields } from "./searchHelpers";
+
+describe("rowFields hides what the cell asks about", () => {
+  const raw = { categoryLevel2: "Rött vin", categoryLevel3: "Fruktigt", country: "Spanien", volumeText: "750 ml", alcoholPercentage: 14, price: 199 };
+  const shown = (redact: string[]) =>
+    Object.fromEntries(rowFields(raw, new Set(redact as any)).map((f) => [f.key, f.hidden ? "■" : f.text]));
+
+  test("nothing hidden without matching categories", () => {
+    expect(shown([])).toEqual({ type: "Rött vin · Fruktigt", country: "Spanien", volume: "750 ml", strength: "14 %", price: "199" });
+  });
+  test("a Spain × price cell hides origin and price, not the rest", () => {
+    expect(shown(["country", "region", "price"])).toEqual({ type: "Rött vin · Fruktigt", country: "■", volume: "750 ml", strength: "14 %", price: "■" });
+  });
+  test("a wine-type cell hides the type line", () => {
+    expect(shown(["style"]).type).toBe("■");
+  });
+  test("hidden fields never carry their text", () => {
+    const fields = rowFields(raw, new Set(["price"] as any));
+    expect(fields.find((f) => f.key === "price")).toEqual({ key: "price", text: "", hidden: true, length: 3 });
+  });
+});
