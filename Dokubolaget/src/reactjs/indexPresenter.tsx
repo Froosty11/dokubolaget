@@ -2,79 +2,32 @@ import { observer } from "mobx-react-lite";
 import { IndexView } from "../views/indexView";
 import { ThemeUnlockView } from "../views/themeUnlockView";
 import { useTheme } from "../theme/ThemeProvider";
+import { useAgeGate } from "../components/AgeGate";
 import type { ThemeId } from "../theme/types";
 import { reactiveModel } from "../mobxReactiveModel";
 import { useState, useEffect } from "react";
-
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import { Linking, View } from "react-native";
-import { haptics } from "../theme/haptics";
+import { View } from "react-native";
 
 //temp
 type IndexProps = {
     model: typeof reactiveModel
 
-    ageGate: {
-        isOpen: boolean,
-        acceptAgeACB: () => void,
-        rejectAgeACB: () => void }
 }
 
-const AGE_VERIFIED_KEY = "verified";
 
 const Index = observer(
     function (props: IndexProps,) {
-        const [isOpen, setIsOpen] = useState(false);
         const { setId } = useTheme();
         const [unlockCard, setUnlockCard] = useState<ThemeId | null>(null);
+        const ageGate = useAgeGate();
 
         // Unlocks earned away from the board (streaks) are announced here.
         const hasPendingUnlock = reactiveModel.hasPendingUnlock("streak");
         useEffect(() => {
-            if (!unlockCard && !isOpen && hasPendingUnlock) {
+            if (!unlockCard && !ageGate.isOpen && hasPendingUnlock) {
                 setUnlockCard(reactiveModel.shiftPendingUnlock("streak"));
             }
-        }, [hasPendingUnlock, isOpen, unlockCard]);
-
-        useEffect(() => {
-            // AsyncStorage is cross-platform (uses localStorage on web,
-            // SharedPreferences/Keychain on native). Wrapped in an async IIFE
-            // so the effect itself stays sync per React's rules.
-            (async () => {
-                const stored = await AsyncStorage.getItem(AGE_VERIFIED_KEY);
-                setIsOpen(stored !== "true");
-            })().catch(function ageGateReadErrorACB(error) {
-                console.warn("Age-gate read failed:", error);
-                setIsOpen(true);
-            });
-        }, []);
-
-        function acceptAgeACB(){
-            haptics.play("tap")
-            AsyncStorage.setItem(AGE_VERIFIED_KEY, "true").catch(
-                function ageGateWriteErrorACB(error) {
-                    console.warn("Age-gate write failed:", error);
-                },
-            );
-            setIsOpen(false);
-        }
-
-        function rejectAgeACB(){
-            haptics.play("tap")
-            // window.location is web-only; Linking handles native too.
-            Linking.openURL("https://www.systembolaget.se/under-20/").catch(
-                function rejectNavErrorACB(error) {
-                    console.warn("Age-gate redirect failed:", error);
-                },
-            );
-
-        }
-
-        const ageGate = {
-            isOpen,
-            acceptAgeACB,
-            rejectAgeACB
-        }
+        }, [hasPendingUnlock, ageGate.isOpen, unlockCard]);
 
         return (
             <View style={{ flex: 1 }}>
