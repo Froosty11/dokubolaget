@@ -43,3 +43,13 @@ test("seeding cycles through the pool and overwrites", () => {
 test("addDaysUtc crosses month ends", () => {
   expect(addDaysUtc("2026-09-30", 1)).toBe("2026-10-01");
 });
+
+import { bundledBoardFor } from "./boards";
+
+test("bundled pick matches the app's offline pick for the same date", () => {
+  const pool = [board(0), board(1), board(2), board(3), board(4)];
+  // Same hash as pickLocalBoardForToday in src/dokuModel.ts.
+  let hash = 0;
+  for (const ch of "2026-10-01") hash = (hash * 31 + ch.codePointAt(0)!) >>> 0;
+  expect(bundledBoardFor("2026-10-01", pool)).toBe(pool[hash % pool.length]);
+});

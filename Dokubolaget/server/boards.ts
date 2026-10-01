@@ -74,3 +74,11 @@ export function seedBoards(db: Database, boards: GeneratedBoard[], startDate: st
   })();
   return written;
 }
+
+// The bundled board the app picks offline for a date (same hash as
+// pickLocalBoardForToday in src/dokuModel.ts), so server and offline agree.
+export function bundledBoardFor<T>(date: string, pool: T[]): T {
+  let hash = 0;
+  for (let index = 0; index < date.length; index += 1) hash = (hash * 31 + (date.codePointAt(index) ?? 0)) >>> 0;
+  return pool[hash % pool.length];
+}

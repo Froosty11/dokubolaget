@@ -18,23 +18,10 @@ RUN bun install --frozen-lockfile
 
 COPY Dokubolaget/ ./
 
-# Web build points its proxy at the same origin. Firebase config can be
-# overridden here; empty args fall back to the values in src/firebaseConfig.ts.
-ARG EXPO_PUBLIC_FIREBASE_API_KEY=
-ARG EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN=
-ARG EXPO_PUBLIC_FIREBASE_PROJECT_ID=
-ARG EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET=
-ARG EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=
-ARG EXPO_PUBLIC_FIREBASE_APP_ID=
+# Web build points its proxy and API at the same origin.
 # Local testing only: "true" offers every theme without unlocking it.
 ARG EXPO_PUBLIC_UNLOCK_ALL_THEMES=
 ENV EXPO_PUBLIC_CORS_PROXY=/proxy?url= \
-    EXPO_PUBLIC_FIREBASE_API_KEY=$EXPO_PUBLIC_FIREBASE_API_KEY \
-    EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN=$EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN \
-    EXPO_PUBLIC_FIREBASE_PROJECT_ID=$EXPO_PUBLIC_FIREBASE_PROJECT_ID \
-    EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET=$EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET \
-    EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=$EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID \
-    EXPO_PUBLIC_FIREBASE_APP_ID=$EXPO_PUBLIC_FIREBASE_APP_ID \
     EXPO_PUBLIC_UNLOCK_ALL_THEMES=$EXPO_PUBLIC_UNLOCK_ALL_THEMES \
     CI=1
 
@@ -45,26 +32,30 @@ FROM oven/bun:1-slim AS runtime
 
 WORKDIR /app/Dokubolaget
 
-# The runtime only needs firebase-admin (for the seeder). Everything else in
-# package.json is app/build tooling, so install just this one to keep the
+# The runtime only needs nodemailer (password reset emails). Everything else
+# in package.json is app/build tooling, so install just this one to keep the
 # image small. Keep the version in step with devDependencies in package.json.
 RUN echo '{"name":"dokubolaget-runtime","private":true}' > package.json \
- && bun add firebase-admin@^13.10.0 \
+ && bun add nodemailer@10.0.13 \
  && rm -rf ~/.bun/install/cache
 
 COPY --from=build /app/Dokubolaget/dist ./dist
 COPY Dokubolaget/server.js Dokubolaget/proxyPolicy.js Dokubolaget/tsconfig.json ./
+COPY Dokubolaget/server ./server
+COPY Dokubolaget/src/theme/types.ts ./src/theme/types.ts
 COPY Dokubolaget/scripts ./scripts
 COPY Dokubolaget/src/boardTags.ts ./src/boardTags.ts
 COPY Dokubolaget/data ./data
 
-# The daily catalog download is written to /app/products.json, so the
-# unprivileged user needs to own /app.
-RUN chown -R bun:bun /app
+# The daily catalog download is written to /app/products.json, and the
+# database lives in /data, so the unprivileged user needs to own both.
+RUN mkdir -p /data && chown -R bun:bun /app /data
+VOLUME /data
 USER bun
 
 ENV NODE_ENV=production \
-    PORT=8080
+    PORT=8080 \
+    DB_PATH=/data/dokubolaget.sqlite
 
 EXPOSE 8080
 

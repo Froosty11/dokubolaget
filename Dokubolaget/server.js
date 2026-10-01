@@ -6,16 +6,20 @@
 //      URLs the app needs are allowed (see proxyPolicy.js), so this is not an
 //      open relay.
 //   3. Runs the daily board pipeline (download catalog → find tags → generate
-//      board → write to Firestore) once a day on a timer, if Firebase
-//      credentials are present.
+//      board → store in SQLite) once a day on a timer.
+//   4. Serves the app's API on /api (accounts, saved prefs and progress,
+//      boards; see server/api.ts) backed by one SQLite file, which is backed
+//      up nightly.
 //
-// Runs under Bun (used in the Docker image) or Node 20+. No dependencies.
+// Runs under Bun (used in the Docker image): it loads the TypeScript modules
+// in ./server directly.
 //
 // Environment:
 //   PORT                          listen port (default 8080)
-//   FIREBASE_SERVICE_ACCOUNT_KEY  service account JSON; enables seeding
-//   GOOGLE_APPLICATION_CREDENTIALS path to a service account file; alternative
-//   SEED_ENABLED                  "false" to disable seeding even with creds
+//   DB_PATH                       SQLite file (default ./data/local.sqlite)
+//   PUBLIC_URL                    base URL for links in emails (default: request origin)
+//   SMTP_URL / MAIL_FROM          send password reset emails (else logged)
+//   SEED_ENABLED                  "false" to disable the nightly pipeline
 //   SEED_ON_START                 "false" to skip the seed run at boot
 //   SEED_HOUR_UTC / SEED_MINUTE_UTC  daily run time (default 00:05 UTC)
 //   SEED_ATTEMPTS                 generator attempts per board (default 3000)
@@ -198,7 +202,7 @@ function contentSecurityPolicy() {
     "style-src 'self' 'unsafe-inline'",
     "img-src 'self' data: blob: https://product-cdn.systembolaget.se https://www.systembolaget.se https://flagcdn.com",
     "font-src 'self' data:",
-    "connect-src 'self' https://*.googleapis.com",
+    "connect-src 'self'",
     "worker-src 'self'",
     "manifest-src 'self'",
     "object-src 'none'",
@@ -366,6 +370,55 @@ async function serveProxy(req, res, requestUrl) {
 }
 
 // ---------------------------------------------------------------------------
+// API and database
+// ---------------------------------------------------------------------------
+
+const { openDb } = require("./server/db.ts");
+const { createApi, MAX_BODY_BYTES } = require("./server/api.ts");
+const { bundledBoardFor, getBoard, putBoard, seedBoards } = require("./server/boards.ts");
+const { createMailer } = require("./server/mail.ts");
+const { createSbKey } = require("./server/sbKey.ts");
+const { backupDb } = require("./server/backup.ts");
+
+const DB_PATH = process.env.DB_PATH || path.join(APP_ROOT, "data", "local.sqlite");
+fs.mkdirSync(path.dirname(DB_PATH), { recursive: true });
+const db = openDb(DB_PATH);
+
+const api = createApi({
+  db,
+  mail: createMailer(process.env),
+  sbKey: createSbKey(db),
+  trustProxy: TRUST_PROXY,
+  // The Expo dev server runs on another localhost port during development.
+  devOrigins: process.env.NODE_ENV !== "production",
+  publicUrl: process.env.PUBLIC_URL,
+});
+
+async function serveApi(req, res, requestUrl) {
+  const chunks = [];
+  let size = 0;
+  for await (const chunk of req) {
+    size += chunk.length;
+    if (size > MAX_BODY_BYTES) {
+      res.writeHead(413, { "Content-Type": "application/json" });
+      res.end(JSON.stringify({ error: "too_large" }));
+      req.destroy();
+      return;
+    }
+    chunks.push(chunk);
+  }
+  const response = await api({
+    method: req.method || "GET",
+    path: requestUrl.pathname,
+    headers: req.headers,
+    body: Buffer.concat(chunks).toString("utf8"),
+    ip: clientKey(req),
+  });
+  res.writeHead(response.status, response.headers);
+  res.end(response.body);
+}
+
+// ---------------------------------------------------------------------------
 // Daily board seeding
 // ---------------------------------------------------------------------------
 
@@ -378,13 +431,6 @@ const seedState = {
   nextRunAt: null,
 };
 
-function hasFirebaseCredentials() {
-  return Boolean(
-    process.env.FIREBASE_SERVICE_ACCOUNT_KEY ||
-      process.env.GOOGLE_APPLICATION_CREDENTIALS,
-  );
-}
-
 function dateKey(date) {
   return date.toISOString().slice(0, 10);
 }
@@ -394,23 +440,12 @@ function utcDatePlusDays(days) {
   return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + days));
 }
 
-const CREDENTIAL_ENV_KEYS = ["FIREBASE_SERVICE_ACCOUNT_KEY", "GOOGLE_APPLICATION_CREDENTIALS"];
-
-// Only the Firestore upload step gets the service account; the catalog and
-// generator steps run without it.
-function stepEnv(withCredentials) {
-  if (withCredentials) return process.env;
-  const env = { ...process.env };
-  for (const key of CREDENTIAL_ENV_KEYS) delete env[key];
-  return env;
-}
-
-function runStep(label, command, args, { withCredentials = false } = {}) {
+function runStep(label, command, args) {
   return new Promise((resolve, reject) => {
     log("seed", `${label}: ${command} ${args.join(" ")}`);
     const child = spawn(command, args, {
       cwd: APP_ROOT,
-      env: stepEnv(withCredentials),
+      env: process.env,
       stdio: ["ignore", "pipe", "pipe"],
     });
     const forward = (stream, level) => {
@@ -460,7 +495,7 @@ async function downloadCatalog() {
   log("seed", `Catalog saved (${(size / 1e6).toFixed(1)} MB)`);
 }
 
-// Generates and uploads `days` boards starting at `startDate`.
+// Generates and stores `days` boards starting at `startDate`.
 async function runSeedPipeline(startDate, days) {
   if (seedState.running) {
     log("seed", "A run is already in progress; skipping");
@@ -484,14 +519,8 @@ async function runSeedPipeline(startDate, days) {
       "--attempts",
       attempts,
     ]);
-    await runStep("upload to Firestore", "bun", [
-      "run",
-      "scripts/seedFirestoreBoard.ts",
-      "--date",
-      start,
-      "--days",
-      String(days),
-    ], { withCredentials: true });
+    const generated = JSON.parse(fs.readFileSync(path.join(APP_ROOT, "data", "generated-boards.json"), "utf8"));
+    seedBoards(db, generated.boards, start, days);
     seedState.lastResult = `ok: ${days} board(s) from ${start}`;
     seedState.lastError = null;
     log("seed", seedState.lastResult);
@@ -519,38 +548,65 @@ function msUntilNextRun() {
   return next.getTime() - now.getTime();
 }
 
+function runBackup() {
+  try {
+    const file = backupDb(db, path.join(path.dirname(DB_PATH), "backups"), dateKey(utcDatePlusDays(0)));
+    log("backup", `Wrote ${file}`);
+  } catch (error) {
+    log("backup", `FAILED: ${error && error.message ? error.message : error}`);
+  }
+}
+
 function scheduleDailySeed() {
   const delay = msUntilNextRun();
   log("seed", `Next scheduled run at ${seedState.nextRunAt}`);
   setTimeout(async () => {
-    // Seed tomorrow's board so it's in place before the next Stockholm midnight.
-    try {
-      await runSeedPipeline(utcDatePlusDays(1), 1);
-    } catch {
-      // Retry once after 30 minutes; the catalog mirror is occasionally down.
-      log("seed", "Retrying in 30 minutes");
-      setTimeout(() => runSeedPipeline(utcDatePlusDays(1), 1).catch(() => {}), 30 * 60 * 1000);
+    if (seedState.enabled) {
+      // Seed tomorrow's board so it's in place before the next midnight.
+      try {
+        await runSeedPipeline(utcDatePlusDays(1), 1);
+      } catch {
+        // Retry once after 30 minutes; the catalog mirror is occasionally down.
+        log("seed", "Retrying in 30 minutes");
+        setTimeout(() => runSeedPipeline(utcDatePlusDays(1), 1).catch(() => {}), 30 * 60 * 1000);
+      }
     }
+    ensureBundledBoards();
+    runBackup();
     scheduleDailySeed();
   }, delay);
 }
 
-function startSeeding() {
-  if (process.env.SEED_ENABLED === "false") {
-    log("seed", "Disabled via SEED_ENABLED=false");
-    return;
+// Today's and tomorrow's boards always exist: if the pipeline hasn't stored
+// one (first boot, seeding off, catalog mirror down), use the bundled pool
+// with the same pick the app uses offline.
+function ensureBundledBoards() {
+  try {
+    const pool = JSON.parse(fs.readFileSync(path.join(APP_ROOT, "data", "generated-boards.json"), "utf8")).boards;
+    for (const offset of [0, 1]) {
+      const date = dateKey(utcDatePlusDays(offset));
+      if (!getBoard(db, date, "9999-12-31")) {
+        putBoard(db, date, bundledBoardFor(date, pool));
+        log("seed", `Stored bundled board for ${date}`);
+      }
+    }
+  } catch (error) {
+    log("seed", `Bundled boards unavailable: ${error && error.message ? error.message : error}`);
   }
-  if (!hasFirebaseCredentials()) {
-    log("seed", "No Firebase credentials found; daily seeding is off. The app falls back to bundled boards.");
-    return;
-  }
-  seedState.enabled = true;
+}
 
-  if (process.env.SEED_ON_START !== "false") {
-    // Cover today and tomorrow on boot so a fresh deploy never serves a stale
-    // fallback board while waiting for the first scheduled run.
-    runSeedPipeline(utcDatePlusDays(0), 2).catch(() => {});
+function startSeeding() {
+  ensureBundledBoards();
+  if (process.env.SEED_ENABLED === "false") {
+    log("seed", "Disabled via SEED_ENABLED=false; serving bundled boards");
+  } else {
+    seedState.enabled = true;
+    if (process.env.SEED_ON_START !== "false") {
+      // Cover today and tomorrow on boot with freshly generated boards.
+      runSeedPipeline(utcDatePlusDays(0), 2).catch(() => {});
+    }
   }
+  // Runs nightly either way: the backup happens even with seeding off.
   scheduleDailySeed();
 }
 
@@ -569,6 +625,11 @@ function handleRequest(req, res) {
   } catch {
     res.writeHead(400, { "Content-Type": "text/plain" });
     res.end("Bad request");
+    return;
+  }
+
+  if (requestUrl.pathname === "/api" || requestUrl.pathname.startsWith("/api/")) {
+    serveApi(req, res, requestUrl).catch((error) => handleRequestError(res, error));
     return;
   }
 
