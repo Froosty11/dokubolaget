@@ -90,15 +90,17 @@ Unlocks are permanent. They're saved on the device and, when logged in, merged i
 - `themes/*.ts`: one token file per theme (colours, fonts, radii, flags, confetti, unlock rule, Swedish and English flavour copy).
 - `registry.ts`: the theme list, the default theme and the UI language.
 - `unlocks.ts` and `themeState.ts`: unlock rules and the theme part of the MobX model.
-- `fonts.ts`: fonts per theme, loaded on demand from `@expo-google-fonts/*` (OFL).
-- `decorations/`: per-theme artwork behind screens and above the celebration.
+- `fonts.ts` and `fontKits.ts`: font sets, loaded on demand from `@expo-google-fonts/*` (OFL). Club themes pick one by id.
+- `decorations/`: per-theme artwork behind screens and above the celebration; `decorations/kit/` holds the decorations club themes can pick.
+- `haptics.ts` and `hapticPatterns.ts`: each theme's vibration pattern. Players can turn vibration off on the Themes screen.
+- `packSchema.ts` and `clubThemes.ts`: the club theme file format (shared with the server) and the device cache.
 
 **Adding a theme:**
 
 1. Add a token file and list it in `registry.ts`.
 2. Add a font loader entry to `fonts.ts`.
 3. Optionally, register decorations in `decorations/index.ts`.
-4. Add its id to `THEME_IDS` in `types.ts` (the API validates against it).
+4. Add its id to `BUILT_IN_THEME_IDS` in `types.ts` (the API validates against it) and give it a `haptics` pattern.
 
 Then run the checks:
 
@@ -110,6 +112,8 @@ node tools/themeScreens.mjs --theme <id> --out /tmp/shots/<id>   # screenshots o
 ### Club themes and unlock codes
 
 Student pub clubs get their own theme, unlocked by scanning a QR code at their pub. Club themes are data, not app code: each one is a folder in `club-themes/<slug>/` (repo root) with a `theme.json` and an optional `logo.png` or `logo.webp`. The server loads them into the database when it starts, so adding or changing a club is a commit and a deploy, not an app release. Bump `version` in `theme.json` whenever you change one, or the server keeps the old copy.
+
+Club themes show up under **Home → Pub stamps** (collected stamps in colour, the rest greyed out with where to scan) and on the Themes screen once unlocked. Set `CONTACT_EMAIL` to show "Want your club here?" on the stamps screen.
 
 Manage codes with the admin script. In the container:
 
