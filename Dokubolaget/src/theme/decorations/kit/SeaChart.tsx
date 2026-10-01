@@ -31,7 +31,9 @@ export function SeaChart({ colors }: KitDecorationProps) {
   const font = theme.fonts.display;
   const uid = useId().replace(/[^a-zA-Z0-9]/g, "");
   const compass = { x: width * 0.84, y: 108 };
-  const sea = height * 0.79;
+  // Just above the tab bar: the only band that stays clear of the screen's
+  // text on short screens (Mobile Safari's bars take ~150 px).
+  const floor = height - 80;
 
   const rhumbs = Array.from({ length: 16 }, (_, i) => {
     const angle = (i * Math.PI) / 8;
@@ -69,32 +71,27 @@ export function SeaChart({ colors }: KitDecorationProps) {
         {hatch(40, 128, 34, 24)}
         <SvgText x={40} y={176} fontSize={11} fill={ink} textAnchor="middle" fontFamily={font} opacity={0.75}>Glöggholmen</SvgText>
 
-        {/* Vinön, bottom left */}
-        <Path d={`M-10 ${sea + 6} q40 -40 92 -18 q40 18 22 56 q-30 40 -114 30 Z`} fill={ink} opacity={0.12} stroke={ink} strokeWidth={1.2} />
-        {hatch(40, sea + 22, 64, 34)}
-        <SvgText x={46} y={sea + 30} fontSize={13} fill={ink} textAnchor="middle" fontFamily={font} opacity={0.8}>Vinön</SvgText>
+        {/* Vinön, bottom left, and Kap Punsch, bottom right, just above the tab bar */}
+        <Path d={`M-10 ${floor - 34} q40 -26 92 -10 q36 14 20 44 l-112 6 Z`} fill={ink} opacity={0.12} stroke={ink} strokeWidth={1.2} />
+        {hatch(36, floor - 8, 58, 26)}
+        <SvgText x={42} y={floor - 10} fontSize={12} fill={ink} textAnchor="middle" fontFamily={font} opacity={0.8}>Vinön</SvgText>
+        <Path d={`M${width + 10} ${floor - 40} q-52 -4 -64 26 q-6 18 10 30 l54 2 Z`} fill={ink} opacity={0.12} stroke={ink} strokeWidth={1.2} />
+        {hatch(width - 22, floor - 10, 42, 26)}
+        <SvgText x={width - 36} y={floor - 14} fontSize={11} fill={ink} textAnchor="middle" fontFamily={font} opacity={0.8}>Kap Punsch</SvgText>
 
-        {/* Kap Punsch, bottom right */}
-        <Path d={`M${width + 10} ${sea - 20} q-56 -6 -70 30 q-10 34 30 54 l50 6 Z`} fill={ink} opacity={0.12} stroke={ink} strokeWidth={1.2} />
-        {hatch(width - 20, sea + 18, 46, 36)}
-        <SvgText x={width - 40} y={sea + 22} fontSize={12} fill={ink} textAnchor="middle" fontFamily={font} opacity={0.8}>Kap Punsch</SvgText>
-
-        {/* The course, from Vinön to the X */}
-        <Path d={`M96 ${sea + 4} C ${width * 0.4} ${sea - 60}, ${width * 0.55} ${sea + 40}, ${width - 96} ${sea - 4}`}
+        {/* The course, a low arc from Vinön to the X */}
+        <Path d={`M96 ${floor - 16} Q ${width / 2} ${floor - 46}, ${width - 112} ${floor - 18}`}
           stroke={accent} strokeWidth={2} strokeDasharray="6 6" fill="none" opacity={0.9} />
         <G opacity={0.95}>
-          <Line x1={width - 104} y1={sea - 12} x2={width - 88} y2={sea + 4} stroke={accent} strokeWidth={3} />
-          <Line x1={width - 88} y1={sea - 12} x2={width - 104} y2={sea + 4} stroke={accent} strokeWidth={3} />
+          <Line x1={width - 112} y1={floor - 26} x2={width - 96} y2={floor - 10} stroke={accent} strokeWidth={3} />
+          <Line x1={width - 96} y1={floor - 26} x2={width - 112} y2={floor - 10} stroke={accent} strokeWidth={3} />
         </G>
 
-        {/* A sea serpent and some waves */}
-        <Path d={`M${width * 0.42} ${sea + 52} q8 -14 16 0 q8 -14 16 0 q8 -14 16 0`} stroke={ink} strokeWidth={1.4} fill="none" opacity={0.55} />
-        <Circle cx={width * 0.42 - 3} cy={sea + 49} r={3} fill={ink} opacity={0.55} />
-        {[0.2, 0.62, 0.75, 0.3].map((fx, i) => (
-          <Path key={i} d={`M${width * fx} ${sea + 70 + (i % 2) * 10} q5 -5 10 0 q5 -5 10 0`} stroke={ink} strokeWidth={1} fill="none" opacity={0.4} />
-        ))}
-
-        <SvgText x={width / 2} y={sea + 92} fontSize={15} fill={ink} textAnchor="middle" fontFamily={font} letterSpacing={6} opacity={0.6}>
+        {/* The sea's name, set sideways along the left edge like a chart label */}
+        <SvgText
+          x={0} y={0} fontSize={13} fill={ink} textAnchor="middle" fontFamily={font} letterSpacing={7} opacity={0.5}
+          transform={`translate(11 ${height * 0.5}) rotate(-90)`}
+        >
           SPRITSJÖN
         </SvgText>
       </Svg>

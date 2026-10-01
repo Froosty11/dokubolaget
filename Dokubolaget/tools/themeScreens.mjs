@@ -32,7 +32,8 @@ if (argv.includes("--compare")) {
 }
 
 const CHROME = "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome";
-const VIEWPORTS = { phone: { w: 390, h: 844, mobile: true }, laptop: { w: 1440, h: 640, mobile: false } };
+// "safari" is an iPhone screen minus Mobile Safari's bars.
+const VIEWPORTS = { phone: { w: 390, h: 844, mobile: true }, safari: { w: 402, h: 690, mobile: true }, laptop: { w: 1440, h: 640, mobile: false } };
 const ALL_THEMES = ["prislista", "midsommar", "cyberwave", "speakeasy", "modern"];
 const base = flag("base", "http://localhost:8081");
 const theme = flag("theme", "modern");
