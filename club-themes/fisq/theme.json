@@ -1,0 +1,157 @@
+{
+  "id": "club-fisq",
+  "version": 1,
+  "club": {
+    "name": "FISQ",
+    "fullName": "Flemingsbergs Ingenjörssektions Qlubbmästeri",
+    "section": "Ingenjörssektionen Flemingsberg",
+    "campus": "Flemingsberg",
+    "venue": "Rudan",
+    "pubNight": "Fridays from 17:17",
+    "website": "https://isflemingsberg.se/fisq"
+  },
+  "dark": true,
+  "colors": {
+    "page": "#2a140e",
+    "surface": "#3a1d14",
+    "surfaceAlt": "#331a12",
+    "ink": "#fbeee2",
+    "inkStrong": "#fff7ef",
+    "inkMuted": "#e8bea6",
+    "inkFaint": "#e0b096",
+    "accent": "#ffc078",
+    "accentInk": "#2a140e",
+    "highlight": "#e07a3a",
+    "cellFill": "#331a12",
+    "cellBorder": "#6b3420",
+    "cellShimmer": "#4a2618",
+    "headerCol": "#ffe7cf",
+    "headerRow": "#ffc078",
+    "headerLabelBg": "#2a140e",
+    "icon": "#ffc078",
+    "pulse": "#ffc078",
+    "correct": "#a8e6b0",
+    "correctBg": "#163020",
+    "nearMiss": "#ffc078",
+    "nearMissBg": "#3d2a10",
+    "miss": "#ffa392",
+    "missBg": "#45150f",
+    "hint": "#e8bea6",
+    "divider": "#6b3420",
+    "overlay": "rgba(20, 9, 6, 0.6)",
+    "celebrationOverlay": "rgba(20, 9, 6, 0.5)",
+    "dialogSurface": "#f4e2c8",
+    "dialogInk": "#2a140e",
+    "dialogButton": "#8e3b22",
+    "dialogButtonInk": "#fff7ef",
+    "gateOverlay": "#120805"
+  },
+  "fontKit": "slab",
+  "radii": {
+    "card": 6,
+    "cell": 6,
+    "button": 6,
+    "pill": 16
+  },
+  "typeScale": {
+    "headerLabel": 0.82
+  },
+  "borders": {
+    "cell": 1.5,
+    "header": 1.5,
+    "card": 1.5
+  },
+  "glow": null,
+  "flags": {
+    "ruledTable": false,
+    "productNumberCells": false,
+    "dottedLeaderPrices": false,
+    "greyscaleFlags": false,
+    "groupResultsByType": false,
+    "feedbackPlacement": "slip",
+    "celebrationLayout": "card"
+  },
+  "confetti": {
+    "shape": "dots",
+    "colors": [
+      "#ffc078",
+      "#8e3b22",
+      "#f4e2c8"
+    ]
+  },
+  "decoration": {
+    "kind": "cellar",
+    "colors": [
+      "#1a0c08",
+      "#ffc078"
+    ]
+  },
+  "haptics": "toast",
+  "copy": {
+    "en": {
+      "name": "Rudan",
+      "description": "FISQ's cellar pub in Flemingsberg: rödockra, brick and a warm lamp.",
+      "unlockHint": "Scan the code at FISQ's Friday pub at Rudan.",
+      "correctTitles": [
+        "Caught one!",
+        "A bite!",
+        "Fish in the bottle!",
+        "Landed!"
+      ],
+      "nearMissTitle": "Close call!",
+      "completeTitle": "Friday 17:17",
+      "searchTitle": "Make your guess",
+      "tabHome": "Home",
+      "tabPlay": "Play",
+      "tabLeaderboard": "Ranks",
+      "dossierTitle": "FISHING LOG",
+      "dossierSubject": "CATCH:",
+      "dossierNotes": "NOTES",
+      "stampHidden": "ON THE HOOK",
+      "stampRevealed": "IN THE NET"
+    },
+    "sv": {
+      "name": "Rudan",
+      "description": "FISQ:s källarpub i Flemingsberg: rödockra, tegel och en varm lampa.",
+      "unlockHint": "Skanna koden på FISQ:s fredagspub på Rudan.",
+      "correctTitles": [
+        "Fångad!",
+        "Napp!",
+        "Fisk i flaskan!",
+        "Landad!"
+      ],
+      "nearMissTitle": "Nära ögat!",
+      "completeTitle": "Fredag 17:17",
+      "searchTitle": "Gissa",
+      "tabHome": "Hem",
+      "tabPlay": "Spela",
+      "tabLeaderboard": "Topplista",
+      "dossierTitle": "FISKELOGG",
+      "dossierSubject": "FÅNGST:",
+      "dossierNotes": "ANTECKNINGAR",
+      "stampHidden": "PÅ KROKEN",
+      "stampRevealed": "I HÅVEN"
+    }
+  },
+  "dossier": {
+    "paper": "#f4e2c8",
+    "ink": "#2a140e",
+    "label": "#7a3a20",
+    "bar": "#2a140e",
+    "rule": "#8e3b22",
+    "border": "#8e3b22",
+    "borderStyle": "solid",
+    "radius": 6,
+    "tilt": "-1.5deg",
+    "marginRule": "#c46a4a",
+    "ruledLines": true,
+    "stampHidden": "#8f1d17",
+    "stampRevealed": "#1d6b35",
+    "font": null,
+    "glow": false
+  },
+  "logo": {
+    "width": 512,
+    "height": 512
+  }
+}

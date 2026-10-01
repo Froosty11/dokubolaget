@@ -1,6 +1,6 @@
 # Club themes
 
-Each club gets a folder here with `theme.json` and `logo.png`. The server loads them at startup (see the spec). The design is in `docs/superpowers/specs/2026-10-01-pub-themes-design.md`.
+Each club has a folder here with `theme.json` and `logo.png`. The server loads them at startup; bump `version` in `theme.json` whenever you change one. Check them with `cd Dokubolaget && bun run admin themes check`. The design is in `docs/superpowers/specs/2026-10-01-pub-themes-design.md`.
 
 Facts come from a web pass on 2026-10-01, using the clubs' own sites (sources below). Anything marked *uncertain* should be confirmed with the club. Owner contact for collaborations: e@dokubolaget.se.
 
@@ -60,7 +60,22 @@ Each concept lists its look, decoration, fonts, vibration pattern, a copy idea a
 
 ## Logos
 
-PNG or WebP only, at most 1024 px and 300 KB. Ask each club for official files. Don't scrape logos from the sites without the club's OK on which file to use.
+PNG or WebP only, at most 1024 px and 300 KB (SVG is refused). The owner has the clubs' permission to use their logos. Each `logo.png` was made from the club's own published file, without redrawing:
+
+| Club | Source | Notes |
+|---|---|---|
+| TMEIT | https://tmeit.se/assets/LogoTMEIT_monochrome-pYIiCl9i.svg | The official logo is white only; recoloured to near-black (`#1a1a1a`) so it shows on the white badge. |
+| QMISK | https://qmisk.com/static/images/logo.png | "Assar". |
+| DKM | https://dsekt-assets.s3.amazonaws.com/website/namnder/dkm.svg | "DKM logo (black)" from Datasektionen's file storage. |
+| MKM | https://storage.googleapis.com/medieteknik-static/committees/mkm.svg | Has its own white background. |
+| PR | https://elektrosektionen.se/wp-content/uploads/2021/11/PR-bat-snurr-hemsidan.gif | First frame of the spinning bat. No vector or still version exists, so edges are rough; ask PR for a better file. |
+| FISQ | https://www.isflemingsberg.se/assets/fisq-Ciyj4_te.webp | The round badge from the /fisq page. |
+
+When a club sends a better file, replace `logo.png`, update `logo.width`/`logo.height` in `theme.json` and bump `version`.
+
+## Provisional colours
+
+PR (graphite and copper) and FISQ (rödockra and brick) have no published palette. Their colours are guesses until the clubs confirm them. The other four use colours from their own sites (DKM's from Datasektionen's official graphic profile).
 
 ## Sources
 

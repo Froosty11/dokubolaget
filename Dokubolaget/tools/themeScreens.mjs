@@ -128,7 +128,8 @@ function seed(extra = {}) {
   const values = {
     verified: "true",
     "dokubolaget.theme": theme,
-    "dokubolaget.unlockedThemes": JSON.stringify(ALL_THEMES),
+    // Club themes (club-…) download from the dev API on first load.
+    "dokubolaget.unlockedThemes": JSON.stringify(theme.startsWith("club-") ? [...ALL_THEMES, theme] : ALL_THEMES),
     "dokubolaget.lastHeaderReveal": today,
     ...extra,
   };

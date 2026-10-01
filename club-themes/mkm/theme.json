@@ -1,0 +1,157 @@
+{
+  "id": "club-mkm",
+  "version": 1,
+  "club": {
+    "name": "MKM",
+    "fullName": "Medias Klubbmästeri",
+    "section": "Medieteknik",
+    "campus": "Valhallavägen",
+    "venue": "META",
+    "pubNight": "Thursdays",
+    "website": "https://www.medieteknik.com"
+  },
+  "dark": true,
+  "colors": {
+    "page": "#121212",
+    "surface": "#1c1c1c",
+    "surfaceAlt": "#222222",
+    "ink": "#f5f5f0",
+    "inkStrong": "#ffffff",
+    "inkMuted": "#c4c4bb",
+    "inkFaint": "#b3b3aa",
+    "accent": "#EEC912",
+    "accentInk": "#121212",
+    "highlight": "#ff4b3a",
+    "cellFill": "#181818",
+    "cellBorder": "#3a3a3a",
+    "cellShimmer": "#2a2a2a",
+    "headerCol": "#EEC912",
+    "headerRow": "#f5f5f0",
+    "headerLabelBg": "#121212",
+    "icon": "#EEC912",
+    "pulse": "#ff4b3a",
+    "correct": "#a6ecb2",
+    "correctBg": "#13301c",
+    "nearMiss": "#EEC912",
+    "nearMissBg": "#3a3205",
+    "miss": "#ff9a8a",
+    "missBg": "#3a120d",
+    "hint": "#c4c4bb",
+    "divider": "#3a3a3a",
+    "overlay": "rgba(0, 0, 0, 0.65)",
+    "celebrationOverlay": "rgba(0, 0, 0, 0.55)",
+    "dialogSurface": "#f5f5f0",
+    "dialogInk": "#121212",
+    "dialogButton": "#121212",
+    "dialogButtonInk": "#EEC912",
+    "gateOverlay": "#000000"
+  },
+  "fontKit": "broadcast",
+  "radii": {
+    "card": 4,
+    "cell": 4,
+    "button": 4,
+    "pill": 12
+  },
+  "typeScale": {
+    "headerLabel": 1
+  },
+  "borders": {
+    "cell": 1,
+    "header": 1,
+    "card": 1.5
+  },
+  "glow": null,
+  "flags": {
+    "ruledTable": false,
+    "productNumberCells": false,
+    "dottedLeaderPrices": false,
+    "greyscaleFlags": false,
+    "groupResultsByType": false,
+    "feedbackPlacement": "overlay",
+    "celebrationLayout": "card"
+  },
+  "confetti": {
+    "shape": "sparks",
+    "colors": [
+      "#c0c000",
+      "#00c0c0",
+      "#c000c0",
+      "#EEC912"
+    ]
+  },
+  "decoration": {
+    "kind": "colorbars",
+    "colors": [
+      "#d9261c"
+    ]
+  },
+  "haptics": "neon",
+  "copy": {
+    "en": {
+      "name": "ON AIR",
+      "description": "MKM's broadcast desk: yellow on black, colour bars and a red light.",
+      "unlockHint": "Scan the code at MKM's Thursday pub in META.",
+      "correctTitles": [
+        "Live!",
+        "Cut!",
+        "Take one!",
+        "On air!"
+      ],
+      "nearMissTitle": "New take!",
+      "completeTitle": "That's a wrap",
+      "searchTitle": "Make your guess",
+      "tabHome": "Home",
+      "tabPlay": "Live",
+      "tabLeaderboard": "Ranks",
+      "dossierTitle": "SCRIPT",
+      "dossierSubject": "SCENE:",
+      "dossierNotes": "DIRECTION",
+      "stampHidden": "CENSORED",
+      "stampRevealed": "AIRED"
+    },
+    "sv": {
+      "name": "ON AIR",
+      "description": "MKM:s sändningsbord: gult på svart, färgbalkar och en röd lampa.",
+      "unlockHint": "Skanna koden på MKM:s torsdagspub i META.",
+      "correctTitles": [
+        "I sändning!",
+        "Klipp!",
+        "Tagning ett!",
+        "Live!"
+      ],
+      "nearMissTitle": "Ny tagning!",
+      "completeTitle": "Sändningen slut",
+      "searchTitle": "Gissa",
+      "tabHome": "Hem",
+      "tabPlay": "Live",
+      "tabLeaderboard": "Topplista",
+      "dossierTitle": "MANUS",
+      "dossierSubject": "SCEN:",
+      "dossierNotes": "REGI",
+      "stampHidden": "CENSUR",
+      "stampRevealed": "SÄNT"
+    }
+  },
+  "dossier": {
+    "paper": "#f5f5f0",
+    "ink": "#121212",
+    "label": "#5f5f55",
+    "bar": "#121212",
+    "rule": "#EEC912",
+    "border": "#121212",
+    "borderStyle": "solid",
+    "radius": 4,
+    "tilt": "0deg",
+    "marginRule": null,
+    "ruledLines": false,
+    "stampHidden": "#b3261c",
+    "stampRevealed": "#1d6b35",
+    "font": null,
+    "glow": false
+  },
+  "logo": {
+    "width": 512,
+    "height": 512
+  }
+}

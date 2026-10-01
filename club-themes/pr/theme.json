@@ -1,0 +1,157 @@
+{
+  "id": "club-pr",
+  "version": 1,
+  "club": {
+    "name": "PR",
+    "fullName": "ProgramRådet",
+    "section": "Elektrosektionen and Medicinsk teknik",
+    "campus": "Valhallavägen",
+    "venue": "TOLVAN",
+    "pubNight": "Thursdays",
+    "website": "https://elektrosektionen.se/verksamhet/pr/"
+  },
+  "dark": false,
+  "colors": {
+    "page": "#f4f4f1",
+    "surface": "#ffffff",
+    "surfaceAlt": "#ebebe6",
+    "ink": "#23262b",
+    "inkStrong": "#111316",
+    "inkMuted": "#575c63",
+    "inkFaint": "#575c63",
+    "accent": "#8f4d1f",
+    "accentInk": "#ffffff",
+    "highlight": "#3fbf6b",
+    "cellFill": "#ffffff",
+    "cellBorder": "#c9c9c2",
+    "cellShimmer": "#ecece6",
+    "headerCol": "#23262b",
+    "headerRow": "#8f4d1f",
+    "headerLabelBg": "#f4f4f1",
+    "icon": "#8f4d1f",
+    "pulse": "#3fbf6b",
+    "correct": "#1d6b35",
+    "correctBg": "#dcefe0",
+    "nearMiss": "#6e4608",
+    "nearMissBg": "#f6e3a6",
+    "miss": "#8f1d17",
+    "missBg": "#f6d6d0",
+    "hint": "#575c63",
+    "divider": "#c9c9c2",
+    "overlay": "rgba(35, 38, 43, 0.45)",
+    "celebrationOverlay": "rgba(35, 38, 43, 0.35)",
+    "dialogSurface": "#ffffff",
+    "dialogInk": "#23262b",
+    "dialogButton": "#23262b",
+    "dialogButtonInk": "#f4f4f1",
+    "gateOverlay": "#23262b"
+  },
+  "fontKit": "grotesk",
+  "radii": {
+    "card": 8,
+    "cell": 8,
+    "button": 8,
+    "pill": 20
+  },
+  "typeScale": {
+    "headerLabel": 0.82
+  },
+  "borders": {
+    "cell": 1.5,
+    "header": 1.5,
+    "card": 1.5
+  },
+  "glow": null,
+  "flags": {
+    "ruledTable": false,
+    "productNumberCells": false,
+    "dottedLeaderPrices": false,
+    "greyscaleFlags": false,
+    "groupResultsByType": false,
+    "feedbackPlacement": "slip",
+    "celebrationLayout": "card"
+  },
+  "confetti": {
+    "shape": "flecks",
+    "colors": [
+      "#b8692e",
+      "#3fbf6b",
+      "#23262b"
+    ]
+  },
+  "decoration": {
+    "kind": "circuit",
+    "colors": [
+      "#b8692e",
+      "#3fbf6b"
+    ]
+  },
+  "haptics": "neon",
+  "copy": {
+    "en": {
+      "name": "TOLVAN",
+      "description": "PR's white-overall lab: graphite, copper traces and status LEDs.",
+      "unlockHint": "Scan the code at PR's Thursday pub at TOLVAN.",
+      "correctTitles": [
+        "Contact!",
+        "Full voltage!",
+        "Closed circuit!",
+        "Power on!"
+      ],
+      "nearMissTitle": "Loose wire!",
+      "completeTitle": "Circuit closed",
+      "searchTitle": "Make your guess",
+      "tabHome": "Home",
+      "tabPlay": "Play",
+      "tabLeaderboard": "Ranks",
+      "dossierTitle": "SCHEMATIC",
+      "dossierSubject": "COMPONENT:",
+      "dossierNotes": "READINGS",
+      "stampHidden": "FUSED",
+      "stampRevealed": "MEASURED"
+    },
+    "sv": {
+      "name": "TOLVAN",
+      "description": "PR:s labb i vit overall: grafit, kopparbanor och lysdioder.",
+      "unlockHint": "Skanna koden på PR:s torsdagspub på TOLVAN.",
+      "correctTitles": [
+        "Kontakt!",
+        "Full spänning!",
+        "Sluten krets!",
+        "Ström på!"
+      ],
+      "nearMissTitle": "Glappkontakt!",
+      "completeTitle": "Kretsen är sluten",
+      "searchTitle": "Gissa",
+      "tabHome": "Hem",
+      "tabPlay": "Spela",
+      "tabLeaderboard": "Topplista",
+      "dossierTitle": "KOPPLINGSSCHEMA",
+      "dossierSubject": "KOMPONENT:",
+      "dossierNotes": "MÄTVÄRDEN",
+      "stampHidden": "SÄKRAD",
+      "stampRevealed": "MÄTT"
+    }
+  },
+  "dossier": {
+    "paper": "#ffffff",
+    "ink": "#23262b",
+    "label": "#575c63",
+    "bar": "#23262b",
+    "rule": "#b8692e",
+    "border": "#23262b",
+    "borderStyle": "solid",
+    "radius": 8,
+    "tilt": "0deg",
+    "marginRule": null,
+    "ruledLines": false,
+    "stampHidden": "#8f1d17",
+    "stampRevealed": "#1d6b35",
+    "font": null,
+    "glow": false
+  },
+  "logo": {
+    "width": 512,
+    "height": 202
+  }
+}

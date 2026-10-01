@@ -1,0 +1,163 @@
+{
+  "id": "club-qmisk",
+  "version": 1,
+  "club": {
+    "name": "QMISK",
+    "fullName": "Qlubbmästeriet IT-sektionen Kista",
+    "section": "IT-sektionen",
+    "campus": "Kista",
+    "venue": "Kistan 2.0",
+    "pubNight": "Thursdays",
+    "website": "https://qmisk.com"
+  },
+  "dark": true,
+  "colors": {
+    "page": "#120708",
+    "surface": "#1f0b0d",
+    "surfaceAlt": "#2a0f12",
+    "ink": "#fff1f0",
+    "inkStrong": "#ffffff",
+    "inkMuted": "#f2a9ae",
+    "inkFaint": "#ec9aa0",
+    "accent": "#C91A25",
+    "accentInk": "#ffffff",
+    "highlight": "#ffd23f",
+    "cellFill": "#1f0b0d",
+    "cellBorder": "#6a1d24",
+    "cellShimmer": "#3a1216",
+    "headerCol": "#ffffff",
+    "headerRow": "#ffd23f",
+    "headerLabelBg": "#120708",
+    "icon": "#ff4d57",
+    "pulse": "#ffd23f",
+    "correct": "#a6ecb2",
+    "correctBg": "#13301c",
+    "nearMiss": "#ffd23f",
+    "nearMissBg": "#3a2a06",
+    "miss": "#ff9a9a",
+    "missBg": "#3a0d10",
+    "hint": "#f2a9ae",
+    "divider": "#6a1d24",
+    "overlay": "rgba(10, 3, 4, 0.65)",
+    "celebrationOverlay": "rgba(10, 3, 4, 0.55)",
+    "dialogSurface": "#fff1f0",
+    "dialogInk": "#120708",
+    "dialogButton": "#C91A25",
+    "dialogButtonInk": "#ffffff",
+    "gateOverlay": "#000000"
+  },
+  "fontKit": "archivo",
+  "radii": {
+    "card": 6,
+    "cell": 6,
+    "button": 6,
+    "pill": 20
+  },
+  "typeScale": {
+    "headerLabel": 0.9
+  },
+  "borders": {
+    "cell": 1,
+    "header": 0,
+    "card": 1.5
+  },
+  "glow": {
+    "color": "#ff4d57",
+    "radius": 12
+  },
+  "flags": {
+    "ruledTable": false,
+    "productNumberCells": false,
+    "dottedLeaderPrices": false,
+    "greyscaleFlags": false,
+    "groupResultsByType": false,
+    "feedbackPlacement": "overlay",
+    "celebrationLayout": "card"
+  },
+  "confetti": {
+    "shape": "dots",
+    "colors": [
+      "#C91A25",
+      "#ff4d57",
+      "#ffd23f",
+      "#ffffff"
+    ]
+  },
+  "decoration": {
+    "kind": "dancefloor",
+    "colors": [
+      "#C91A25",
+      "#ff4d57",
+      "#ffd23f",
+      "#7a1018"
+    ]
+  },
+  "haptics": "bass",
+  "copy": {
+    "en": {
+      "name": "Boomis",
+      "description": "QMISK red, a lit dance floor and Boomis the speaker. Q-spelled everything.",
+      "unlockHint": "Scan the code at QMISK's Thursday pub in Kistan 2.0.",
+      "correctTitles": [
+        "Qorrekt!",
+        "Qlart!",
+        "Qanon!",
+        "Qul!"
+      ],
+      "nearMissTitle": "Qlose!",
+      "completeTitle": "Qvällen är räddad",
+      "searchTitle": "Qvick, guess",
+      "tabHome": "Hem",
+      "tabPlay": "Qör",
+      "tabLeaderboard": "Ranqs",
+      "dossierTitle": "QVITTO",
+      "dossierSubject": "VARA:",
+      "dossierNotes": "QOMMENTAR",
+      "stampHidden": "HEMLIQ",
+      "stampRevealed": "AVSLÖJAD"
+    },
+    "sv": {
+      "name": "Boomis",
+      "description": "QMISK-rött, ett upplyst dansgolv och högtalaren Boomis. Allt stavat med Q.",
+      "unlockHint": "Skanna koden på QMISK:s torsdagspub i Kistan 2.0.",
+      "correctTitles": [
+        "Qorrekt!",
+        "Qlart!",
+        "Qanon!",
+        "Qul!"
+      ],
+      "nearMissTitle": "Qlose!",
+      "completeTitle": "Qvällen är räddad",
+      "searchTitle": "Gissa, qvickt",
+      "tabHome": "Hem",
+      "tabPlay": "Qör",
+      "tabLeaderboard": "Ranqs",
+      "dossierTitle": "QVITTO",
+      "dossierSubject": "VARA:",
+      "dossierNotes": "QOMMENTAR",
+      "stampHidden": "HEMLIQ",
+      "stampRevealed": "AVSLÖJAD"
+    }
+  },
+  "dossier": {
+    "paper": "#fff1f0",
+    "ink": "#120708",
+    "label": "#8c1a22",
+    "bar": "#120708",
+    "rule": "#C91A25",
+    "border": "#C91A25",
+    "borderStyle": "solid",
+    "radius": 6,
+    "tilt": "1deg",
+    "marginRule": null,
+    "ruledLines": false,
+    "stampHidden": "#8c1a22",
+    "stampRevealed": "#1d6b35",
+    "font": null,
+    "glow": false
+  },
+  "logo": {
+    "width": 182,
+    "height": 512
+  }
+}

@@ -1,0 +1,159 @@
+{
+  "id": "club-tmeit",
+  "version": 1,
+  "club": {
+    "name": "TMEIT",
+    "fullName": "TraditionsMEsterIT",
+    "section": "IT-sektionen",
+    "campus": "Kista",
+    "venue": "Kistan 2.0",
+    "pubNight": "Fridays",
+    "website": "https://tmeit.se"
+  },
+  "dark": true,
+  "colors": {
+    "page": "#2a1f36",
+    "surface": "#3a2b4a",
+    "surfaceAlt": "#33263f",
+    "ink": "#f4ecff",
+    "inkStrong": "#fff8ec",
+    "inkMuted": "#cbb8e8",
+    "inkFaint": "#c2acdf",
+    "accent": "#f2c46d",
+    "accentInk": "#2a1f36",
+    "highlight": "#cc99ff",
+    "cellFill": "#33263f",
+    "cellBorder": "#6a5285",
+    "cellShimmer": "#4a3760",
+    "headerCol": "#d9b8ff",
+    "headerRow": "#f2c46d",
+    "headerLabelBg": "#2a1f36",
+    "icon": "#f2c46d",
+    "pulse": "#cc99ff",
+    "correct": "#a6ecb2",
+    "correctBg": "#1d3326",
+    "nearMiss": "#f2c46d",
+    "nearMissBg": "#3d2f12",
+    "miss": "#ffb3b3",
+    "missBg": "#4a1f28",
+    "hint": "#cbb8e8",
+    "divider": "#6a5285",
+    "overlay": "rgba(20, 12, 28, 0.6)",
+    "celebrationOverlay": "rgba(20, 12, 28, 0.5)",
+    "dialogSurface": "#f6ecd6",
+    "dialogInk": "#2a1f36",
+    "dialogButton": "#2a1f36",
+    "dialogButtonInk": "#f6ecd6",
+    "gateOverlay": "#120c18"
+  },
+  "fontKit": "poppins",
+  "radii": {
+    "card": 10,
+    "cell": 10,
+    "button": 22,
+    "pill": 20
+  },
+  "typeScale": {
+    "headerLabel": 0.82
+  },
+  "borders": {
+    "cell": 1,
+    "header": 1,
+    "card": 1.5
+  },
+  "glow": {
+    "color": "#f2c46d",
+    "radius": 10
+  },
+  "flags": {
+    "ruledTable": false,
+    "productNumberCells": false,
+    "dottedLeaderPrices": false,
+    "greyscaleFlags": false,
+    "groupResultsByType": false,
+    "feedbackPlacement": "overlay",
+    "celebrationLayout": "card"
+  },
+  "confetti": {
+    "shape": "sparks",
+    "colors": [
+      "#f2c46d",
+      "#cc99ff",
+      "#fff8ec"
+    ]
+  },
+  "decoration": {
+    "kind": "candlelight",
+    "colors": [
+      "#f2c46d"
+    ]
+  },
+  "haptics": "toast",
+  "copy": {
+    "en": {
+      "name": "Tentagasque",
+      "description": "TMEIT's gasque table: plum, laser violet and candlelight. Every bottle a verse.",
+      "unlockHint": "Scan the code at TMEIT's Friday pub in Kistan 2.0.",
+      "correctTitles": [
+        "Vers ett!",
+        "Sjung!",
+        "Rätt ton!",
+        "Bravo!"
+      ],
+      "nearMissTitle": "Nästan!",
+      "completeTitle": "Sista versen",
+      "searchTitle": "Make your guess",
+      "tabHome": "Home",
+      "tabPlay": "Sing",
+      "tabLeaderboard": "Ranks",
+      "dossierTitle": "SONG SHEET",
+      "dossierSubject": "VERSE:",
+      "dossierNotes": "NOTES",
+      "stampHidden": "HUSHED",
+      "stampRevealed": "SUNG"
+    },
+    "sv": {
+      "name": "Tentagasque",
+      "description": "TMEIT:s gasquebord: plommon, laserviolett och levande ljus. Varje flaska en vers.",
+      "unlockHint": "Skanna koden på TMEIT:s fredagspub i Kistan 2.0.",
+      "correctTitles": [
+        "Vers ett!",
+        "Sjung!",
+        "Rätt ton!",
+        "Bravo!"
+      ],
+      "nearMissTitle": "Nästan!",
+      "completeTitle": "Sista versen",
+      "searchTitle": "Gissa",
+      "tabHome": "Hem",
+      "tabPlay": "Sjung",
+      "tabLeaderboard": "Topplista",
+      "dossierTitle": "SÅNGBLAD",
+      "dossierSubject": "VERS:",
+      "dossierNotes": "NOTER",
+      "stampHidden": "TYST",
+      "stampRevealed": "SJUNGEN"
+    }
+  },
+  "dossier": {
+    "paper": "#f6ecd6",
+    "ink": "#2a1f36",
+    "label": "#6b4f8a",
+    "bar": "#2a1f36",
+    "rule": "#c9b28a",
+    "border": "#7b4fae",
+    "borderStyle": "solid",
+    "radius": 8,
+    "tilt": "-1deg",
+    "marginRule": "#c98a8a",
+    "ruledLines": true,
+    "stampHidden": "#8f1d17",
+    "stampRevealed": "#2e6b3a",
+    "font": null,
+    "glow": false
+  },
+  "logo": {
+    "width": 512,
+    "height": 374
+  }
+}
