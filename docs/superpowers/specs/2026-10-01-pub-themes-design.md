@@ -120,14 +120,14 @@ Each club theme is a JSON file, validated on the server when it loads it and aga
   haptics: HapticPatternId,
   copy: { en: ThemeCopy, sv: ThemeCopy },
   dossier: DossierLook,
-  logo: { width, height }           // the image is logo.png (or .webp) next to it
+  logo: { width, height } | null    // the image is logo.png (or .webp) next to it
 }
 ```
 
 **At startup** (`loadThemePack(dir)`):
 - Runs the same WCAG AA contrast checks as `theme.test.ts`, using `src/theme/contrast.ts`.
 - Rejects unknown font kits, decorations and haptic patterns.
-- Accepts only PNG or WebP logos, at most 300 KB and 1024 px. No SVG, since an SVG can carry scripts.
+- Logos are optional. When present, only PNG or WebP, at most 300 KB and 1024 px. No SVG, since an SVG can carry scripts. Without a logo, the app draws the club's initial in its colours (a monogram), as the mockups do.
 - When the file's `version` is newer than the stored one, it replaces it. The same or an older version is left alone.
 - A file that fails validation is logged and skipped; the server still starts, and the previous stored version stays in use.
 
