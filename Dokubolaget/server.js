@@ -390,6 +390,7 @@ const api = createApi({
   // localhost port. Never on in a deployed container.
   devOrigins: process.env.API_DEV_CORS === "true",
   publicUrl: process.env.PUBLIC_URL,
+  supportUrl: process.env.SUPPORT_URL,
 });
 
 async function serveApi(req, res, requestUrl) {
