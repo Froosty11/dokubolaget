@@ -1,7 +1,8 @@
 import { observer } from "mobx-react-lite";
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 import { AccessibilityInfo, Platform, StyleSheet } from "react-native";
-import { FALLBACK_FONTS, useThemeFonts } from "./fonts";
+import { useThemeFonts } from "./fonts";
+import { themeWithFonts } from "./fontKits";
 import { setActiveHapticPattern } from "./haptics";
 import { UI_LANG, getTheme } from "./registry";
 import type { Theme, ThemeCopy, ThemeId } from "./types";
@@ -32,10 +33,10 @@ export const ThemeProvider = observer(function ThemeProvider({
   children: ReactNode;
 }) {
   const id = model.activeThemeId;
-  const fontsReady = useThemeFonts(id);
   const base = getTheme(id);
+  const fontsReady = useThemeFonts(base);
   // Until a theme's fonts arrive, text uses fonts that are always loaded.
-  const theme = useMemo(() => (fontsReady ? base : { ...base, fonts: FALLBACK_FONTS }), [base, fontsReady]);
+  const theme = useMemo(() => themeWithFonts(base, fontsReady), [base, fontsReady]);
   useWebChrome(theme);
   // Vibration follows the active theme.
   setActiveHapticPattern(base.haptics);

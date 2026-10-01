@@ -1,4 +1,4 @@
-import type { ClubThemeId, DecorationKind, HapticPatternId } from "./packSchema";
+import type { ClubThemeId, DecorationKind, FontKitId, HapticPatternId } from "./packSchema";
 
 // Themes that ship with the app. Club themes come from the server and have
 // ids like "club-qmisk" (see packSchema.ts).
@@ -78,6 +78,8 @@ export type Theme = {
   haptics: HapticPatternId;
   // Club themes draw a decoration from the app's kit instead of their own artwork.
   decoration?: { kind: DecorationKind; colors: string[] };
+  // Club themes name the font set their fonts come from.
+  fontKit?: FontKitId;
   copy: Record<Lang, ThemeCopy>;
   dossier: DossierLook;
 };

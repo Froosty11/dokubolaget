@@ -13,6 +13,7 @@ export function packToTheme(pack: ThemePack): Theme {
     dark: pack.dark,
     colors: pack.colors,
     fonts: FONT_KIT_FONTS[pack.fontKit],
+    fontKit: pack.fontKit,
     radii: pack.radii,
     typeScale: pack.typeScale,
     borders: pack.borders,
