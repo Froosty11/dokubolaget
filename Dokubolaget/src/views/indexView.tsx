@@ -11,6 +11,7 @@ import { makeAppStyles } from "../AppStyles"
 import { useTheme, useThemedStyles } from "../theme/ThemeProvider";
 import { ThemeLogo } from "../theme/ThemeLogo";
 import { ThemeBackdrop } from "../theme/decorations/ThemeBackdrop";
+import { ResponsibleNote } from "../components/ResponsibleNote";
 import type { Theme } from "../theme/types";
 import  AuthDialog from "./authDialogView";
 import DokubolagetLogo from "../../assets/Dokubolaget3.svg";
@@ -124,7 +125,7 @@ export function IndexView({ ageGate, account }: IndexViewProps) {
       </View>
 
       {/* Index menu */}
-      <View style={{width: "100%", gap: 10, marginBottom: 80}}>
+      <View style={{width: "100%", gap: 10, marginBottom: 16}}>
         <IndexOption
           Icon={Drinks}
           text="Daily play!"
@@ -158,6 +159,11 @@ export function IndexView({ ageGate, account }: IndexViewProps) {
           </View>
         )}
       </View>
+
+      <View style={{marginBottom: 56}}>
+        <ResponsibleNote />
+      </View>
+
       {/* Login dialog */}
       <AuthDialog 
         open={showLogin}
@@ -189,6 +195,7 @@ function AgeVerificationDialog({
   onReject,
 }: AgeVerificationDialogProps) {
   const age = useThemedStyles(makeAgeStyles);
+  const { theme } = useTheme();
   if (!isOpen) return null;
 
   return (
@@ -234,6 +241,7 @@ function AgeVerificationDialog({
               <Text style={age.buttonText}>I have turned 20</Text>
             </Pressable>
           </View>
+          <ResponsibleNote color={theme.colors.dialogInk} />
         </Dialog.Content>
       </Dialog.Portal>
     </Dialog>
