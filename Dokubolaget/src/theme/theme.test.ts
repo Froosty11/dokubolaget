@@ -1,16 +1,7 @@
 import { describe, expect, test } from "bun:test";
-import { contrastRatio } from "./contrast";
+import { CONTRAST_PAIRS, contrastRatio, dossierContrastProblems } from "./contrast";
 import { DEFAULT_THEME_ID, THEMES, getTheme } from "./registry";
-import type { ThemeColors, ThemeCopy } from "./types";
-
-// Text/background pairs that must meet WCAG AA (4.5:1) in every theme.
-const CONTRAST_PAIRS: Array<[keyof ThemeColors, keyof ThemeColors]> = [
-  ["ink", "page"], ["ink", "surface"], ["ink", "cellFill"], ["inkStrong", "surface"],
-  ["inkMuted", "page"], ["inkMuted", "surface"], ["inkFaint", "surface"], ["inkFaint", "surfaceAlt"],
-  ["hint", "page"], ["hint", "surface"], ["accentInk", "accent"],
-  ["correct", "correctBg"], ["nearMiss", "nearMissBg"], ["miss", "missBg"],
-  ["dialogInk", "dialogSurface"], ["dialogButtonInk", "dialogButton"], ["ink", "headerLabelBg"],
-];
+import type { ThemeCopy } from "./types";
 
 const COPY_KEYS: Array<keyof ThemeCopy> = [
   "name", "description", "unlockHint", "correctTitles", "nearMissTitle", "completeTitle",
@@ -49,11 +40,7 @@ test("themes appear in picker order", () => {
 
 describe.each(THEMES.map((theme) => [theme.id, theme] as const))("info sheet for %s", (_id, theme) => {
   test("text on the sheet meets AA", () => {
-    const d = theme.dossier;
-    expect(contrastRatio(d.ink, d.paper)).toBeGreaterThanOrEqual(4.5);
-    expect(contrastRatio(d.label, d.paper)).toBeGreaterThanOrEqual(4.5);
-    expect(contrastRatio(d.stampHidden, d.paper)).toBeGreaterThanOrEqual(3);
-    expect(contrastRatio(d.stampRevealed, d.paper)).toBeGreaterThanOrEqual(3);
+    expect(dossierContrastProblems(theme.dossier)).toEqual([]);
   });
   test("has its own wording in both languages", () => {
     for (const lang of ["sv", "en"] as const) {

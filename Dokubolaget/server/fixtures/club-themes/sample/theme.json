@@ -1,0 +1,51 @@
+{
+  "id": "club-sample",
+  "version": 1,
+  "club": {
+    "name": "Sample", "fullName": "Sample Klubbmästeri", "section": "Testsektionen", "campus": "Testcampus",
+    "venue": "Testpuben", "pubNight": "Thursdays", "website": "https://example.com"
+  },
+  "dark": false,
+  "colors": {
+    "page": "#f1e9d2", "surface": "#f7f1df", "surfaceAlt": "#e8dcbc",
+    "ink": "#1d1b17", "inkStrong": "#1d1b17", "inkMuted": "#5b5446", "inkFaint": "#625a49",
+    "accent": "#0d6b3a", "accentInk": "#f1e9d2", "highlight": "#f3c63f",
+    "cellFill": "#f1e9d2", "cellBorder": "#1d1b17", "cellShimmer": "#e6d9b4",
+    "headerCol": "#1d1b17", "headerRow": "#1d1b17", "headerLabelBg": "#f1e9d2", "icon": "#1d1b17", "pulse": "#0d6b3a",
+    "correct": "#0d6b3a", "correctBg": "#dfe8cf", "nearMiss": "#6e4608", "nearMissBg": "#f6e3a6", "miss": "#8f1d17", "missBg": "#efd2c4",
+    "hint": "#5b5446", "divider": "#1d1b17", "overlay": "rgba(29, 27, 23, 0.45)", "celebrationOverlay": "rgba(29, 27, 23, 0.35)",
+    "dialogSurface": "#f7f1df", "dialogInk": "#1d1b17", "dialogButton": "#1d1b17", "dialogButtonInk": "#f1e9d2", "gateOverlay": "#1d1b17"
+  },
+  "fontKit": "prislista",
+  "radii": { "card": 4, "cell": 2, "button": 4, "pill": 12 },
+  "typeScale": { "headerLabel": 1 },
+  "borders": { "cell": 1, "header": 1.5, "card": 1.5 },
+  "glow": null,
+  "flags": {
+    "ruledTable": false, "productNumberCells": false, "dottedLeaderPrices": false,
+    "greyscaleFlags": false, "groupResultsByType": false, "feedbackPlacement": "overlay", "celebrationLayout": "card"
+  },
+  "confetti": { "shape": "dots", "colors": ["#0d6b3a", "#f3c63f"] },
+  "decoration": { "kind": "none", "colors": [] },
+  "haptics": "receipt",
+  "copy": {
+    "en": {
+      "name": "Sample", "description": "A made-up club theme for tests.", "unlockHint": "Scan the code at Testpuben.",
+      "correctTitles": ["Right!"], "nearMissTitle": "Close!", "completeTitle": "Done", "searchTitle": "Make your guess",
+      "tabHome": "Home", "tabPlay": "Play", "tabLeaderboard": "Ranks",
+      "dossierTitle": "CARD", "dossierSubject": "ITEM:", "dossierNotes": "NOTES", "stampHidden": "HIDDEN", "stampRevealed": "SHOWN"
+    },
+    "sv": {
+      "name": "Exempel", "description": "Ett påhittat klubbtema för tester.", "unlockHint": "Skanna koden på Testpuben.",
+      "correctTitles": ["Rätt!"], "nearMissTitle": "Nära!", "completeTitle": "Klart", "searchTitle": "Gissa",
+      "tabHome": "Hem", "tabPlay": "Spela", "tabLeaderboard": "Topplista",
+      "dossierTitle": "KORT", "dossierSubject": "VARA:", "dossierNotes": "NOTISER", "stampHidden": "DOLD", "stampRevealed": "VISAD"
+    }
+  },
+  "dossier": {
+    "paper": "#f7f1df", "ink": "#1d1b17", "label": "#5b5446", "bar": "#1d1b17", "rule": "#1d1b17",
+    "border": "#1d1b17", "borderStyle": "solid", "radius": 2, "tilt": "-1deg", "marginRule": null, "ruledLines": false,
+    "stampHidden": "#8f1d17", "stampRevealed": "#0d6b3a", "font": null, "glow": false
+  },
+  "logo": { "width": 64, "height": 64 }
+}
