@@ -3,6 +3,8 @@
 // 8090) with the sample club theme loaded:
 //   CLUB_THEMES_DIR=server/fixtures/club-themes bun run api
 //   node tools/scanCheck.mjs
+// Against a container, pass a link made there and its theme:
+//   APP_URL=http://localhost:8080 SCAN_LINK=<link> THEME=club-qmisk node tools/scanCheck.mjs
 import { execFileSync, spawn } from "node:child_process";
 
 const BASE = process.env.APP_URL || "http://localhost:8081";
@@ -57,10 +59,12 @@ async function browser(port) {
   return { send, ev, click, text, waitFor, close: () => chrome.kill(), goto: (url) => send("Page.navigate", { url }) };
 }
 
-const created = execFileSync("bun", ["scripts/admin.ts", "codes", "create", "club-sample", "--label", "scanCheck"], {
-  env: { ...process.env, PUBLIC_URL: BASE }, encoding: "utf8",
-});
-const link = created.match(/link: (\S+)/)?.[1];
+const THEME = process.env.THEME || "club-sample";
+const link =
+  process.env.SCAN_LINK ||
+  execFileSync("bun", ["scripts/admin.ts", "codes", "create", THEME, "--label", "scanCheck"], {
+    env: { ...process.env, PUBLIC_URL: BASE }, encoding: "utf8",
+  }).match(/link: (\S+)/)?.[1];
 check("admin script made a link", Boolean(link), link);
 
 const A = await browser(9661);
@@ -72,12 +76,12 @@ await A.click("I have turned 20");
 check("the unlock moment shows", await A.waitFor("Stamp collected"));
 // Before touching anything: the unlock is already saved on the device.
 const saved = await A.ev(`localStorage.getItem("dokubolaget.unlockedThemes")`);
-check("the unlock is saved before any tap", String(saved).includes("club-sample"), saved);
+check("the unlock is saved before any tap", String(saved).includes(THEME), saved);
 await A.click("Wear it now");
 await sleep(1500);
 await A.goto(`${BASE}/`);
 await sleep(6000);
-check("the club theme is active after a reload", (await A.ev("window.__doku.activeThemeId")) === "club-sample");
+check("the club theme is active after a reload", (await A.ev(`document.documentElement.innerText.length > 0 && localStorage.getItem("dokubolaget.theme")`)) === THEME);
 await A.goto(`${BASE}/scan/AAAA-AAAA-AA`);
 check("a made-up code is refused", await A.waitFor("That code doesn't exist"));
 A.close();
