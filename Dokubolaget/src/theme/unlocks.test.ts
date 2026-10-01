@@ -99,3 +99,15 @@ test("themeCardState honours an explicit availability list", () => {
   const ctx = { unlocked: [], longestStreak: 0, loggedIn: false };
   expect(themeCardState(ALL[4], ctx, "prislista", ["prislista", "modern"]).state).toBe("available");
 });
+
+describe("club theme ids", () => {
+  test("parseUnlocked keeps valid club ids and drops malformed ones", () =>
+    expect(parseUnlocked('["club-tmeit","cyberwave","nope","club-"]')).toEqual(["cyberwave", "club-tmeit"]));
+  test("mergeUnlocked puts built-ins first, then club ids sorted", () =>
+    expect(mergeUnlocked(["club-b"], ["club-a", "speakeasy"])).toEqual(["speakeasy", "club-a", "club-b"]));
+  test("a scan theme is available only once unlocked", () => {
+    const club = t("club-x", { kind: "scan" });
+    expect(availableThemeIds([...ALL, club], none)).toEqual(["prislista", "midsommar"]);
+    expect(availableThemeIds([...ALL, club], { ...none, unlocked: ["club-x"] })).toEqual(["prislista", "midsommar", "club-x"]);
+  });
+});

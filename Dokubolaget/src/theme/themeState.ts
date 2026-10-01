@@ -1,9 +1,9 @@
-import { DEFAULT_THEME_ID, THEMES } from "./registry";
+import { DEFAULT_THEME_ID, THEMES, clubTheme, isBuiltInThemeId, registeredClubThemeIds } from "./registry";
 import type { ThemeId } from "./types";
 
 // Where an unlock was earned decides where it is announced: board unlocks
 // after the celebration on Play, streak unlocks on Home.
-export type UnlockSource = "board" | "streak";
+export type UnlockSource = "board" | "streak" | "scan";
 import { availableThemeIds, mergeUnlocked, resolveActiveThemeId, unlocksForStreak } from "./unlocks";
 
 function isAlwaysAvailable(id: ThemeId) {
@@ -26,12 +26,15 @@ export function createThemeState({ unlockAll = UNLOCK_ALL_FROM_BUILD }: { unlock
     pendingSources: {} as Partial<Record<ThemeId, UnlockSource>>,
 
     get availableThemeIds(): ThemeId[] {
-      if (unlockAll) return THEMES.map((theme) => theme.id);
-      return availableThemeIds(THEMES, {
+      if (unlockAll) return [...THEMES.map((theme) => theme.id), ...registeredClubThemeIds()];
+      const builtIn = availableThemeIds(THEMES, {
         unlocked: this.unlockedThemes,
         longestStreak: this.longestStreak,
         loggedIn: this.loggedIn,
       });
+      // Club themes count once they're unlocked and downloaded.
+      const clubs = this.unlockedThemes.filter((id) => !isBuiltInThemeId(id) && clubTheme(id));
+      return [...builtIn, ...clubs];
     },
     get activeThemeId(): ThemeId {
       return resolveActiveThemeId(this.themeId, this.availableThemeIds, DEFAULT_THEME_ID);

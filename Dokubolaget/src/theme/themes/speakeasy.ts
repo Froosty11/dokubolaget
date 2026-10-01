@@ -29,6 +29,7 @@ export const speakeasy: Theme = {
   },
   confetti: { shape: "flecks", colors: ["#d4af37", "#f5e7bf", "#b8912a"] },
   unlock: { kind: "perfectBoard" },
+  haptics: "toast",
   copy: {
     en: {
       name: "Speakeasy", description: "1920s art deco. Black, gold and a password.", unlockHint: "Unlocks with a perfect board: nine cells, no misses.",

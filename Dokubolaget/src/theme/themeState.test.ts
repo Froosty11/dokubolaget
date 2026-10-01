@@ -48,3 +48,37 @@ test("a local build with unlockAll offers every theme", () => {
   expect(s.setThemeId("modern")).toBe(true);
   expect(createThemeState().availableThemeIds).not.toContain("modern");
 });
+
+import { getTheme, registerClubTheme } from "./registry";
+import { prislista } from "./themes/prislista";
+
+const clubTheme = (id: `club-${string}`) => ({ ...prislista, id, unlock: { kind: "scan" as const } });
+
+test("an unlocked club theme that isn't downloaded yet falls back to the default", () => {
+  const s = createThemeState();
+  s.addUnlocks(["club-ghost"], "scan");
+  s.themeId = "club-ghost";
+  expect(s.activeThemeId).toBe("prislista");
+  expect(s.setThemeId("club-ghost")).toBe(false);
+});
+
+test("a registered, unlocked club theme can be worn, and was announced as a scan", () => {
+  registerClubTheme(clubTheme("club-reg"));
+  const s = createThemeState();
+  expect(s.setThemeId("club-reg")).toBe(false);
+  s.addUnlocks(["club-reg"], "scan");
+  expect(s.pendingSources["club-reg"]).toBe("scan");
+  expect(s.setThemeId("club-reg")).toBe(true);
+  expect(s.activeThemeId).toBe("club-reg");
+});
+
+test("getTheme finds registered club themes and falls back for unknown ones", () => {
+  registerClubTheme(clubTheme("club-found"));
+  expect(getTheme("club-found").id).toBe("club-found");
+  expect(getTheme("club-missing").id).toBe("prislista");
+});
+
+test("unlock-all builds also offer registered club themes", () => {
+  registerClubTheme(clubTheme("club-all"));
+  expect(createThemeState({ unlockAll: true }).availableThemeIds).toContain("club-all");
+});

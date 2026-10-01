@@ -28,6 +28,7 @@ export const cyberwave: Theme = {
   },
   confetti: { shape: "sparks", colors: ["#00f0ff", "#ff2ec4", "#ffe45e", "#ff8a3d"] },
   unlock: { kind: "firstBoard" },
+  haptics: "neon",
   copy: {
     en: {
       name: "Cyberwave", description: "80s outrun. Neon grid, sunset, chrome.", unlockHint: "Unlocks when you finish your first board.",

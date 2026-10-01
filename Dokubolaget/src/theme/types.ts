@@ -1,5 +1,11 @@
-export const THEME_IDS = ["prislista", "midsommar", "cyberwave", "speakeasy", "modern"] as const;
-export type ThemeId = (typeof THEME_IDS)[number];
+import type { ClubThemeId, DecorationKind, HapticPatternId } from "./packSchema";
+
+// Themes that ship with the app. Club themes come from the server and have
+// ids like "club-qmisk" (see packSchema.ts).
+export const BUILT_IN_THEME_IDS = ["prislista", "midsommar", "cyberwave", "speakeasy", "modern"] as const;
+export const THEME_IDS = BUILT_IN_THEME_IDS;
+export type BuiltInThemeId = (typeof BUILT_IN_THEME_IDS)[number];
+export type ThemeId = BuiltInThemeId | ClubThemeId;
 export type Lang = "sv" | "en";
 
 export type ThemeColors = {
@@ -24,7 +30,8 @@ export type UnlockRule =
   | { kind: "always" }
   | { kind: "firstBoard" }
   | { kind: "perfectBoard" }
-  | { kind: "streak"; days: number };
+  | { kind: "streak"; days: number }
+  | { kind: "scan" };
 
 export type ThemeCopy = {
   name: string; description: string; unlockHint: string;
@@ -68,6 +75,9 @@ export type Theme = {
   };
   confetti: { shape: ConfettiShape; colors: string[] };
   unlock: UnlockRule;
+  haptics: HapticPatternId;
+  // Club themes draw a decoration from the app's kit instead of their own artwork.
+  decoration?: { kind: DecorationKind; colors: string[] };
   copy: Record<Lang, ThemeCopy>;
   dossier: DossierLook;
 };

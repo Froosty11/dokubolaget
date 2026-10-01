@@ -28,6 +28,7 @@ export const midsommar: Theme = {
   },
   confetti: { shape: "petals", colors: ["#c8102e", "#ffd23f", "#ffffff", "#8cc59a", "#1f3a5f"] },
   unlock: { kind: "always" },
+  haptics: "classic",
   copy: {
     en: {
       name: "Midsommar", description: "Swedish summer meadow. Flowers and a maypole.", unlockHint: "Always available.",

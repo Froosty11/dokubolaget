@@ -30,6 +30,7 @@ export const modern: Theme = {
   confetti: { shape: "dots", colors: ["#007a33", "#ffd400", "#ff5a5f", "#2d9cdb", "#ff9f1c", "#9b5de5"] },
   // Modern ships Systembolaget's own fonts, so it is the hardest reward.
   unlock: { kind: "streak", days: 7 },
+  haptics: "classic",
   copy: {
     en: {
       name: "Modern", description: "Clean and bright. The classic look.", unlockHint: "Unlocks at a 7-day streak.",

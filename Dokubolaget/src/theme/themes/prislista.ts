@@ -29,6 +29,7 @@ export const prislista: Theme = {
   },
   confetti: { shape: "priceTags", colors: ["#0d6b3a", "#1d1b17", "#f3c63f", "#fbf7ea"] },
   unlock: { kind: "always" },
+  haptics: "receipt",
   copy: {
     en: {
       name: "Prislista 1986", description: "The old printed price list. Ink on newsprint.", unlockHint: "Always available.",

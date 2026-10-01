@@ -1,5 +1,5 @@
-import { isThemeId } from "./registry";
-import { THEME_IDS, type Theme, type ThemeId } from "./types";
+import { isBuiltInThemeId, isThemeId } from "./registry";
+import { BUILT_IN_THEME_IDS, type Theme, type ThemeId } from "./types";
 
 export type UnlockContext = { unlocked: readonly ThemeId[]; longestStreak: number; loggedIn: boolean };
 
@@ -51,9 +51,11 @@ export function parseUnlocked(raw: unknown): ThemeId[] {
   return mergeUnlocked([], value.filter(isThemeId));
 }
 
+// Built-in themes in picker order, then club themes sorted by id.
 export function mergeUnlocked(a: readonly ThemeId[], b: readonly ThemeId[]): ThemeId[] {
   const all = new Set<ThemeId>([...a, ...b]);
-  return THEME_IDS.filter((id) => all.has(id));
+  const clubs = [...all].filter((id) => !isBuiltInThemeId(id)).sort();
+  return [...BUILT_IN_THEME_IDS.filter((id) => all.has(id)), ...clubs];
 }
 
 export function resolveActiveThemeId(stored: ThemeId | null, available: readonly ThemeId[], fallback: ThemeId): ThemeId {
