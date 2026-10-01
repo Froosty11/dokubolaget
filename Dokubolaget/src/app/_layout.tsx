@@ -36,6 +36,7 @@ export default function RootLayout() {
             />
             <Stack.Screen name="themes" options={{ headerShown: false, presentation: "modal" }} />
             <Stack.Screen name="reset-password" options={{ headerShown: false }} />
+            <Stack.Screen name="delete-account" options={{ headerShown: false }} />
           </Stack>
         </NavThemeProvider>
       </ThemeProvider>

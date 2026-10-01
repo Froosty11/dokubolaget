@@ -16,6 +16,10 @@ export function logoutACB() {
     return serverSync.logout();
 }
 
+export function deleteAccountACB(email: string, password: string) {
+    return serverSync.deleteAccount(email.trim(), password);
+}
+
 export function requestPasswordResetACB(email: string) {
     return api.requestReset(email.trim());
 }

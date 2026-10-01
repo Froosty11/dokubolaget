@@ -67,7 +67,7 @@ export async function signup(db: Database, input: { email: unknown; password: un
 // Verified against when the email is unknown, so both failures take as long.
 let dummyHash: Promise<string> | null = null;
 
-export async function login(db: Database, input: { email: unknown; password: unknown }) {
+async function verifyCredentials(db: Database, input: { email: unknown; password: unknown }) {
   const email = String(input.email ?? "").trim().toLowerCase();
   const password = String(input.password ?? "");
   const user = db.query("SELECT id, password_hash FROM users WHERE email = ?").get(email) as
@@ -79,7 +79,21 @@ export async function login(db: Database, input: { email: unknown; password: unk
     throw new ApiError(401, "bad_credentials");
   }
   if (!(await Bun.password.verify(password, user.password_hash))) throw new ApiError(401, "bad_credentials");
-  return { userId: user.id, token: createSession(db, user.id) };
+  return user.id;
+}
+
+export async function login(db: Database, input: { email: unknown; password: unknown }) {
+  const userId = await verifyCredentials(db, input);
+  return { userId, token: createSession(db, userId) };
+}
+
+// Deletes the account and, through ON DELETE CASCADE, its sessions, reset
+// links, prefs and progress. The password is asked for again so a session
+// left open on a shared device can't delete it.
+export async function deleteAccount(db: Database, input: { email: unknown; password: unknown }) {
+  const userId = await verifyCredentials(db, input);
+  db.run("DELETE FROM users WHERE id = ?", [userId]);
+  return userId;
 }
 
 export function sessionUser(db: Database, token: string | null | undefined, now = new Date()): SessionUser | null {

@@ -152,6 +152,9 @@ export function IndexView({ ageGate, account }: IndexViewProps) {
               text="Logout"
               onPress={handleLogoutACB}
             />
+            <Pressable accessibilityRole="link" onPress={() => router.push("/delete-account")}>
+              <Text style={{fontFamily: theme.fonts.body, color: theme.colors.inkMuted, textDecorationLine: "underline"}}>Delete account</Text>
+            </Pressable>
           </View>
         )}
       </View>

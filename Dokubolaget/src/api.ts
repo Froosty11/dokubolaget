@@ -63,6 +63,8 @@ export const api = {
   logout: () => request<{ ok: true }>("POST", "/api/auth/logout", {}),
   requestReset: (email: string) => request<{ ok: true }>("POST", "/api/auth/reset-request", { email }),
   resetPassword: (token: string, password: string) => request<{ ok: true }>("POST", "/api/auth/reset", { token, password }),
+  deleteAccount: (email: string, password: string) =>
+    request<{ ok: true }>("POST", "/api/auth/delete-account", { email, password }),
   setNickname: (nickname: string) => request<{ user: Account }>("PATCH", "/api/me", { nickname }),
   putPrefs: (prefs: { theme: string; unlockedThemes: string[] }) =>
     request<{ prefs: ServerPrefs }>("PUT", "/api/me/prefs", prefs),

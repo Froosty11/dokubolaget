@@ -210,3 +210,38 @@ describe("review fixes", () => {
     expect((await api(req("GET", "/api/boards/%E0%A4%A"))).status).toBe(404);
   });
 });
+
+describe("account deletion", () => {
+  test("deletes the account and everything stored for it", async () => {
+    const cookie = await signedIn();
+    await api(req("PUT", "/api/me/prefs", { theme: "midsommar", unlockedThemes: ["cyberwave"] }, { cookie }));
+    await api(req("PUT", "/api/me/progress", { date: TODAY, boardKey: "k", data: { selectedProductsByCell: {} } }, { cookie }));
+    await api(req("POST", "/api/auth/reset-request", { email: user.email }));
+
+    const res = await api(req("POST", "/api/auth/delete-account", { email: user.email, password: user.password }, { cookie }));
+    expect(res.status).toBe(200);
+    expect(res.headers["set-cookie"]).toContain("Max-Age=0");
+    expect(json(await api(req("GET", "/api/me", undefined, { cookie }))).user).toBeNull();
+    for (const table of ["users", "sessions", "password_resets", "prefs", "progress"]) {
+      expect((db.query(`SELECT COUNT(*) AS n FROM ${table}`).get() as { n: number }).n).toBe(0);
+    }
+    // The email and nickname are free again.
+    expect((await api(req("POST", "/api/auth/signup", user))).status).toBe(200);
+  });
+  test("needs the right password, and leaves other accounts alone", async () => {
+    await signedIn();
+    await api(req("POST", "/api/auth/signup", { email: "bo@example.se", password: "hemligt456", nickname: "Bo" }));
+    const bad = await api(req("POST", "/api/auth/delete-account", { email: user.email, password: "wrongwrong" }));
+    expect([bad.status, json(bad).error]).toEqual([401, "bad_credentials"]);
+    const ok = await api(req("POST", "/api/auth/delete-account", { email: "BO@example.se", password: "hemligt456" }));
+    expect(ok.status).toBe(200);
+    expect((db.query("SELECT nickname FROM users").all() as Array<{ nickname: string }>).map((u) => u.nickname)).toEqual(["Anna"]);
+  });
+  test("is blocked from other sites", async () => {
+    await signedIn();
+    const res = await api(
+      req("POST", "/api/auth/delete-account", { email: user.email, password: user.password }, { headers: { origin: "https://evil.example" } }),
+    );
+    expect(res.status).toBe(403);
+  });
+});

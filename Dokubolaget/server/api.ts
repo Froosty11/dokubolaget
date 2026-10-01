@@ -1,7 +1,7 @@
 import type { Database } from "bun:sqlite";
 import { THEME_IDS } from "../src/theme/types";
 import {
-  ApiError, RateLimiter, SESSION_DAYS, createResetToken, login, logout, resetPassword, sessionUser, setNickname, signup,
+  ApiError, RateLimiter, SESSION_DAYS, createResetToken, deleteAccount, login, logout, resetPassword, sessionUser, setNickname, signup,
   type SessionUser,
 } from "./auth";
 import { getBoard } from "./boards";
@@ -210,6 +210,14 @@ export function createApi(deps: ApiDeps) {
       const body = parseBody(req);
       await resetPassword(db, body.token, body.password, now());
       return respond(200, { ok: true });
+    }
+
+    // Works logged out too (email and password), so the web page for deleting
+    // an account doesn't need the app.
+    if (method === "POST" && path === "/api/auth/delete-account") {
+      limit(`login:${req.ip}`, 10, 60_000);
+      await deleteAccount(db, parseBody(req));
+      return respond(200, { ok: true }, { "set-cookie": sessionCookie(req, null) });
     }
 
     if (method === "GET" && path === "/api/me") {

@@ -121,5 +121,14 @@ export function connectToServer(model: SyncedModel) {
       model.setAccount(null);
       model.setLoggedIn(false);
     },
+    // The server also ends the session. What's saved on this device (theme,
+    // today's board) stays, as it would for any logged-out player.
+    async deleteAccount(email: string, password: string) {
+      await api.deleteAccount(email, password);
+      synced = false;
+      remoteProgress = null;
+      model.setAccount(null);
+      model.setLoggedIn(false);
+    },
   };
 }
