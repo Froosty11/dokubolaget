@@ -94,34 +94,26 @@ bun run confirm:board --board-index 0
 - Do not use these scripts in the mobile/web production bundle.
 - Keep board generation in build/dev/admin workflows, then ship only generated data needed by the app.
 
-## Step 4: Seed to Firestore
+## Step 4: Store boards in the app database
 
-Pushes the top board from `data/generated-boards.json` to `boards/{YYYY-MM-DD}` in Firestore.
+Stores boards from `data/generated-boards.json` in the app's SQLite database (`DB_PATH`, default `data/local.sqlite`), one per date.
 
 ```bash
-# Provide service account credentials one of two ways:
-# 1. JSON contents in env (preferred for CI):
-export FIREBASE_SERVICE_ACCOUNT_KEY='{"type":"service_account",...}'
-# 2. Path to a JSON file (firebase-admin reads GOOGLE_APPLICATION_CREDENTIALS):
-export GOOGLE_APPLICATION_CREDENTIALS=/path/to/key.json
-
-bun run seed:firestore -- --date 2026-05-06
-bun run seed:firestore -- --date 2026-05-06 --days 30
+bun run seed:boards -- --date 2026-05-06
+bun run seed:boards -- --date 2026-05-06 --days 30
+DB_PATH=/data/dokubolaget.sqlite bun run seed:boards -- --date 2026-05-06
 ```
 
 Defaults: `--date` falls back to tomorrow UTC, `--days 1`, `--boards-file data/generated-boards.json` is the input.
 
-When `--days N` is set, the script writes one document per consecutive date starting from `--date`, cycling through the available board pool round-robin. If the pool is smaller than `N`, you'll see a warning and dates will reuse boards. Generate a larger pool first with `bun run generate:board --boards 30` (and a fresh `products.json`) for unique daily puzzles.
-
-Output:
-- Firestore documents `boards/{YYYY-MM-DD}` with `rows`, `cols`, `score`, `counts`, `seed`, `generatedAt`.
+When `--days N` is set, the script stores one board per consecutive date starting from `--date`, cycling through the available board pool round-robin. If the pool is smaller than `N`, you'll see a warning and dates will reuse boards. Generate a larger pool first with `bun run generate:board --boards 30` (and a fresh `products.json`) for unique daily puzzles.
 
 ## Nightly run in production
 
-`server.js` (the process inside the Docker container) runs this pipeline on a timer: on boot it seeds today's and tomorrow's boards, then every night at 00:05 UTC it seeds tomorrow's. Each run:
+`server.js` (the process inside the Docker container) runs this pipeline on a timer: on boot it stores today's and tomorrow's boards, then every night at 00:05 UTC it stores tomorrow's. Each run:
 
 1. Downloads a fresh `products.json` from the community catalog mirror at `https://susbolaget.emrik.org/v1/products` (CORS-open, no auth, ~100MB).
 2. Runs Step 1 (`find:tags`) and Step 2 (`generate:board`).
-3. Runs Step 4 (`seed:firestore`) to write `boards/{YYYY-MM-DD}` in Firestore.
+3. Stores the result in the database (the same code as Step 4).
 
-It only runs when `FIREBASE_SERVICE_ACCOUNT_KEY` (raw JSON of a Firebase service account) is set in the container's environment. `GET /healthz` reports the last run and the next scheduled one. See `SEED-BOARD-PROD-SETUP.md` for the full checklist.
+No credentials are needed. Set `SEED_ENABLED=false` to skip the pipeline; the container then serves boards from the bundled pool. `GET /healthz` reports liveness; run details are in the logs.

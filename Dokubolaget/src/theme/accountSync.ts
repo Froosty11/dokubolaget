@@ -16,9 +16,3 @@ export function applyAccountThemeData(
   const accountTheme = parseThemeId(privateData.theme);
   if (accountTheme) state.setThemeId(accountTheme);
 }
-
-// Theme fields for the private profile. Unlocks are written as a union
-// (Firestore arrayUnion) so two devices never erase each other's unlocks.
-export function themeFieldsForAccount<U>(state: ThemeState, arrayUnion: (...ids: string[]) => U) {
-  return { theme: state.themeId, unlockedThemes: arrayUnion(...state.unlockedThemes) };
-}

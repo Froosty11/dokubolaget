@@ -1,5 +1,5 @@
 // Small pure helpers for search and the board, kept free of React and
-// Firebase so they can be unit tested.
+// the network so they can be unit tested.
 
 // Records a wrongly guessed product for a cell. Returns the same map when
 // nothing changes, so MobX doesn't see a pointless update.

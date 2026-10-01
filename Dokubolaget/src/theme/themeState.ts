@@ -15,7 +15,7 @@ function isAlwaysAvailable(id: ThemeId) {
 const UNLOCK_ALL_FROM_BUILD = process.env.EXPO_PUBLIC_UNLOCK_ALL_THEMES === "true";
 
 // Theme choice and unlocks. A plain object with getters, merged into the MobX
-// model (see dokuModel.ts), so it stays testable without React or Firebase.
+// model (see dokuModel.ts), so it stays testable without React or the network.
 export function createThemeState({ unlockAll = UNLOCK_ALL_FROM_BUILD }: { unlockAll?: boolean } = {}) {
   return {
     themeId: DEFAULT_THEME_ID as ThemeId,

@@ -208,7 +208,7 @@ const Gameplay = observer(function GameRender({ model }: GameplayProps) {
     return (
       <SafeAreaView style={styles.container}>
         {/* The model always has a board (bundled fallback, swapped for the
-            Firestore one when that lookup finishes), so don't gate the
+            server's one when that lookup finishes), so don't gate the
             game on the background refresh — on web it takes seconds. */}
         <GameView
           score={model.score}
