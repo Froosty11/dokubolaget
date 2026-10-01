@@ -314,12 +314,24 @@ export function createApi(deps: ApiDeps) {
     }
 
     if (method === "POST" && path === "/api/scan") {
-      limit(`scan:${req.ip}`, 20, 60_000);
+      // Guessing is limited by failed scans per address (20 a minute). Good
+      // scans only meet a loose cap: a whole pub shares one Wi-Fi address.
+      if (limiter.blocked(`scan-fail:${req.ip}`, 20)) throw new ApiError(429, "rate_limited");
+      limit(`scan:${req.ip}`, 300, 60_000);
+      const failed = (error: ApiError) => {
+        limiter.hit(`scan-fail:${req.ip}`, 20, 60_000);
+        return error;
+      };
       const code = normalizeCode(parseBody(req).code);
-      if (!code) throw new ApiError(404, "invalid_code");
+      if (!code) throw failed(new ApiError(404, "invalid_code"));
       limit(`scan-code:${code}`, 120, 60_000);
       const user = sessionUser(db, readCookie(req.headers.cookie, COOKIE), now());
-      const { themeId } = redeemCode(db, code, user?.id ?? null, now());
+      let themeId: string;
+      try {
+        themeId = redeemCode(db, code, user?.id ?? null, now()).themeId;
+      } catch (error) {
+        throw error instanceof ApiError ? failed(error) : error;
+      }
       if (user) saveUnlocks(user.id, null, [themeId]);
       return respond(200, { themeId, summary: getPackSummary(db, themeId) });
     }

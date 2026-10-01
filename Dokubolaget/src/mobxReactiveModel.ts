@@ -47,8 +47,6 @@ let themePrefsLoaded = false;
         reactiveModel.setClubSummaries(clubThemes.summaries());
         await serverSync.refresh();
         reactiveModel.setClubSummaries(await clubThemes.refresh(reactiveModel.unlockedThemes));
-        // The theme chosen last time may only just have downloaded.
-        if (themeId) reactiveModel.setThemeId(themeId);
     });
 reaction(() => reactiveModel.unlockedThemes.join(","), () => {
     if (themePrefsLoaded) ensureUnlockedClubThemes();

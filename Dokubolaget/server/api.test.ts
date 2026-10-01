@@ -298,6 +298,13 @@ describe("club themes and scanning", () => {
     expect([last!.status, json(last!).error]).toEqual([429, "rate_limited"]);
   });
 
+  test("a whole pub scanning one poster from the same Wi-Fi isn't blocked", async () => {
+    const { code } = createCode(db, { themeId: "club-sample", label: "Poster" });
+    const statuses = [];
+    for (let i = 0; i < 25; i++) statuses.push((await scan(code, { ip: "8.8.8.8" })).status);
+    expect(statuses.every((status) => status === 200)).toBe(true);
+  });
+
   test("scans from other sites are refused", async () => {
     const res = await scan("AAAA-AAAA-AA", { headers: { origin: "https://evil.example" } });
     expect(res.status).toBe(403);

@@ -175,6 +175,13 @@ export class RateLimiter {
     return current.count <= limit;
   }
 
+  // True when the key has used up its limit in the current window, without
+  // counting this check as a hit.
+  blocked(key: string, limit: number): boolean {
+    const current = this.windows.get(key);
+    return Boolean(current && this.now() - current.start < current.windowMs && current.count >= limit);
+  }
+
   private prune(now: number) {
     for (const [key, window] of this.windows) if (now - window.start >= window.windowMs) this.windows.delete(key);
     // Still full of live windows: drop the oldest.

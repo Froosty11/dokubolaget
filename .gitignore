@@ -62,3 +62,7 @@ products.json
 *.sqlite-wal
 data/nightly-boards.json
 
+
+# QR images from the admin script contain live unlock codes
+Dokubolaget/data/qr/
+/qr/

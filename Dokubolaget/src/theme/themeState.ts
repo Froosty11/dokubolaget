@@ -39,8 +39,12 @@ export function createThemeState({ unlockAll = UNLOCK_ALL_FROM_BUILD }: { unlock
     get activeThemeId(): ThemeId {
       return resolveActiveThemeId(this.themeId, this.availableThemeIds, DEFAULT_THEME_ID);
     },
+    // An unlocked club theme can be chosen before it has downloaded (the
+    // account's choice from another device); it's worn once it arrives, and
+    // activeThemeId falls back to the default until then.
     setThemeId(id: ThemeId): boolean {
-      if (!this.availableThemeIds.includes(id)) return false;
+      const unlockedClub = !isBuiltInThemeId(id) && this.unlockedThemes.includes(id);
+      if (!this.availableThemeIds.includes(id) && !unlockedClub) return false;
       this.themeId = id;
       return true;
     },

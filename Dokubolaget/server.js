@@ -88,31 +88,10 @@ const CONTENT_TYPES = {
 };
 
 // Returns null for paths that can't be decoded or that escape dist/.
+const { resolveStaticFile: resolveInDist } = require("./server/staticRoutes.ts");
+
 function resolveStaticFile(pathname) {
-  let decoded;
-  try {
-    decoded = decodeURIComponent(pathname);
-  } catch {
-    return null;
-  }
-  if (decoded.includes("\0")) {
-    return null;
-  }
-  const base = path.join(DIST_DIR, path.normalize(decoded));
-  if (base !== DIST_DIR && !base.startsWith(DIST_DIR + path.sep)) {
-    return null;
-  }
-
-  const candidates = [base, `${base}.html`, path.join(base, "index.html")];
-  for (const candidate of candidates) {
-    if (fs.existsSync(candidate) && fs.statSync(candidate).isFile()) {
-      return candidate;
-    }
-  }
-
-  // Client-side route: expo-router handles it from the shell page.
-  const fallback = path.join(DIST_DIR, "index.html");
-  return fs.existsSync(fallback) ? fallback : null;
+  return resolveInDist(DIST_DIR, pathname);
 }
 
 const COMPRESSIBLE = new Set([".html", ".js", ".mjs", ".css", ".json", ".map", ".svg", ".txt", ".webmanifest", ".ttf", ".otf"]);

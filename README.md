@@ -122,12 +122,12 @@ docker exec dokubolaget bun run admin themes check            # validate every c
 docker exec dokubolaget bun run admin themes list             # loaded club themes and how often they were scanned
 docker exec dokubolaget bun run admin codes create club-qmisk --label "Bar poster"
 docker exec dokubolaget bun run admin codes create club-tmeit --label "Tentagasque" --expires 2026-10-10T03:00:00+02:00 --max-uses 300
-docker cp dokubolaget:/data/qr ./qr                           # the QR images for the posters
+docker cp dokubolaget:/data/qr ~/Desktop/dokubolaget-qr      # the QR images for the posters (keep them out of the repo: they hold live codes)
 docker exec dokubolaget bun run admin codes list
 docker exec dokubolaget bun run admin codes revoke 3          # e.g. a poster code that leaked
 ```
 
-A code is shown once, when it's made; the database only keeps its hash. To replace a leaked code, revoke it and make a new one. Players who already unlocked the theme keep it. `codes create` needs `PUBLIC_URL`, because the QR code links to `PUBLIC_URL/scan/<code>`. Locally, run the same commands with `bun run admin …` from `Dokubolaget/` (they use `data/local.sqlite`).
+A code is shown once, when it's made; the database only keeps its hash. To replace a leaked code, revoke it and make a new one. Players who already unlocked the theme keep it. `codes create` needs `PUBLIC_URL`, because the QR code links to `PUBLIC_URL/scan/<code>`. Locally, run the same commands with `bun run admin …` from `Dokubolaget/` (they use `data/local.sqlite` and write QR images to `data/qr/`, which git ignores).
 
 ## File structure (with `Dokubolaget` as root)
 

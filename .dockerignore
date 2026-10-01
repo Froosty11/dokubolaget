@@ -18,3 +18,5 @@ user-testing
 **/*.sqlite
 **/*.sqlite-*
 **/data/backups
+**/data/qr
+/qr

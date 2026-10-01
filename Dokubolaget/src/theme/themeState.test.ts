@@ -54,13 +54,7 @@ import { prislista } from "./themes/prislista";
 
 const clubTheme = (id: `club-${string}`) => ({ ...prislista, id, unlock: { kind: "scan" as const } });
 
-test("an unlocked club theme that isn't downloaded yet falls back to the default", () => {
-  const s = createThemeState();
-  s.addUnlocks(["club-ghost"], "scan");
-  s.themeId = "club-ghost";
-  expect(s.activeThemeId).toBe("prislista");
-  expect(s.setThemeId("club-ghost")).toBe(false);
-});
+
 
 test("a registered, unlocked club theme can be worn, and was announced as a scan", () => {
   registerClubTheme(clubTheme("club-reg"));
@@ -81,4 +75,16 @@ test("getTheme finds registered club themes and falls back for unknown ones", ()
 test("unlock-all builds also offer registered club themes", () => {
   registerClubTheme(clubTheme("club-all"));
   expect(createThemeState({ unlockAll: true }).availableThemeIds).toContain("club-all");
+});
+
+test("an unlocked club theme can be chosen before it downloads, and shows once it arrives", () => {
+  const s = createThemeState();
+  expect(s.setThemeId("club-later")).toBe(false);
+  s.addUnlocks(["club-later"], "scan");
+  // Chosen (e.g. the account's choice from another device), not yet worn.
+  expect(s.setThemeId("club-later")).toBe(true);
+  expect(s.themeId).toBe("club-later");
+  expect(s.activeThemeId).toBe("prislista");
+  registerClubTheme(clubTheme("club-later"));
+  expect(s.activeThemeId).toBe("club-later");
 });
