@@ -51,6 +51,35 @@ const MIGRATIONS: string[] = [
     updated_at TEXT NOT NULL
   );
   `,
+  // 2: club themes (loaded from club-themes/ at startup) and their unlock codes.
+  `
+  CREATE TABLE theme_packs (
+    id TEXT PRIMARY KEY,
+    version INTEGER NOT NULL,
+    data TEXT NOT NULL,
+    logo BLOB,
+    logo_type TEXT,
+    hidden_at TEXT,
+    updated_at TEXT NOT NULL
+  );
+  CREATE TABLE unlock_codes (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    code_hash TEXT NOT NULL UNIQUE,
+    theme_id TEXT NOT NULL REFERENCES theme_packs(id),
+    label TEXT NOT NULL,
+    created_at TEXT NOT NULL,
+    expires_at TEXT,
+    max_uses INTEGER,
+    uses INTEGER NOT NULL DEFAULT 0,
+    revoked_at TEXT
+  );
+  CREATE TABLE code_redemptions (
+    code_id INTEGER NOT NULL REFERENCES unlock_codes(id),
+    user_id TEXT REFERENCES users(id) ON DELETE SET NULL,
+    at TEXT NOT NULL
+  );
+  CREATE INDEX code_redemptions_code ON code_redemptions(code_id, user_id);
+  `,
 ];
 
 export function nowIso(now: Date = new Date()) {
