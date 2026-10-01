@@ -60,3 +60,4 @@ products.json
 *.sqlite
 *.sqlite-shm
 *.sqlite-wal
+data/nightly-boards.json

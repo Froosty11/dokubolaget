@@ -41,6 +41,7 @@ const {
   proxiedContentType,
   PROXY_RESPONSE_HEADERS,
 } = require("./proxyPolicy");
+const { clientAddress } = require("./server/net.ts");
 
 const APP_ROOT = __dirname;
 const DIST_DIR = path.join(APP_ROOT, "dist");
@@ -253,11 +254,7 @@ const TRUST_PROXY = process.env.TRUST_PROXY === "true";
 const rateWindows = new Map();
 
 function clientKey(req) {
-  if (TRUST_PROXY) {
-    const forwarded = String(req.headers["x-forwarded-for"] || "").split(",")[0].trim();
-    if (forwarded) return forwarded;
-  }
-  return req.socket.remoteAddress || "unknown";
+  return clientAddress(req.headers, req.socket.remoteAddress, TRUST_PROXY);
 }
 
 function isRateLimited(req) {
@@ -389,8 +386,9 @@ const api = createApi({
   mail: createMailer(process.env),
   sbKey: createSbKey(db),
   trustProxy: TRUST_PROXY,
-  // The Expo dev server runs on another localhost port during development.
-  devOrigins: process.env.NODE_ENV !== "production",
+  // Development only (`bun run api`): the Expo dev server runs on another
+  // localhost port. Never on in a deployed container.
+  devOrigins: process.env.API_DEV_CORS === "true",
   publicUrl: process.env.PUBLIC_URL,
 });
 
@@ -512,6 +510,10 @@ async function runSeedPipeline(startDate, days) {
     await runStep("generate boards", "bun", [
       "run",
       "scripts/generateBoard.ts",
+      // Not the bundled pool (data/generated-boards.json), which stays the
+      // fallback the app also uses offline.
+      "--out",
+      "data/nightly-boards.json",
       "--seed",
       start,
       "--boards",
@@ -519,7 +521,7 @@ async function runSeedPipeline(startDate, days) {
       "--attempts",
       attempts,
     ]);
-    const generated = JSON.parse(fs.readFileSync(path.join(APP_ROOT, "data", "generated-boards.json"), "utf8"));
+    const generated = JSON.parse(fs.readFileSync(path.join(APP_ROOT, "data", "nightly-boards.json"), "utf8"));
     seedBoards(db, generated.boards, start, days);
     seedState.lastResult = `ok: ${days} board(s) from ${start}`;
     seedState.lastError = null;

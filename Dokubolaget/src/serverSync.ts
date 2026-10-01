@@ -8,6 +8,9 @@ type SyncedModel = Parameters<typeof applyAccountThemeData>[0] & {
   setAccount(account: Account | null): void;
   practiceBoard: boolean;
   boardDate: string;
+  // True once today's board is final (the server's, or the bundled fallback
+  // when the server has none). Progress isn't synced before that.
+  boardSettled: boolean;
   topCategories: Array<{ id: string }>;
   sideCategories: Array<{ id: string }>;
   filledCellCount: number;
@@ -33,6 +36,24 @@ export function connectToServer(model: SyncedModel) {
   // Writes start only after the account has been read, so this device's
   // defaults never overwrite what the account already has.
   let synced = false;
+  // Progress from the account, kept until the matching board is on screen.
+  let remoteProgress: { date: string; boardKey: string; data: any } | null = null;
+
+  function applyRemoteIfMatching() {
+    const remote = remoteProgress;
+    if (!remote || !model.boardSettled || model.practiceBoard) return;
+    if (remote.date !== model.boardDate) {
+      remoteProgress = null;
+      return;
+    }
+    remoteProgress = null;
+    // The board is final, so progress saved for another board is stale.
+    if (remote.boardKey !== boardKey(model)) return;
+    // Another device got further on today's board: continue from there.
+    if (Object.keys(remote.data?.selectedProductsByCell ?? {}).length > model.filledCellCount) {
+      model.applyProgress(remote.data);
+    }
+  }
 
   function pushPrefs() {
     if (!synced) return;
@@ -42,7 +63,9 @@ export function connectToServer(model: SyncedModel) {
   }
 
   function pushProgress() {
-    if (!synced || model.practiceBoard || model.filledCellCount === 0) return;
+    // Only for the settled daily board, and only after any account progress
+    // has had its chance to load, so a fallback board never overwrites it.
+    if (!synced || !model.boardSettled || remoteProgress || model.practiceBoard || model.filledCellCount === 0) return;
     api
       .putProgress({
         date: model.boardDate,
@@ -71,17 +94,8 @@ export function connectToServer(model: SyncedModel) {
         // Streaks arrive with scoring (step 2).
         { longestStreak: 0 },
       );
-      // Another device got further on today's board: continue from there.
-      const remote = me.progress;
-      if (
-        remote &&
-        !model.practiceBoard &&
-        remote.date === model.boardDate &&
-        remote.boardKey === boardKey(model) &&
-        Object.keys(remote.data?.selectedProductsByCell ?? {}).length > model.filledCellCount
-      ) {
-        model.applyProgress(remote.data);
-      }
+      remoteProgress = me.progress ?? null;
+      applyRemoteIfMatching();
       synced = true;
       pushPrefs();
       pushProgress();
@@ -93,6 +107,7 @@ export function connectToServer(model: SyncedModel) {
   }
 
   reaction(() => [model.themeId, model.unlockedThemes.join(",")], debounce(pushPrefs, 800));
+  reaction(() => [boardKey(model), model.boardSettled, model.boardDate], applyRemoteIfMatching);
   reaction(
     () => [model.selectedProductsByCell, model.missesByCell, model.rejectedByCell],
     debounce(pushProgress, 800),

@@ -18,6 +18,7 @@ beforeEach(() => {
     now: () => new Date(`${TODAY}T12:00:00Z`),
     trustProxy: false,
     devOrigins: false,
+    publicUrl: "https://dokubolaget.se",
   });
 });
 
@@ -162,5 +163,50 @@ describe("boards and misc", () => {
   test("sb-key and leaderboard", async () => {
     expect(json(await api(req("GET", "/api/sb-key")))).toEqual({ key: "abc123" });
     expect(json(await api(req("GET", "/api/leaderboard")))).toEqual({ rows: [] });
+  });
+});
+
+describe("review fixes", () => {
+  function prodApi(publicUrl?: string) {
+    return createApi({
+      db,
+      mail: { sendReset: async (to, link) => void mails.push({ to, link }) },
+      sbKey: { get: async () => "k" },
+      now: () => new Date(`${TODAY}T12:00:00Z`),
+      devOrigins: false,
+      publicUrl,
+    });
+  }
+
+  test("reset links always use PUBLIC_URL, whatever Host/Origin say", async () => {
+    const prod = prodApi("https://dokubolaget.se");
+    await prod(req("POST", "/api/auth/signup", user));
+    await prod(req("POST", "/api/auth/reset-request", { email: user.email }, { headers: { host: "evil.example", origin: "" } }));
+    expect(mails).toHaveLength(1);
+    expect(mails[0].link).toStartWith("https://dokubolaget.se/reset-password?token=");
+  });
+  test("without PUBLIC_URL in production no reset link is sent", async () => {
+    const prod = prodApi(undefined);
+    await prod(req("POST", "/api/auth/signup", user));
+    const res = await prod(req("POST", "/api/auth/reset-request", { email: user.email }));
+    expect(json(res)).toEqual({ ok: true });
+    expect(mails).toHaveLength(0);
+  });
+  test("with PUBLIC_URL, Origin must match it even if a proxy rewrote Host", async () => {
+    const prod = prodApi("https://dokubolaget.se");
+    const ok = await prod(req("POST", "/api/auth/signup", user, { headers: { host: "127.0.0.1:8080" } }));
+    expect(ok.status).toBe(200);
+    const bad = await prod(req("POST", "/api/auth/login", user, { headers: { host: "evil.example", origin: "https://evil.example" } }));
+    expect(bad.status).toBe(403);
+  });
+  test("progress only for today or yesterday", async () => {
+    const cookie = await signedIn();
+    const data = { selectedProductsByCell: {}, missesByCell: {}, rejectedByCell: {} };
+    expect((await api(req("PUT", "/api/me/progress", { date: "0001-01-01", boardKey: "k", data }, { cookie }))).status).toBe(400);
+    expect((await api(req("PUT", "/api/me/progress", { date: "2026-09-30", boardKey: "k", data }, { cookie }))).status).toBe(200);
+  });
+  test("a malformed cookie or path is not a server error", async () => {
+    expect((await api(req("GET", "/api/me", undefined, { cookie: "doku_session=%E0%A4%A" }))).status).toBe(200);
+    expect((await api(req("GET", "/api/boards/%E0%A4%A"))).status).toBe(404);
   });
 });

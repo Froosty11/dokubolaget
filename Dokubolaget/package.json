@@ -13,7 +13,7 @@
     "start": "bun run server.js",
     "test": "bun test src server",
     "seed:boards": "bun run scripts/seedBoards.ts",
-    "api": "PORT=8090 SEED_ENABLED=false bun run server.js"
+    "api": "PORT=8090 SEED_ENABLED=false API_DEV_CORS=true PUBLIC_URL=http://localhost:8081 bun run server.js"
   },
   "dependencies": {
     "@expo-google-fonts/barlow-condensed": "0.4.1",

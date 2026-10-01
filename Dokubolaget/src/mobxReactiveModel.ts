@@ -42,7 +42,15 @@ reaction(
         AsyncStorage.getItem(PROGRESS_KEY)
             .then((raw) => {
                 const progress = restoreProgress(raw, reactiveModel.boardDate, key);
-                if (progress && boardKey(reactiveModel) === key) reactiveModel.applyProgress(progress);
+                // Re-check after the async read: account progress may have
+                // landed meanwhile, and a smaller device copy mustn't replace it.
+                if (
+                    progress &&
+                    boardKey(reactiveModel) === key &&
+                    Object.keys(progress.selectedProductsByCell).length > reactiveModel.filledCellCount
+                ) {
+                    reactiveModel.applyProgress(progress);
+                }
             })
             .catch((error) => console.warn("Progress read failed:", error));
     },

@@ -41,10 +41,18 @@ function respond(status: number, data: unknown, headers: Record<string, string> 
   };
 }
 
+function safeDecode(value: string) {
+  try {
+    return decodeURIComponent(value);
+  } catch {
+    return null;
+  }
+}
+
 function readCookie(header: string | undefined, name: string) {
   for (const part of String(header ?? "").split(";")) {
     const [key, ...rest] = part.trim().split("=");
-    if (key === name) return decodeURIComponent(rest.join("="));
+    if (key === name) return safeDecode(rest.join("="));
   }
   return null;
 }
@@ -63,6 +71,10 @@ export function createApi(deps: ApiDeps) {
   const now = deps.now ?? (() => new Date());
   const limiter = new RateLimiter(() => now().getTime());
   const today = () => now().toISOString().slice(0, 10);
+  const yesterday = () => new Date(now().getTime() - 86_400_000).toISOString().slice(0, 10);
+  // The public address, when configured: the only trusted origin and the only
+  // base for links in emails (request headers can be forged).
+  const publicOrigin = deps.publicUrl ? new URL(deps.publicUrl).origin : null;
 
   function isHttps(req: ApiRequest) {
     return deps.trustProxy === true && String(req.headers["x-forwarded-proto"] ?? "").split(",")[0].trim() === "https";
@@ -76,7 +88,7 @@ export function createApi(deps: ApiDeps) {
       "SameSite=Lax",
       `Max-Age=${token ? SESSION_DAYS * 86_400 : 0}`,
     ];
-    if (isHttps(req)) parts.push("Secure");
+    if (isHttps(req) || publicOrigin?.startsWith("https:")) parts.push("Secure");
     return parts.join("; ");
   }
 
@@ -100,8 +112,9 @@ export function createApi(deps: ApiDeps) {
       try {
         host = new URL(origin).host;
       } catch {}
-      const sameHost = host !== "" && host === req.headers.host;
-      if (!sameHost && !(deps.devOrigins && DEV_ORIGIN.test(origin))) throw new ApiError(403, "forbidden_origin");
+      // With PUBLIC_URL set, only that origin counts (a proxy may rewrite Host).
+      const ours = publicOrigin ? origin === publicOrigin : host !== "" && host === req.headers.host;
+      if (!ours && !(deps.devOrigins && DEV_ORIGIN.test(origin))) throw new ApiError(403, "forbidden_origin");
     } else {
       const site = req.headers["sec-fetch-site"];
       if (site && site !== "same-origin" && site !== "none") throw new ApiError(403, "forbidden_origin");
@@ -147,8 +160,13 @@ export function createApi(deps: ApiDeps) {
     return row ? { date: row.date, boardKey: row.board_key, data: JSON.parse(row.data) } : null;
   }
 
-  function linkBase(req: ApiRequest) {
-    return (deps.publicUrl || req.headers.origin || `${isHttps(req) ? "https" : "http"}://${req.headers.host}`).replace(/\/$/, "");
+  // Links in emails never come from request headers, which an attacker can
+  // set: PUBLIC_URL, or during development the (allow-listed) dev origin.
+  function linkBase(req: ApiRequest): string | null {
+    if (publicOrigin) return publicOrigin;
+    const origin = req.headers.origin;
+    if (deps.devOrigins && origin && DEV_ORIGIN.test(origin)) return origin;
+    return null;
   }
 
   async function route(req: ApiRequest): Promise<ApiResponse> {
@@ -174,10 +192,15 @@ export function createApi(deps: ApiDeps) {
       const email = String(parseBody(req).email ?? "").trim().toLowerCase();
       // Same answer whether or not the account exists.
       if (email && limiter.hit(`reset-email:${email}`, 3, 3_600_000)) {
-        const reset = createResetToken(db, email, now());
-        if (reset) {
-          const link = `${linkBase(req)}/reset-password?token=${encodeURIComponent(reset.token)}`;
-          deps.mail.sendReset(email, link).catch((error) => console.error("Reset email failed:", error));
+        const base = linkBase(req);
+        if (!base) {
+          console.error("Password reset requested but PUBLIC_URL is not set; no link sent.");
+        } else {
+          const reset = createResetToken(db, email, now());
+          if (reset) {
+            const link = `${base}/reset-password?token=${encodeURIComponent(reset.token)}`;
+            deps.mail.sendReset(email, link).catch((error) => console.error("Reset email failed:", error));
+          }
         }
       }
       return respond(200, { ok: true });
@@ -196,11 +219,13 @@ export function createApi(deps: ApiDeps) {
     }
     if (method === "PATCH" && path === "/api/me") {
       const user = requireUser(req);
+      limit(`nickname:${user.id}`, 10, 60_000);
       setNickname(db, user.id, parseBody(req).nickname);
       return respond(200, { user: sessionUser(db, readCookie(req.headers.cookie, COOKIE), now()) });
     }
     if (method === "PUT" && path === "/api/me/prefs") {
       const user = requireUser(req);
+      limit(`prefs:${user.id}`, 120, 60_000);
       const body = parseBody(req);
       const theme = body.theme == null ? null : String(body.theme);
       if (theme !== null && !(THEME_IDS as readonly string[]).includes(theme)) throw new ApiError(400, "bad_request");
@@ -215,9 +240,11 @@ export function createApi(deps: ApiDeps) {
     }
     if (method === "PUT" && path === "/api/me/progress") {
       const user = requireUser(req);
+      limit(`progress:${user.id}`, 120, 60_000);
       const body = parseBody(req);
       const date = String(body.date ?? "");
-      if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || date > today() || typeof body.data !== "object" || body.data === null) {
+      // Today's board (or yesterday's, for a tab left open over midnight).
+      if ((date !== today() && date !== yesterday()) || typeof body.data !== "object" || body.data === null) {
         throw new ApiError(400, "bad_request");
       }
       db.run(
@@ -230,7 +257,7 @@ export function createApi(deps: ApiDeps) {
 
     const boardMatch = /^\/api\/boards\/([^/]+)$/.exec(path);
     if (method === "GET" && boardMatch) {
-      const board = getBoard(db, decodeURIComponent(boardMatch[1]), today());
+      const board = getBoard(db, safeDecode(boardMatch[1]) ?? "", today());
       return board ? respond(200, board, { "cache-control": "public, max-age=300" }) : respond(404, { error: "not_found" });
     }
     if (method === "GET" && path === "/api/sb-key") {

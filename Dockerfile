@@ -5,7 +5,7 @@
 # and runs the daily board pipeline. See Dokubolaget/server.js.
 #
 #   docker build -t dokubolaget .
-#   docker run -p 8080:8080 --env-file .env dokubolaget
+#   docker run -p 8080:8080 -v dokubolaget-data:/data --env-file .env dokubolaget
 
 # ---------------------------------------------------------------------------
 FROM node:22-bookworm-slim AS build

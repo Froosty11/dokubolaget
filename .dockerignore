@@ -13,3 +13,8 @@ user-testing
 .env
 .env.*
 !.env.example
+
+# Local databases and their backups never go into an image.
+**/*.sqlite
+**/*.sqlite-*
+**/data/backups

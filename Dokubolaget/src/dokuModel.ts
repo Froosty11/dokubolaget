@@ -167,8 +167,10 @@ const modelBody = {
     if (boardOverrideIndex != null) {
       console.log("[BOARD] ?board override active; skipping the server board");
       resolvePromise(Promise.resolve("local"), this.boardLoadPromiseState);
+      this.boardSettled = true;
       return;
     }
+    this.boardSettled = false;
     const dateKey = todayDateKey();
     console.log("[BOARD] loadDailyBoard start, dateKey=" + dateKey);
     const boardPromise = api.board(dateKey).catch((error) => {
@@ -185,6 +187,7 @@ const modelBody = {
 
     const board = await boardPromise;
     if (!board) {
+      this.boardSettled = true;
       console.log(
         "[BOARD] no board for " + dateKey +
           " on the server — staying on local fallback (boardSource=" + this.boardSource + ")",
@@ -199,7 +202,12 @@ const modelBody = {
     this.sideCategories = board.rows;
     this.boardSource = "server";
     if (boardKey(this) !== before) this.clearProgress();
+    this.boardSettled = true;
   },
+
+  // True once today's board is final (the server's, or the bundled fallback
+  // when the server has none). Account progress waits for it.
+  boardSettled: false,
 
   // The logged-in player, or null.
   account: null as Account | null,

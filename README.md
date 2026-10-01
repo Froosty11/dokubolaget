@@ -59,7 +59,7 @@ The container listens on port 8080, bound to `127.0.0.1` on the host by default 
 
 - **Data.** Everything lives in the `dokubolaget-data` volume at `/data`: the database `dokubolaget.sqlite` and nightly backups in `/data/backups` (the last 7). Back up the volume.
 - **Boards.** On boot the container stores today's and tomorrow's boards (bundled ones if the pipeline hasn't run), then runs the pipeline every night at 00:05 UTC. `GET /healthz` reports liveness; run details are in the container logs.
-- **Password reset.** Set `SMTP_URL` and `MAIL_FROM` to send reset emails. Without them, reset links are printed to the container log (`docker logs dokubolaget`).
+- **Password reset.** Set `PUBLIC_URL` (required: links are only ever built from it) plus `SMTP_URL` and `MAIL_FROM` to send reset emails. Without SMTP, reset links are printed to the container log (`docker logs dokubolaget`).
 
 ### Local development
 
@@ -121,14 +121,13 @@ Contains fonts, vector icons and the logo
 
 ### `/scripts`
 
-The 3-step (+1) board pipeline run nightly by `server.js` inside the Docker container (also runnable locally). See [README](Dokubolaget/scripts/README.md) for full usage and [SEED-BOARD-PROD-SETUP.md](Dokubolaget/scripts/SEED-BOARD-PROD-SETUP.md) for the production enablement checklist.
+The 3-step (+1) board pipeline run nightly by `server.js` inside the Docker container (also runnable locally). See [README](Dokubolaget/scripts/README.md) for full usage.
 
 - `findTags.ts` - Step 1: mines viable tags from `products.json` and writes `data/board-tags.json`
 - `generateBoard.ts` - Step 2: picks 3x3 boards from viable tags and writes `data/generated-boards.json`
 - `confirmBoard.ts` - Step 3 (dev only): recomputes and prints the exact solution count for each of the 9 cells of a generated board
 - `seedBoards.ts` - Step 4: stores the generated board(s) in the app database at their dates (`DB_PATH`)
 - `README.md` - script-by-script usage, flags, and recommended daily run
-- `SEED-BOARD-PROD-SETUP.md` - end-to-end checklist for enabling the nightly cron in production
 - In production the pipeline is scheduled by `server.js`; check `GET /healthz` or the container logs for the last run.
 
 ### `/src`

@@ -133,3 +133,32 @@ describe("RateLimiter", () => {
     expect(limiter.hit("k", 3, 1000)).toBe(true);
   });
 });
+
+describe("review fixes", () => {
+  test("a reset token can't be used twice even in parallel", async () => {
+    const db = fresh();
+    await signup(db, good);
+    const reset = createResetToken(db, good.email)!;
+    const results = await Promise.allSettled([
+      resetPassword(db, reset.token, "forsta12345"),
+      resetPassword(db, reset.token, "andra123456"),
+    ]);
+    expect(results.filter((r) => r.status === "fulfilled")).toHaveLength(1);
+  });
+  test("using a reset token voids the user's other reset tokens", async () => {
+    const db = fresh();
+    await signup(db, good);
+    const first = createResetToken(db, good.email)!;
+    const second = createResetToken(db, good.email)!;
+    await resetPassword(db, first.token, "forsta12345");
+    expect(await code(() => resetPassword(db, second.token, "andra123456"))).toBe("invalid_token");
+  });
+  test("the rate limiter keeps each key's own window when pruning", () => {
+    let now = 0;
+    const limiter = new RateLimiter(() => now);
+    limiter.hit("long", 1, 3_600_000);
+    now = 120_000;
+    for (let i = 0; i < 10_050; i++) limiter.hit(`short-${i}`, 10, 60_000);
+    expect(limiter.hit("long", 1, 3_600_000)).toBe(false);
+  });
+});

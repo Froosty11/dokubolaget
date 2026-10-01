@@ -114,16 +114,24 @@ export function createResetToken(db: Database, email: unknown, now = new Date())
 }
 
 export async function resetPassword(db: Database, token: unknown, password: unknown, now = new Date()) {
-  const row = db
-    .query("SELECT user_id, expires_at, used_at FROM password_resets WHERE token_hash = ?")
-    .get(hashToken(String(token ?? ""))) as { user_id: string; expires_at: string; used_at: string | null } | null;
-  if (!row || row.used_at || row.expires_at <= nowIso(now)) throw new ApiError(400, "invalid_token");
+  const tokenHash = hashToken(String(token ?? ""));
+  const valid = db
+    .query("SELECT user_id FROM password_resets WHERE token_hash = ? AND used_at IS NULL AND expires_at > ?")
+    .get(tokenHash, nowIso(now)) as { user_id: string } | null;
+  if (!valid) throw new ApiError(400, "invalid_token");
   const hash = await Bun.password.hash(checkPassword(password), "argon2id");
   db.transaction(() => {
-    db.run("UPDATE users SET password_hash = ? WHERE id = ?", [hash, row.user_id]);
-    db.run("UPDATE password_resets SET used_at = ? WHERE token_hash = ?", [nowIso(now), hashToken(String(token))]);
+    // Claim the token atomically: of two parallel resets only one gets here.
+    const claimed = db.run(
+      "UPDATE password_resets SET used_at = ? WHERE token_hash = ? AND used_at IS NULL AND expires_at > ?",
+      [nowIso(now), tokenHash, nowIso(now)],
+    );
+    if (claimed.changes !== 1) throw new ApiError(400, "invalid_token");
+    db.run("UPDATE users SET password_hash = ? WHERE id = ?", [hash, valid.user_id]);
+    // Any other outstanding reset links for this account stop working too.
+    db.run("UPDATE password_resets SET used_at = ? WHERE user_id = ? AND used_at IS NULL", [nowIso(now), valid.user_id]);
     // A reset means the old password may be known to someone else.
-    db.run("DELETE FROM sessions WHERE user_id = ?", [row.user_id]);
+    db.run("DELETE FROM sessions WHERE user_id = ?", [valid.user_id]);
   })();
 }
 
@@ -134,24 +142,28 @@ export function setNickname(db: Database, userId: string, nickname: unknown) {
   db.run("UPDATE users SET nickname = ? WHERE id = ?", [value, userId]);
 }
 
-// Fixed-window counter per key, e.g. "login:1.2.3.4".
+// Fixed-window counter per key, e.g. "login:1.2.3.4". Each key keeps its own
+// window length, and the map is capped so a flood of keys can't grow it
+// without bound.
 export class RateLimiter {
-  private windows = new Map<string, { start: number; count: number }>();
-  constructor(private now: () => number = Date.now) {}
+  private windows = new Map<string, { start: number; count: number; windowMs: number }>();
+  constructor(private now: () => number = Date.now, private maxKeys = 50_000) {}
 
   hit(key: string, limit: number, windowMs: number): boolean {
     const now = this.now();
     const current = this.windows.get(key);
-    if (!current || now - current.start >= windowMs) {
-      this.windows.set(key, { start: now, count: 1 });
-      if (this.windows.size > 10_000) this.prune(now, windowMs);
+    if (!current || now - current.start >= current.windowMs) {
+      if (!current && this.windows.size >= this.maxKeys) this.prune(now);
+      this.windows.set(key, { start: now, count: 1, windowMs });
       return true;
     }
     current.count += 1;
     return current.count <= limit;
   }
 
-  private prune(now: number, windowMs: number) {
-    for (const [key, window] of this.windows) if (now - window.start >= windowMs) this.windows.delete(key);
+  private prune(now: number) {
+    for (const [key, window] of this.windows) if (now - window.start >= window.windowMs) this.windows.delete(key);
+    // Still full of live windows: drop the oldest.
+    while (this.windows.size >= this.maxKeys) this.windows.delete(this.windows.keys().next().value!);
   }
 }
