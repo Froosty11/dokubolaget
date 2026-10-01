@@ -55,3 +55,8 @@ products.json
 
 # Brainstorm mockups
 .superpowers/
+
+# Local app database
+*.sqlite
+*.sqlite-shm
+*.sqlite-wal
