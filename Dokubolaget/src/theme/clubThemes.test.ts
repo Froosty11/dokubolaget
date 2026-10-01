@@ -90,6 +90,7 @@ describe("club theme cache", () => {
     const store = createClubThemes({ storage, api: fakeApi([], true), register: () => {} });
     await store.loadCache();
     expect((await store.refresh(["club-s1"])).map((s) => s.id)).toEqual(["club-s1"]);
+    expect(store.offline()).toBe(true);
   });
 
   test("an active club theme whose cache was cleared falls back to the default", async () => {

@@ -12,11 +12,65 @@ type ThemePickerViewProps = {
   onClose: () => void;
   hapticsOn: boolean;
   onToggleHaptics: (on: boolean) => void;
+  // Unlocked club themes that can be worn, and names of ones still downloading.
+  clubCards: Array<{ theme: Theme; card: ThemeCardState }>;
+  downloading: string[];
+  onOpenStamps: () => void;
 };
 
-export function ThemePickerView({ cards, streakLine, onPick, onClose, hapticsOn, onToggleHaptics }: Readonly<ThemePickerViewProps>) {
+export function ThemePickerView({
+  cards, streakLine, onPick, onClose, hapticsOn, onToggleHaptics, clubCards, downloading, onOpenStamps,
+}: Readonly<ThemePickerViewProps>) {
   const { theme } = useTheme();
   const styles = useThemedStyles(makeStyles);
+
+  function renderCard({ theme: item, card }: { theme: Theme; card: ThemeCardState }) {
+    const copy = item.copy[UI_LANG];
+    const locked = card.state === "locked";
+    const active = card.state === "active";
+    return (
+      <Pressable
+        key={item.id}
+        // Locked cards stay focusable so keyboard and screen-reader
+        // users can reach the unlock condition; pressing does nothing.
+        onPress={() => {
+          if (!locked) onPick(item.id);
+        }}
+        accessibilityRole="button"
+        accessibilityState={{ selected: active }}
+        accessibilityLabel={[
+          `${copy.name}:`,
+          locked ? `locked. ${copy.unlockHint}` : active ? "active." : "available.",
+          card.progress ? `${card.progress.current} of ${card.progress.target} days.` : null,
+        ].filter(Boolean).join(" ")}
+        style={[styles.card, active ? styles.cardActive : null]}
+      >
+        <View style={{ opacity: locked ? 0.35 : 1 }}>
+          <ThemeSwatch theme={item} />
+        </View>
+        {locked ? <Text style={styles.lock}>🔒</Text> : null}
+        <View style={styles.cardText}>
+          <Text style={styles.name}>{copy.name}</Text>
+          <Text style={styles.description}>{locked ? copy.unlockHint : copy.description}</Text>
+          {card.progress ? (
+            <View style={styles.progressRow}>
+              <View style={styles.progressTrack}>
+                <View style={[styles.progressFill, { width: `${(card.progress.current / card.progress.target) * 100}%` }]} />
+              </View>
+              <Text style={styles.progressText}>
+                {card.progress.current} of {card.progress.target} days
+              </Text>
+            </View>
+          ) : null}
+        </View>
+        {active ? (
+          <View style={styles.badge}>
+            <Text style={styles.badgeText}>ACTIVE</Text>
+          </View>
+        ) : null}
+      </Pressable>
+    );
+  }
 
   return (
     <View style={styles.page}>
@@ -28,53 +82,20 @@ export function ThemePickerView({ cards, streakLine, onPick, onClose, hapticsOn,
       </View>
       {streakLine ? <Text style={styles.streak}>{streakLine}</Text> : null}
       <ScrollView contentContainerStyle={styles.list}>
-        {cards.map(({ theme: item, card }) => {
-          const copy = item.copy[UI_LANG];
-          const locked = card.state === "locked";
-          const active = card.state === "active";
-          return (
-            <Pressable
-              key={item.id}
-              // Locked cards stay focusable so keyboard and screen-reader
-              // users can reach the unlock condition; pressing does nothing.
-              onPress={() => {
-                if (!locked) onPick(item.id);
-              }}
-              accessibilityRole="button"
-              accessibilityState={{ selected: active }}
-              accessibilityLabel={[
-                `${copy.name}:`,
-                locked ? `locked. ${copy.unlockHint}` : active ? "active." : "available.",
-                card.progress ? `${card.progress.current} of ${card.progress.target} days.` : null,
-              ].filter(Boolean).join(" ")}
-              style={[styles.card, active ? styles.cardActive : null]}
-            >
-              <View style={{ opacity: locked ? 0.35 : 1 }}>
-                <ThemeSwatch theme={item} />
-              </View>
-              {locked ? <Text style={styles.lock}>🔒</Text> : null}
-              <View style={styles.cardText}>
-                <Text style={styles.name}>{copy.name}</Text>
-                <Text style={styles.description}>{locked ? copy.unlockHint : copy.description}</Text>
-                {card.progress ? (
-                  <View style={styles.progressRow}>
-                    <View style={styles.progressTrack}>
-                      <View style={[styles.progressFill, { width: `${(card.progress.current / card.progress.target) * 100}%` }]} />
-                    </View>
-                    <Text style={styles.progressText}>
-                      {card.progress.current} of {card.progress.target} days
-                    </Text>
-                  </View>
-                ) : null}
-              </View>
-              {active ? (
-                <View style={styles.badge}>
-                  <Text style={styles.badgeText}>ACTIVE</Text>
-                </View>
-              ) : null}
-            </Pressable>
-          );
-        })}
+        {cards.map(renderCard)}
+        <View style={styles.sectionRow}>
+          <Text style={styles.section}>PUB THEMES</Text>
+          <Pressable onPress={onOpenStamps} accessibilityRole="link" hitSlop={8}>
+            <Text style={[styles.section, styles.sectionLink]}>Pub stamps ›</Text>
+          </Pressable>
+        </View>
+        {clubCards.length === 0 && downloading.length === 0 ? (
+          <Text style={styles.description}>Scan the code at a club's pub to collect its theme.</Text>
+        ) : null}
+        {clubCards.map(renderCard)}
+        {downloading.map((name) => (
+          <Text key={name} style={styles.description}>{name}: downloading…</Text>
+        ))}
         <View style={styles.setting}>
           <View style={styles.cardText}>
             <Text style={styles.name}>Vibration</Text>
@@ -120,6 +141,9 @@ const makeStyles = (theme: Theme) => ({
   progressFill: { height: 6, backgroundColor: theme.colors.accent },
   progressText: { fontFamily: theme.fonts.mono, fontSize: 11, color: theme.colors.inkMuted },
   badge: { position: "absolute" as const, top: 8, right: 8, backgroundColor: theme.colors.accent, borderRadius: 20, paddingHorizontal: 8, paddingVertical: 2 },
+  sectionRow: { flexDirection: "row" as const, justifyContent: "space-between" as const, alignItems: "center" as const, marginTop: 10 },
+  section: { fontFamily: theme.fonts.condensed, fontSize: 13, letterSpacing: 2, color: theme.colors.inkMuted },
+  sectionLink: { color: theme.colors.ink, textDecorationLine: "underline" as const },
   setting: {
     flexDirection: "row" as const, alignItems: "center" as const, gap: 14, paddingTop: 14, marginTop: 4,
     borderTopWidth: 1, borderTopColor: theme.colors.divider,

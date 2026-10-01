@@ -105,6 +105,11 @@ export function IndexView({ ageGate, account, supportUrl }: IndexViewProps) {
     router.push("/themes");
   }
 
+  function stampsACB() {
+    haptics.play("tap");
+    router.push("/stamps");
+  }
+
   function loginACB() {
     haptics.play("tap")
     setShowLogin(true);
@@ -138,6 +143,12 @@ export function IndexView({ ageGate, account, supportUrl }: IndexViewProps) {
           Icon={Lista}
           text="Themes"
           onPress={themesACB}
+        />
+
+        <IndexOption
+          Icon={Drinks}
+          text="Pub stamps"
+          onPress={stampsACB}
         />
 
         {/* Login conditional rendering */}

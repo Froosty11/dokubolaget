@@ -42,6 +42,7 @@ function parseJson<T>(raw: string | null, fallback: T): T {
 export function createClubThemes(deps: { storage: Storage; api: Api; register: (theme: Theme) => void }) {
   const packs = new Map<string, ThemePack>();
   let summaries: PackSummary[] = [];
+  let offline = false;
 
   function keep(pack: ThemePack) {
     packs.set(pack.id, pack);
@@ -78,6 +79,8 @@ export function createClubThemes(deps: { storage: Storage; api: Api; register: (
   return {
     get: (id: string) => packs.get(id),
     summaries: () => summaries,
+    // True when the last list fetch failed and the saved list is shown.
+    offline: () => offline,
 
     // Cached files are checked again: a bad one is dropped, never worn.
     async loadCache() {
@@ -99,8 +102,10 @@ export function createClubThemes(deps: { storage: Storage; api: Api; register: (
     async refresh(unlocked: readonly ThemeId[]): Promise<PackSummary[]> {
       try {
         summaries = (await deps.api.themes()).themes;
+        offline = false;
         await deps.storage.setItem(SUMMARIES_KEY, JSON.stringify(summaries)).catch(() => {});
       } catch (error: any) {
+        offline = true;
         console.warn("Couldn't fetch the club theme list:", error?.message ?? error);
         return summaries;
       }

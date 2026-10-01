@@ -2,7 +2,8 @@ import { router } from "expo-router";
 import { useState } from "react";
 import { haptics, saveHapticsSetting } from "../theme/haptics";
 import { observer } from "mobx-react-lite";
-import { THEMES } from "../theme/registry";
+import { THEMES, clubTheme, isBuiltInThemeId } from "../theme/registry";
+import type { PackSummary } from "../theme/packSchema";
 import { useTheme } from "../theme/ThemeProvider";
 import type { ThemeId } from "../theme/types";
 import { themeCardState } from "../theme/unlocks";
@@ -10,6 +11,7 @@ import { ThemePickerView } from "../views/themePickerView";
 
 type ThemePickerModel = {
   unlockedThemes: ThemeId[];
+  clubSummaries: PackSummary[];
   longestStreak: number;
   loggedIn: boolean;
 };
@@ -18,6 +20,16 @@ export const ThemePicker = observer(function ThemePicker({ model }: { model: The
   const { id, setId, available } = useTheme();
   const ctx = { unlocked: model.unlockedThemes, longestStreak: model.longestStreak, loggedIn: model.loggedIn };
   const cards = THEMES.map((theme) => ({ theme, card: themeCardState(theme, ctx, id, available) }));
+  // Unlocked club themes after the built-in ones; any not downloaded yet are
+  // listed by name.
+  const clubIds = model.unlockedThemes.filter((unlocked) => !isBuiltInThemeId(unlocked));
+  const clubCards = clubIds.flatMap((clubId) => {
+    const theme = clubTheme(clubId);
+    return theme ? [{ theme, card: themeCardState(theme, ctx, id, available) }] : [];
+  });
+  const downloading = clubIds
+    .filter((clubId) => !clubTheme(clubId))
+    .map((clubId) => model.clubSummaries.find((s) => s.id === clubId)?.name ?? clubId);
   const streakLine = model.loggedIn ? `Best streak: ${model.longestStreak} days` : "Log in to earn streak rewards";
 
   function onPick(next: ThemeId) {
@@ -44,6 +56,9 @@ export const ThemePicker = observer(function ThemePicker({ model }: { model: The
       onClose={onClose}
       hapticsOn={hapticsOn}
       onToggleHaptics={onToggleHaptics}
+      clubCards={clubCards}
+      downloading={downloading}
+      onOpenStamps={() => router.push("/stamps")}
     />
   );
 });
