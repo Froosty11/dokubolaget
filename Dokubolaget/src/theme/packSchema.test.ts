@@ -56,6 +56,13 @@ describe("validatePack", () => {
     expect(errors.length).toBeGreaterThanOrEqual(2);
   });
 
+  test("accepts the chart font set and the sea chart decoration", () => {
+    const pack = fixture();
+    pack.fontKit = "chart";
+    pack.decoration = { kind: "seachart", colors: ["#6b2fb3"] };
+    expect(validatePack(pack).ok).toBe(true);
+  });
+
   test("accepts the pirate font set and the seas decoration", () => {
     const pack = fixture();
     pack.fontKit = "pirate";

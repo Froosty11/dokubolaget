@@ -80,6 +80,8 @@ export type Theme = {
   decoration?: { kind: DecorationKind; colors: string[] };
   // Club themes name the font set their fonts come from.
   fontKit?: FontKitId;
+  // Club themes show the club's logo (a server path) in place of the wordmark.
+  logo?: { url: string; width: number; height: number } | null;
   copy: Record<Lang, ThemeCopy>;
   dossier: DossierLook;
 };

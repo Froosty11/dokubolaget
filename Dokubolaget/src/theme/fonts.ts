@@ -39,6 +39,10 @@ import { AlfaSlabOne_400Regular } from "@expo-google-fonts/alfa-slab-one/400Regu
 import { Bitter_400Regular } from "@expo-google-fonts/bitter/400Regular";
 import { Bitter_700Bold } from "@expo-google-fonts/bitter/700Bold";
 import { PirataOne_400Regular } from "@expo-google-fonts/pirata-one/400Regular";
+import { IMFellEnglishSC_400Regular } from "@expo-google-fonts/im-fell-english-sc/400Regular";
+import { EBGaramond_500Medium } from "@expo-google-fonts/eb-garamond/500Medium";
+import { EBGaramond_600SemiBold } from "@expo-google-fonts/eb-garamond/600SemiBold";
+import { EBGaramond_700Bold } from "@expo-google-fonts/eb-garamond/700Bold";
 
 export { FALLBACK_FONTS } from "./fontKits";
 
@@ -58,6 +62,7 @@ export const FONT_KIT_LOADERS: Record<FontKitId, () => Record<string, any>> = {
   broadcast: () => ({ Oswald_400Regular, Oswald_600SemiBold, Oswald_700Bold }),
   grotesk: () => ({ SpaceGrotesk_400Regular, SpaceGrotesk_600SemiBold, SpaceGrotesk_700Bold }),
   slab: () => ({ AlfaSlabOne_400Regular, Bitter_400Regular, Bitter_700Bold }),
+  chart: () => ({ IMFellEnglishSC_400Regular, EBGaramond_500Medium, EBGaramond_600SemiBold, EBGaramond_700Bold, IBMPlexMono_400Regular }),
   pirate: () => ({ PirataOne_400Regular, Poppins_400Regular, Poppins_600SemiBold, IBMPlexMono_400Regular }),
 };
 

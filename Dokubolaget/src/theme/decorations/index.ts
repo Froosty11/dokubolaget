@@ -12,6 +12,7 @@ import { Circuit } from "./kit/Circuit";
 import { ColorBars } from "./kit/ColorBars";
 import { Dancefloor } from "./kit/Dancefloor";
 import { Seas } from "./kit/Seas";
+import { SeaChart } from "./kit/SeaChart";
 
 BACKDROPS.prislista = PaperGrain;
 BACKDROPS.midsommar = MidsommarMeadow;
@@ -26,3 +27,4 @@ DECORATIONS.circuit = Circuit;
 DECORATIONS.candlelight = Candlelight;
 DECORATIONS.cellar = Cellar;
 DECORATIONS.seas = Seas;
+DECORATIONS.seachart = SeaChart;

@@ -7,10 +7,10 @@ import type { ConfettiShape, DossierLook, Lang, Theme, ThemeColors, ThemeCopy } 
 export const CLUB_THEME_ID = /^club-[a-z0-9-]{2,32}$/;
 export type ClubThemeId = `club-${string}`;
 
-export const FONT_KIT_IDS = ["prislista", "midsommar", "cyberwave", "speakeasy", "poppins", "archivo", "pixel", "broadcast", "grotesk", "slab", "pirate"] as const;
+export const FONT_KIT_IDS = ["prislista", "midsommar", "cyberwave", "speakeasy", "poppins", "archivo", "pixel", "broadcast", "grotesk", "slab", "pirate", "chart"] as const;
 export type FontKitId = (typeof FONT_KIT_IDS)[number];
 
-export const DECORATION_KINDS = ["none", "dancefloor", "arcade", "colorbars", "circuit", "candlelight", "cellar", "seas"] as const;
+export const DECORATION_KINDS = ["none", "dancefloor", "arcade", "colorbars", "circuit", "candlelight", "cellar", "seas", "seachart"] as const;
 export type DecorationKind = (typeof DECORATION_KINDS)[number];
 
 export const HAPTIC_PATTERN_IDS = ["classic", "receipt", "neon", "bass", "arcade", "toast"] as const;

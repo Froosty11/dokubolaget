@@ -17,12 +17,12 @@ Facts come from a web pass on 2026-10-01, using the clubs' own sites (sources be
 
 Each concept lists its look, decoration, fonts, vibration pattern, a copy idea and a dossier note.
 
-### TMEIT: "Laser Pirates"
-- **Look:** laser violet night seas with treasure gold. TMEIT's logo is a parrot on a bottle, so the theme is pirates, not candles (the owner's correction).
-- **Decoration:** `seas`: rolling violet waves, a pirate ship sailing the horizon, stars.
-- **Fonts:** the `pirate` set (Pirata One titles, Poppins text).
+### TMEIT: "The Liquor Sea" (Spritsjön)
+- **Look:** an old sea chart, "a map of the liquor sea" (the owner's direction): parchment, sepia ink and laser violet as the chart's ink colour. No neon. TMEIT's parrot-on-a-bottle logo sits in the header.
+- **Decoration:** `seachart`: rhumb lines from a compass rose, hatched islands named after drinks (Vinön, Kap Punsch, Glöggholmen), a dotted course to an X, a sea serpent.
+- **Fonts:** the `chart` set (IM Fell English SC titles, EB Garamond text).
 - **Vibration:** `bass` (cannon).
-- **Copy:** "Arr!", "Land ho!", "X marks the spot!"; the info sheet is a treasure map.
+- **Copy:** "Land ho!", "X marks the spot!"; the info sheet is the captain's log.
 
 ### QMISK: "Boomis"
 - **Look:** QMISK red on near-black, with a lit dance floor. Boomis, their giant speaker on wheels, appears in the celebration.

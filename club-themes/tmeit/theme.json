@@ -1,6 +1,6 @@
 {
   "id": "club-tmeit",
-  "version": 2,
+  "version": 3,
   "club": {
     "name": "TMEIT",
     "fullName": "TraditionsMEsterIT",
@@ -10,98 +10,94 @@
     "pubNight": "Fridays",
     "website": "https://tmeit.se"
   },
-  "dark": true,
+  "dark": false,
   "colors": {
-    "page": "#140b26",
-    "surface": "#21123a",
-    "surfaceAlt": "#1c1033",
-    "ink": "#f3eaff",
-    "inkStrong": "#ffffff",
-    "inkMuted": "#cdb6f2",
-    "inkFaint": "#c2a8ee",
-    "accent": "#b77dff",
-    "accentInk": "#140b26",
-    "highlight": "#f2d27a",
-    "cellFill": "#1c1033",
-    "cellBorder": "#5b3a92",
-    "cellShimmer": "#2c1a4f",
-    "headerCol": "#d6b6ff",
-    "headerRow": "#f2d27a",
-    "headerLabelBg": "#140b26",
-    "icon": "#b77dff",
-    "pulse": "#f2d27a",
-    "correct": "#a6ecb2",
-    "correctBg": "#123020",
-    "nearMiss": "#f2d27a",
-    "nearMissBg": "#3b2f0f",
-    "miss": "#ffb0b8",
-    "missBg": "#45142a",
-    "hint": "#cdb6f2",
-    "divider": "#5b3a92",
-    "overlay": "rgba(10, 5, 22, 0.6)",
-    "celebrationOverlay": "rgba(10, 5, 22, 0.5)",
-    "dialogSurface": "#f3e3b5",
-    "dialogInk": "#2b1a0e",
-    "dialogButton": "#2b1a0e",
-    "dialogButtonInk": "#f3e3b5",
-    "gateOverlay": "#08040f"
+    "page": "#eadbb4",
+    "surface": "#f4e9cc",
+    "surfaceAlt": "#e4d2a4",
+    "ink": "#2b1d10",
+    "inkStrong": "#1d130a",
+    "inkMuted": "#55402a",
+    "inkFaint": "#55402a",
+    "accent": "#5b23a8",
+    "accentInk": "#fbf3dc",
+    "highlight": "#a066f0",
+    "cellFill": "#f4e9cc",
+    "cellBorder": "#7a5a36",
+    "cellShimmer": "#e6d6aa",
+    "headerCol": "#5b23a8",
+    "headerRow": "#2b1d10",
+    "headerLabelBg": "#eadbb4",
+    "icon": "#5b23a8",
+    "pulse": "#a066f0",
+    "correct": "#1d5e30",
+    "correctBg": "#d7e8c6",
+    "nearMiss": "#6a4206",
+    "nearMissBg": "#f2dc9a",
+    "miss": "#8a1c16",
+    "missBg": "#f0cfbf",
+    "hint": "#55402a",
+    "divider": "#7a5a36",
+    "overlay": "rgba(43, 29, 16, 0.45)",
+    "celebrationOverlay": "rgba(43, 29, 16, 0.35)",
+    "dialogSurface": "#f4e9cc",
+    "dialogInk": "#2b1d10",
+    "dialogButton": "#5b23a8",
+    "dialogButtonInk": "#fbf3dc",
+    "gateOverlay": "#2b1d10"
   },
-  "fontKit": "pirate",
+  "fontKit": "chart",
   "radii": {
-    "card": 10,
-    "cell": 8,
-    "button": 22,
-    "pill": 20
+    "card": 6,
+    "cell": 4,
+    "button": 6,
+    "pill": 16
   },
   "typeScale": {
     "headerLabel": 0.82
   },
   "borders": {
-    "cell": 1,
-    "header": 1,
+    "cell": 1.5,
+    "header": 1.5,
     "card": 1.5
   },
-  "glow": {
-    "color": "#b77dff",
-    "radius": 12
-  },
+  "glow": null,
   "flags": {
     "ruledTable": false,
     "productNumberCells": false,
     "dottedLeaderPrices": false,
     "greyscaleFlags": false,
     "groupResultsByType": false,
-    "feedbackPlacement": "overlay",
+    "feedbackPlacement": "slip",
     "celebrationLayout": "card"
   },
   "confetti": {
     "shape": "dots",
     "colors": [
-      "#f2d27a",
       "#d9a93a",
-      "#b77dff",
-      "#ffffff"
+      "#f2d27a",
+      "#6b2fb3",
+      "#a066f0"
     ]
   },
   "decoration": {
-    "kind": "seas",
+    "kind": "seachart",
     "colors": [
-      "#7b2fd6",
-      "#b77dff",
-      "#f2d27a"
+      "#6b2fb3",
+      "#5a4329"
     ]
   },
   "haptics": "bass",
   "copy": {
     "en": {
-      "name": "Laser Pirates",
-      "description": "TMEIT ahoy: laser violet seas, a parrot on the bottle and treasure in every cell.",
+      "name": "The Liquor Sea",
+      "description": "TMEIT's chart of Spritsjön: laser violet ink on old parchment, a parrot on the bottle and an X for every find.",
       "unlockHint": "Scan the code at TMEIT's Friday pub in Kistan 2.0.",
       "correctTitles": [
-        "Arr!",
-        "Treasure!",
         "Land ho!",
-        "X marks the spot!"
+        "X marks the spot!",
+        "Treasure!",
+        "Arr!"
       ],
       "nearMissTitle": "Almost ashore!",
       "completeTitle": "Treasure found",
@@ -109,21 +105,21 @@
       "tabHome": "Harbour",
       "tabPlay": "Aboard",
       "tabLeaderboard": "Crew",
-      "dossierTitle": "TREASURE MAP",
+      "dossierTitle": "CAPTAIN'S LOG",
       "dossierSubject": "LOOT:",
-      "dossierNotes": "CAPTAIN'S LOG",
+      "dossierNotes": "NOTES",
       "stampHidden": "BURIED",
       "stampRevealed": "DUG UP"
     },
     "sv": {
-      "name": "Laserpirater",
-      "description": "TMEIT ohoj: laservioletta hav, en papegoja på flaskan och en skatt i varje ruta.",
+      "name": "Spritsjön",
+      "description": "TMEIT:s sjökort över Spritsjön: laserviolett bläck på gammalt pergament, en papegoja på flaskan och ett kryss för varje fynd.",
       "unlockHint": "Skanna koden på TMEIT:s fredagspub i Kistan 2.0.",
       "correctTitles": [
-        "Arr!",
-        "Skatt!",
         "Land i sikte!",
-        "Här är krysset!"
+        "Här är krysset!",
+        "Skatt!",
+        "Arr!"
       ],
       "nearMissTitle": "Nästan i hamn!",
       "completeTitle": "Skatten är bärgad",
@@ -131,27 +127,27 @@
       "tabHome": "Hamnen",
       "tabPlay": "Ombord",
       "tabLeaderboard": "Besättning",
-      "dossierTitle": "SKATTKARTA",
+      "dossierTitle": "LOGGBOK",
       "dossierSubject": "BYTE:",
-      "dossierNotes": "LOGGBOK",
+      "dossierNotes": "ANTECKNINGAR",
       "stampHidden": "BEGRAVD",
       "stampRevealed": "UPPGRÄVD"
     }
   },
   "dossier": {
-    "paper": "#f3e3b5",
-    "ink": "#2b1a0e",
-    "label": "#6b3f1d",
-    "bar": "#2b1a0e",
+    "paper": "#fbf3dc",
+    "ink": "#2b1d10",
+    "label": "#6b4a26",
+    "bar": "#2b1d10",
     "rule": "#a8783f",
-    "border": "#8a5a2b",
+    "border": "#7a5a36",
     "borderStyle": "dashed",
-    "radius": 4,
-    "tilt": "-2deg",
+    "radius": 2,
+    "tilt": "-1.5deg",
     "marginRule": null,
     "ruledLines": false,
-    "stampHidden": "#8f1d17",
-    "stampRevealed": "#1d6b35",
+    "stampHidden": "#8a1c16",
+    "stampRevealed": "#1d5e30",
     "font": null,
     "glow": false
   },

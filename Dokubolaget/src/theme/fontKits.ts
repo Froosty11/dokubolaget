@@ -44,6 +44,11 @@ export const FONT_KIT_FONTS: Record<FontKitId, ThemeFonts> = {
     logo: "PirataOne_400Regular", display: "PirataOne_400Regular", body: "Poppins_400Regular",
     bodyStrong: "Poppins_600SemiBold", condensed: "Poppins_600SemiBold", mono: "IBMPlexMono_400Regular",
   },
+  // An old sea chart: engraved small caps for titles, a book face for text.
+  chart: {
+    logo: "IMFellEnglishSC_400Regular", display: "IMFellEnglishSC_400Regular", body: "EBGaramond_500Medium",
+    bodyStrong: "EBGaramond_700Bold", condensed: "EBGaramond_600SemiBold", mono: "IBMPlexMono_400Regular",
+  },
   slab: {
     logo: "AlfaSlabOne_400Regular", display: "AlfaSlabOne_400Regular", body: "Bitter_400Regular",
     bodyStrong: "Bitter_700Bold", condensed: "Bitter_700Bold", mono: "Bitter_400Regular",

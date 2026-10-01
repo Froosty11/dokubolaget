@@ -48,6 +48,11 @@ describe("packToTheme", () => {
     expect(theme.decoration).toEqual({ kind: "none", colors: [] });
     expect(contrastProblems(theme.colors)).toEqual([]);
   });
+
+  test("carries the club's logo for the header, versioned so a new logo isn't cached", () => {
+    expect(packToTheme({ ...fixture(), version: 3 }).logo).toEqual({ url: "/api/themes/club-sample/logo?v=3", width: 64, height: 64 });
+    expect(packToTheme({ ...fixture(), logo: null }).logo).toBeNull();
+  });
 });
 
 describe("club theme cache", () => {

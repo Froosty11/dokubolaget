@@ -14,6 +14,7 @@ export function packToTheme(pack: ThemePack): Theme {
     colors: pack.colors,
     fonts: FONT_KIT_FONTS[pack.fontKit],
     fontKit: pack.fontKit,
+    logo: pack.logo ? { url: `/api/themes/${pack.id}/logo?v=${pack.version}`, ...pack.logo } : null,
     radii: pack.radii,
     typeScale: pack.typeScale,
     borders: pack.borders,
