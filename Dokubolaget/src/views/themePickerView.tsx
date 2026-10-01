@@ -1,4 +1,4 @@
-import { Pressable, ScrollView, Text, View } from "react-native";
+import { Pressable, ScrollView, Text, View, Switch } from "react-native";
 import { useTheme, useThemedStyles } from "../theme/ThemeProvider";
 import { ThemeSwatch } from "../theme/ThemeSwatch";
 import { UI_LANG } from "../theme/registry";
@@ -10,9 +10,11 @@ type ThemePickerViewProps = {
   streakLine: string | null;
   onPick: (id: ThemeId) => void;
   onClose: () => void;
+  hapticsOn: boolean;
+  onToggleHaptics: (on: boolean) => void;
 };
 
-export function ThemePickerView({ cards, streakLine, onPick, onClose }: Readonly<ThemePickerViewProps>) {
+export function ThemePickerView({ cards, streakLine, onPick, onClose, hapticsOn, onToggleHaptics }: Readonly<ThemePickerViewProps>) {
   const { theme } = useTheme();
   const styles = useThemedStyles(makeStyles);
 
@@ -73,6 +75,20 @@ export function ThemePickerView({ cards, streakLine, onPick, onClose }: Readonly
             </Pressable>
           );
         })}
+        <View style={styles.setting}>
+          <View style={styles.cardText}>
+            <Text style={styles.name}>Vibration</Text>
+            <Text style={styles.description}>Each theme buzzes its own way.</Text>
+          </View>
+          <Switch
+            value={hapticsOn}
+            onValueChange={onToggleHaptics}
+            accessibilityLabel="Vibration"
+            trackColor={{ false: theme.colors.divider, true: theme.colors.accent }}
+            thumbColor={theme.colors.surface}
+            {...({ activeThumbColor: theme.colors.surface } as object)}
+          />
+        </View>
       </ScrollView>
     </View>
   );
@@ -104,5 +120,9 @@ const makeStyles = (theme: Theme) => ({
   progressFill: { height: 6, backgroundColor: theme.colors.accent },
   progressText: { fontFamily: theme.fonts.mono, fontSize: 11, color: theme.colors.inkMuted },
   badge: { position: "absolute" as const, top: 8, right: 8, backgroundColor: theme.colors.accent, borderRadius: 20, paddingHorizontal: 8, paddingVertical: 2 },
+  setting: {
+    flexDirection: "row" as const, alignItems: "center" as const, gap: 14, paddingTop: 14, marginTop: 4,
+    borderTopWidth: 1, borderTopColor: theme.colors.divider,
+  },
   badgeText: { fontFamily: theme.fonts.bodyStrong, fontSize: 10, letterSpacing: 1, color: theme.colors.accentInk },
 });

@@ -5,7 +5,7 @@ import { useTheme, useThemedStyles } from "../theme/ThemeProvider";
 import { ThemeLogo } from "../theme/ThemeLogo";
 import { ThemeBackdrop } from "../theme/decorations/ThemeBackdrop";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
-import * as Haptics from "expo-haptics"
+import { haptics } from "../theme/haptics";
 import { formatTagLabel, getTagIconName, getTagImageUrl } from "../tagDisplay";
 import { AlertDialog, ScrollView, XStack, YStack } from "tamagui";
 import InfoIcon from "../../assets/info.svg";
@@ -464,7 +464,7 @@ export function GameView(props: Readonly<GameViewProps>) {
     const selectedProduct = selectedProductsByCell[item];
 
     function onCellPressedACB() {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium)
+      haptics.play("tap")
       if (selectedProduct) {
         onFilledCellPressed(item);
       } else {

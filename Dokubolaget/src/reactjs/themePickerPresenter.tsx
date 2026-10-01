@@ -1,5 +1,6 @@
 import { router } from "expo-router";
-import * as Haptics from "expo-haptics";
+import { useState } from "react";
+import { haptics, saveHapticsSetting } from "../theme/haptics";
 import { observer } from "mobx-react-lite";
 import { THEMES } from "../theme/registry";
 import { useTheme } from "../theme/ThemeProvider";
@@ -20,7 +21,14 @@ export const ThemePicker = observer(function ThemePicker({ model }: { model: The
   const streakLine = model.loggedIn ? `Best streak: ${model.longestStreak} days` : "Log in to earn streak rewards";
 
   function onPick(next: ThemeId) {
-    if (setId(next)) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    if (setId(next)) haptics.play("tap");
+  }
+
+  const [hapticsOn, setHapticsOn] = useState(haptics.enabled);
+  function onToggleHaptics(on: boolean) {
+    saveHapticsSetting(on);
+    setHapticsOn(on);
+    if (on) haptics.play("tap");
   }
 
   function onClose() {
@@ -28,5 +36,14 @@ export const ThemePicker = observer(function ThemePicker({ model }: { model: The
     else router.replace("/");
   }
 
-  return <ThemePickerView cards={cards} streakLine={streakLine} onPick={onPick} onClose={onClose} />;
+  return (
+    <ThemePickerView
+      cards={cards}
+      streakLine={streakLine}
+      onPick={onPick}
+      onClose={onClose}
+      hapticsOn={hapticsOn}
+      onToggleHaptics={onToggleHaptics}
+    />
+  );
 });

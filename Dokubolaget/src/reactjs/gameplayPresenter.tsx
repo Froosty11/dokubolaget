@@ -11,7 +11,7 @@ import { Dossier, redactionKeysForTags } from "../components/Dossier"
 import { router } from "expo-router"
 import { BoardTag, GuessFeedback } from "../dokuModel"
 import { useEffect, useState, useRef } from "react"
-import * as Haptics from "expo-haptics"
+import { haptics } from "../theme/haptics";
 import { useTheme } from "../theme/ThemeProvider"
 import { composeFeedbackText } from "../theme/feedbackText"
 import { receiptLines } from "../searchHelpers"
@@ -96,17 +96,13 @@ const Gameplay = observer(function GameRender({ model }: GameplayProps) {
       model.clearLastFeedback();
 
       if (next.kind === "correct") {
-        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        haptics.play("correct");
         setFlipNonceByCell((current) => bump(current, next.cell) as Record<number, number>);
         const id = burstIdRef.current++;
         // Let the flip land before the confetti pops out of the cell.
         setTimeout(() => setBursts((current) => [...current, { id, cell: next.cell }]), 220);
       } else {
-        Haptics.notificationAsync(
-          next.kind === "near"
-            ? Haptics.NotificationFeedbackType.Warning
-            : Haptics.NotificationFeedbackType.Error,
-        );
+        haptics.play(next.kind === "near" ? "nearMiss" : "miss");
         setShakeNonceByCell((current) => bump(current, next.cell) as Record<number, number>);
         if (next.kind === "near" && next.matchedTagId) {
           setPulseNonceByTag((current) => bump(current, next.matchedTagId as string));
@@ -137,7 +133,10 @@ const Gameplay = observer(function GameRender({ model }: GameplayProps) {
       if (previous < 9 && model.filledCellCount === 9) {
         model.recordBoardComplete();
         setShareStatus("idle");
-        const timer = setTimeout(() => setBoardCompleteOpen(true), 900);
+        const timer = setTimeout(() => {
+          setBoardCompleteOpen(true);
+          haptics.play("complete");
+        }, 900);
         return () => clearTimeout(timer);
       }
     }, [model.filledCellCount]);
@@ -181,17 +180,17 @@ const Gameplay = observer(function GameRender({ model }: GameplayProps) {
     });
 
     function openTutorialACB() {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)
+      haptics.play("tap")
       setTutorialOpen(true);
     }
 
     function closeTutorialACB() {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)
+      haptics.play("tap")
       setTutorialOpen(false);
     }
 
     async function onShareACB() {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)
+      haptics.play("tap")
       setShareStatus(await shareTextACB(model.buildShareText()));
     }
 

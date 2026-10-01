@@ -1,9 +1,8 @@
 import { observer } from "mobx-react-lite"
 import { router } from "expo-router"
 import { useEffect, useMemo, useState } from "react"
-import { Vibration } from "react-native"
 import { SearchView, type SearchResultItem } from "../views/searchView"
-import * as Haptics from "expo-haptics"
+import { haptics } from "../theme/haptics";
 import { useTheme } from "../theme/ThemeProvider"
 import { composeFeedbackText } from "../theme/feedbackText"
 
@@ -36,7 +35,7 @@ const Search = observer(function SearchRender(props: any) {
 	}
 
 	function onSearch() {
-		Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium)
+		haptics.play("tap")
 		const trimmedQuery = query.trim()
 		if (trimmedQuery.length === 0) {
 			model.doSearch({ query: "", cell: selectedCell })
@@ -58,7 +57,6 @@ const Search = observer(function SearchRender(props: any) {
 		const validation = model.setCellResult(selectedCell, result)
 
 		if (validation?.isValid) {
-			Vibration.vibrate([0, 100, 50, 100])
 			setInlineFeedback(null)
 			clearSearchState()
 			router.back()
@@ -66,13 +64,13 @@ const Search = observer(function SearchRender(props: any) {
 		}
 
 		// Wrong guess: stay in search with the query kept, so a retry is one tap.
-		Vibration.vibrate([0, 50, 100, 50])
+		// (The board plays the theme's vibration for every guess.)
 		const kind = validation?.kind === "near" ? "near" : "miss"
 		setInlineFeedback({ kind, text: composeFeedbackText({ kind, message: String(validation?.reason ?? "") }, copy) })
 	}
 
 	function onClose() {
-		Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium)
+		haptics.play("tap")
 		setInlineFeedback(null)
 		clearSearchState()
 		router.back()

@@ -4,6 +4,7 @@ import { model } from "./dokuModel";
 import { connectToServer } from "./serverSync"
 import { api } from "./api"
 import { loadDeviceThemePrefs, saveDeviceThemePrefs } from "./theme/themeStorage"
+import { loadHapticsSetting } from "./theme/haptics"
 import AsyncStorage from "@react-native-async-storage/async-storage"
 import { AppState, Platform } from "react-native"
 import { todayDateKey } from "./dokuModel"
@@ -13,6 +14,9 @@ import { boardKey, restoreProgress, serializeProgress } from "./progress"
 configure({ enforceActions: "never" });
 
 export const reactiveModel = observable(model);
+
+// The vibration switch is a device setting.
+loadHapticsSetting();
 
 // Theme choice and unlocks live on the device too, so they survive reloads
 // for players who never log in.

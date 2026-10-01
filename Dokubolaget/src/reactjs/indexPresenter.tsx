@@ -8,7 +8,7 @@ import { useState, useEffect } from "react";
 
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Linking, View } from "react-native";
-import * as Haptics from "expo-haptics"
+import { haptics } from "../theme/haptics";
 
 //temp
 type IndexProps = {
@@ -50,7 +50,7 @@ const Index = observer(
         }, []);
 
         function acceptAgeACB(){
-            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium)
+            haptics.play("tap")
             AsyncStorage.setItem(AGE_VERIFIED_KEY, "true").catch(
                 function ageGateWriteErrorACB(error) {
                     console.warn("Age-gate write failed:", error);
@@ -60,7 +60,7 @@ const Index = observer(
         }
 
         function rejectAgeACB(){
-            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium)
+            haptics.play("tap")
             // window.location is web-only; Linking handles native too.
             Linking.openURL("https://www.systembolaget.se/under-20/").catch(
                 function rejectNavErrorACB(error) {

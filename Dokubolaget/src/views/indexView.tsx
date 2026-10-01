@@ -1,5 +1,5 @@
 import { router } from "expo-router";
-import * as Haptics from "expo-haptics";
+import { haptics } from "../theme/haptics";
 import { handleLogoutACB } from "../reactjs/authPresenter";
 import type { Account } from "../api";
 import { FC, use, useEffect, useState } from "react";
@@ -92,7 +92,7 @@ export function IndexView({ ageGate, account, supportUrl }: IndexViewProps) {
   const app = useThemedStyles(makeAppStyles);
 
   function dailyPlayACB() {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium)
+    haptics.play("tap")
     router.push("/gameplay");
   }
 
@@ -101,12 +101,12 @@ export function IndexView({ ageGate, account, supportUrl }: IndexViewProps) {
   // }
 
   function themesACB() {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium)
+    haptics.play("tap")
     router.push("/themes");
   }
 
   function loginACB() {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium)
+    haptics.play("tap")
     setShowLogin(true);
   }
   

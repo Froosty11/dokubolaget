@@ -6,7 +6,7 @@ import "@tamagui/native/setup-zeego";
 import Smakprofil from "../../../assets/smakprofil.svg";
 import Drinks from "../../../assets/drinks.svg";
 import LeaderboardIcon from "../../../assets/leaderboard.svg";
-import * as Haptics from "expo-haptics"
+import { haptics } from "../../theme/haptics";
 import { useTheme } from "../../theme/ThemeProvider";
 
 export default observer(function TabsLayout() {
@@ -19,7 +19,7 @@ export default observer(function TabsLayout() {
 
   const hapticListeners = {
     tabPress: () => {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium)
+      haptics.play("tap")
     }
   }
 

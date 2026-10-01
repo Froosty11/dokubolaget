@@ -3,7 +3,7 @@ import { useTheme, useThemedStyles } from "../theme/ThemeProvider";
 import type { Theme } from "../theme/types";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { Label, XStack, YStack } from "tamagui";
-import * as Haptics from "expo-haptics"
+import { haptics } from "../theme/haptics";
 
 export type TimeFilter = "TODAY" | "WEEK" | "MONTH" | "ALL_TIME";
 export type CategoryFilter =
@@ -118,7 +118,7 @@ function LeaderboardSelect({
     items.find((item) => item.value === value)?.label || placeholder;
 
   function onSelectACB(nextValue: string) {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium)
+    haptics.play("tap")
     onValueChange(nextValue);
     setOpen(false);
   }
@@ -130,7 +130,7 @@ function LeaderboardSelect({
           accessibilityRole="button"
           accessibilityLabel={id}
           onPress={() => {
-            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+            haptics.play("tap");
             setOpen((prev) => !prev)
           }}
           style={style.trigger}

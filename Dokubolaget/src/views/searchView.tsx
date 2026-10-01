@@ -2,7 +2,7 @@ import { useEffect, useState } from "react"
 import { Image, Keyboard, Platform, Pressable, StyleSheet, Text, TextInput, View, FlatList, useWindowDimensions } from "react-native"
 import Svg, { SvgUri, Path } from 'react-native-svg'
 import { categories } from "../categories"
-import * as Haptics from "expo-haptics"
+import { haptics } from "../theme/haptics";
 import { formatTagLabel } from "../tagDisplay"
 import { Dossier, redactionKeysForTags } from "../components/Dossier"
 import { useTheme, useThemedStyles } from "../theme/ThemeProvider"
@@ -64,7 +64,7 @@ function SearchResultRow(props: Readonly<SearchResultRowProps>) {
 	}, [result.id, result.image])
 
 	function onPressACB() {
-		Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium)
+		haptics.play("tap")
 		onPress(result)
 	}
 
@@ -89,7 +89,7 @@ function SearchResultRow(props: Readonly<SearchResultRowProps>) {
 			onHoverIn={() => onPeek(result, false)}
 			onHoverOut={() => onPeek(null, false)}
 			onLongPress={() => {
-				Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy)
+				haptics.play("tap")
 				// The on-screen keyboard would cover half the case file.
 				Keyboard.dismiss()
 				onPeek(result, true)
