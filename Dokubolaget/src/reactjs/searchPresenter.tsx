@@ -4,6 +4,8 @@ import { useEffect, useMemo, useState } from "react"
 import { Vibration } from "react-native"
 import { SearchView, type SearchResultItem } from "../views/searchView"
 import * as Haptics from "expo-haptics"
+import { useTheme } from "../theme/ThemeProvider"
+import { composeFeedbackText } from "../theme/feedbackText"
 
 const Search = observer(function SearchRender(props: any) {
 	const { model, cellParam } = props
@@ -17,6 +19,10 @@ const Search = observer(function SearchRender(props: any) {
 	}, [cellParam, model.currentCell])
 
 	const [query, setQuery] = useState(model.searchParams.query ?? "")
+	const { copy } = useTheme()
+	// Feedback for the last wrong guess, shown inside the search panel so the
+	// player can try again without retyping.
+	const [inlineFeedback, setInlineFeedback] = useState<{ kind: "near" | "miss"; text: string } | null>(null)
 
 	function clearSearchState() {
 		setQuery("")
@@ -53,16 +59,21 @@ const Search = observer(function SearchRender(props: any) {
 
 		if (validation?.isValid) {
 			Vibration.vibrate([0, 100, 50, 100])
-		} else {
-			Vibration.vibrate([0, 50, 100, 50])
+			setInlineFeedback(null)
+			clearSearchState()
+			router.back()
+			return
 		}
 
-		clearSearchState()
-		router.back()
+		// Wrong guess: stay in search with the query kept, so a retry is one tap.
+		Vibration.vibrate([0, 50, 100, 50])
+		const kind = validation?.kind === "near" ? "near" : "miss"
+		setInlineFeedback({ kind, text: composeFeedbackText({ kind, message: String(validation?.reason ?? "") }, copy) })
 	}
 
 	function onClose() {
 		Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium)
+		setInlineFeedback(null)
 		clearSearchState()
 		router.back()
 	}
@@ -99,6 +110,7 @@ const Search = observer(function SearchRender(props: any) {
 			results={model.searchResultsPromiseState.data ?? []}
 			rejectedIds={model.rejectedByCell?.[selectedCell] || []}
 			onResultPress={onResultPress}
+			feedback={inlineFeedback}
 			onQueryChange={onQueryChange}
 			onSearch={onSearch}
 			onClose={onClose}

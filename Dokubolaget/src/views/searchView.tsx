@@ -40,6 +40,8 @@ type SearchViewProps = {
 	sideCategories: BoardTag[]
 	// Products already guessed wrong for this cell.
 	rejectedIds: string[]
+	// The last wrong guess, shown above the results.
+	feedback: { kind: "near" | "miss"; text: string } | null
 }
 
 type SearchResultRowProps = {
@@ -262,6 +264,7 @@ export function SearchView(props: Readonly<SearchViewProps>) {
 		topCategories,
 		sideCategories,
 		rejectedIds,
+		feedback,
 	} = props
 	const { theme, copy } = useTheme()
 	const search = useThemedStyles(makeSearchStyles)
@@ -355,6 +358,23 @@ export function SearchView(props: Readonly<SearchViewProps>) {
 					</Pressable>	
 				</View>
 
+				{feedback ? (
+					<View
+						accessibilityLiveRegion="polite"
+						accessibilityRole="alert"
+						style={[
+							search.feedback,
+							{
+								backgroundColor: feedback.kind === "near" ? theme.colors.nearMissBg : theme.colors.missBg,
+								borderColor: feedback.kind === "near" ? theme.colors.nearMiss : theme.colors.miss,
+							},
+						]}
+					>
+						<Text style={[search.feedbackText, { color: feedback.kind === "near" ? theme.colors.nearMiss : theme.colors.miss }]}>
+							{feedback.text}
+						</Text>
+					</View>
+				) : null}
 				{isLoading ? <Text style={search.status}>Searching...</Text> : null}
 				{!isLoading && results.length == 0 ? <Text style={search.status}>No results</Text> : null}
 				{errorMessage ? <Text style={search.status}>{errorMessage}</Text> : null}
@@ -498,6 +518,17 @@ const makeSearchStyles = (theme: Theme) => ({
 		color: theme.colors.ink,
 		textAlign: "center" as const,
 		padding: 5,
+	},
+	feedback: {
+		borderWidth: 1.5,
+		borderRadius: Math.min(12, theme.radii.card),
+		paddingVertical: 8,
+		paddingHorizontal: 12,
+	},
+	feedbackText: {
+		fontFamily: theme.fonts.bodyStrong,
+		fontSize: 14,
+		textAlign: "center" as const,
 	},
 	groupHeader: {
 		fontFamily: theme.fonts.display,

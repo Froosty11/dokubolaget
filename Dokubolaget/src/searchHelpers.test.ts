@@ -43,3 +43,12 @@ describe("receiptLines", () => {
     ]);
   });
 });
+
+import { cellUsingProduct } from "./searchHelpers";
+
+describe("cellUsingProduct", () => {
+  const board = { 2: { id: "p1", raw: { productId: "p1" } }, 7: { id: "p9" } };
+  test("finds the cell a product already fills", () => expect(cellUsingProduct(board, "p1", 5)).toBe(2));
+  test("ignores the cell being guessed", () => expect(cellUsingProduct(board, "p1", 2)).toBeNull());
+  test("null when unused", () => expect(cellUsingProduct(board, "p3", 5)).toBeNull());
+});

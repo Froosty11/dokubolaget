@@ -10,7 +10,7 @@ import { fetchBoardForDateACB } from "./firestoreModel";
 import { createThemeState } from "./theme/themeState";
 import { THEMES } from "./theme/registry";
 import { unlocksForBoard } from "./theme/unlocks";
-import { addRejected } from "./searchHelpers";
+import { addRejected, cellUsingProduct } from "./searchHelpers";
 
 export type BoardTag = {
   id: string;
@@ -257,8 +257,21 @@ const modelBody = {
   rejectedByCell: {} as Record<number, string[]>,
 
   setCellResult(cell: any, result: any) {
-    const validation = this.validateCellResult(cell, result);
     const asNumber = Number(cell);
+
+    // One product per board. Not a miss: it says nothing about the categories.
+    const usedIn = cellUsingProduct(
+      this.selectedProductsByCell,
+      String(result?.id ?? result?.raw?.productId ?? ""),
+      asNumber,
+    );
+    if (usedIn != null) {
+      const reason = `Already used in ${"ABC"[(usedIn - 1) % 3]}${Math.floor((usedIn - 1) / 3) + 1}.`;
+      this.lastFeedback = { kind: "miss", isCorrect: false, message: reason, cell: asNumber };
+      return { isValid: false, kind: "used" as const, reason };
+    }
+
+    const validation = this.validateCellResult(cell, result);
 
     if (!validation.isValid) {
       if (validation.kind === "near" || validation.kind === "miss") {

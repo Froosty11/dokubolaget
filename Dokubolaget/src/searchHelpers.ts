@@ -50,3 +50,18 @@ export function receiptLines(selectedProductsByCell: Record<number, any>): strin
       return [name, product?.raw?.productNumber, product?.name].filter(Boolean).join(" ");
     });
 }
+
+// The cell (other than `exceptCell`) already filled with this product, if any.
+// One product may only be used once per board.
+export function cellUsingProduct(
+  selectedProductsByCell: Record<number, any>,
+  productId: string,
+  exceptCell: number,
+): number | null {
+  if (!productId) return null;
+  for (const [cell, product] of Object.entries(selectedProductsByCell)) {
+    const id = String(product?.id ?? product?.raw?.productId ?? "");
+    if (Number(cell) !== exceptCell && id === productId) return Number(cell);
+  }
+  return null;
+}
