@@ -12,6 +12,7 @@
     "build:web": "TAMAGUI_DISABLE_SLIDER_INTERVAL=1 expo export --platform web",
     "start": "bun run server.js",
     "test": "bun test src server",
+    "admin": "bun scripts/admin.ts",
     "seed:boards": "bun run scripts/seedBoards.ts",
     "api": "PORT=8090 SEED_ENABLED=false API_DEV_CORS=true PUBLIC_URL=http://localhost:8081 bun run server.js"
   },

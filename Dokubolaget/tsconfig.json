@@ -3,5 +3,5 @@
   "compilerOptions": {
     "jsx": "react-native"
   },
-  "exclude": ["node_modules", "**/*.test.ts", "server", "scripts/seedBoards.ts", "server.js"]
+  "exclude": ["node_modules", "**/*.test.ts", "server", "scripts/seedBoards.ts", "scripts/admin.ts", "server.js"]
 }

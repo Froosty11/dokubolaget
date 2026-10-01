@@ -83,7 +83,7 @@ The app ships five looks. Players switch between the ones they have in **Home â†
 | Speakeasy | A perfect board: all nine cells with no misses |
 | Modern | A 7-day streak (logged in). Modern ships Systembolaget's own fonts, so it is the hardest reward. |
 
-Unlocks are permanent. They're saved on the device and, when logged in, merged into `users/{uid}/private/profile`. Practice boards (`?board=`) never unlock anything.
+Unlocks are permanent. They're saved on the device and, when logged in, merged into the account on the server. Practice boards (`?board=`) never unlock anything.
 
 **Where things live** (all under `Dokubolaget/src/theme/`):
 
@@ -106,6 +106,24 @@ Then run the checks:
 cd Dokubolaget && bun test src                                   # tokens, contrast (WCAG AA), unlock rules
 node tools/themeScreens.mjs --theme <id> --out /tmp/shots/<id>   # screenshots of every screen (needs the web dev server + proxy)
 ```
+
+### Club themes and unlock codes
+
+Student pub clubs get their own theme, unlocked by scanning a QR code at their pub. Club themes are data, not app code: each one is a folder in `club-themes/<slug>/` (repo root) with a `theme.json` and an optional `logo.png` or `logo.webp`. The server loads them into the database when it starts, so adding or changing a club is a commit and a deploy, not an app release. Bump `version` in `theme.json` whenever you change one, or the server keeps the old copy.
+
+Manage codes with the admin script. In the container:
+
+```bash
+docker exec dokubolaget bun run admin themes check            # validate every club theme folder
+docker exec dokubolaget bun run admin themes list             # loaded club themes and how often they were scanned
+docker exec dokubolaget bun run admin codes create club-qmisk --label "Bar poster"
+docker exec dokubolaget bun run admin codes create club-tmeit --label "Tentagasque" --expires 2026-10-10T03:00:00+02:00 --max-uses 300
+docker cp dokubolaget:/data/qr ./qr                           # the QR images for the posters
+docker exec dokubolaget bun run admin codes list
+docker exec dokubolaget bun run admin codes revoke 3          # e.g. a poster code that leaked
+```
+
+A code is shown once, when it's made; the database only keeps its hash. To replace a leaked code, revoke it and make a new one. Players who already unlocked the theme keep it. `codes create` needs `PUBLIC_URL`, because the QR code links to `PUBLIC_URL/scan/<code>`. Locally, run the same commands with `bun run admin â€¦` from `Dokubolaget/` (they use `data/local.sqlite`).
 
 ## File structure (with `Dokubolaget` as root)
 
