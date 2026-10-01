@@ -5,7 +5,9 @@ import {
   type SessionUser,
 } from "./auth";
 import { getBoard } from "./boards";
+import { normalizeCode, redeemCode } from "./codes";
 import { nowIso } from "./db";
+import { getLogo, getPack, getPackSummary, knownClubIds, listPacks } from "./themePacks";
 
 export type ApiRequest = {
   method: string;
@@ -14,7 +16,7 @@ export type ApiRequest = {
   body: string;
   ip: string;
 };
-export type ApiResponse = { status: number; headers: Record<string, string>; body: string };
+export type ApiResponse = { status: number; headers: Record<string, string>; body: string | Uint8Array };
 
 export type ApiDeps = {
   db: Database;
@@ -28,7 +30,16 @@ export type ApiDeps = {
   publicUrl?: string;
   // Ko-fi (or similar) page shown as "Support Dokubolaget"; https only.
   supportUrl?: string;
+  // Shown on the pub stamps screen as "Want your club here?".
+  contactEmail?: string;
 };
+
+const EMAIL = /^[^\s@<>"]+@[^\s@<>"]+\.[^\s@<>"]+$/;
+
+export function safeContactEmail(value: string | undefined): string | null {
+  const email = value?.trim();
+  return email && EMAIL.test(email) && email.length <= 254 ? email : null;
+}
 
 // Only plain https links reach the page, whatever ends up in the env file.
 export function safeSupportUrl(value: string | undefined): string | null {
@@ -70,13 +81,17 @@ function readCookie(header: string | undefined, name: string) {
   return null;
 }
 
-function parseUnlocked(value: unknown): string[] {
+// Built-in themes in picker order, then club themes the server knows, sorted.
+function parseUnlocked(value: unknown, knownClubs: Set<string>): string[] {
+  let parsed: unknown = value;
   try {
-    const parsed = typeof value === "string" ? JSON.parse(value) : value;
-    return Array.isArray(parsed) ? parsed.filter((id) => (THEME_IDS as readonly string[]).includes(id)) : [];
+    if (typeof value === "string") parsed = JSON.parse(value);
   } catch {
     return [];
   }
+  if (!Array.isArray(parsed)) return [];
+  const ids = new Set(parsed.filter((id): id is string => typeof id === "string"));
+  return [...THEME_IDS.filter((id) => ids.has(id)), ...[...ids].filter((id) => knownClubs.has(id)).sort()];
 }
 
 export function createApi(deps: ApiDeps) {
@@ -89,6 +104,7 @@ export function createApi(deps: ApiDeps) {
   // base for links in emails (request headers can be forged).
   const publicOrigin = deps.publicUrl ? new URL(deps.publicUrl).origin : null;
   const supportUrl = safeSupportUrl(deps.supportUrl);
+  const contactEmail = safeContactEmail(deps.contactEmail);
 
   function isHttps(req: ApiRequest) {
     return deps.trustProxy === true && String(req.headers["x-forwarded-proto"] ?? "").split(",")[0].trim() === "https";
@@ -164,7 +180,21 @@ export function createApi(deps: ApiDeps) {
     const row = db.query("SELECT theme, unlocked_themes FROM prefs WHERE user_id = ?").get(userId) as
       | { theme: string | null; unlocked_themes: string }
       | null;
-    return { theme: row?.theme ?? null, unlockedThemes: parseUnlocked(row?.unlocked_themes ?? "[]") };
+    return { theme: row?.theme ?? null, unlockedThemes: parseUnlocked(row?.unlocked_themes ?? "[]", knownClubIds(db)) };
+  }
+
+  function isKnownTheme(id: string) {
+    return (THEME_IDS as readonly string[]).includes(id) || knownClubIds(db).has(id);
+  }
+
+  // Unlocks only ever grow, so a device that knows fewer can't erase any.
+  function saveUnlocks(userId: string, theme: string | null, ids: unknown) {
+    const merged = parseUnlocked([...prefsFor(userId).unlockedThemes, ...parseUnlocked(ids, knownClubIds(db))], knownClubIds(db));
+    db.run(
+      `INSERT INTO prefs (user_id, theme, unlocked_themes) VALUES (?, ?, ?)
+       ON CONFLICT(user_id) DO UPDATE SET theme = COALESCE(excluded.theme, prefs.theme), unlocked_themes = excluded.unlocked_themes`,
+      [userId, theme, JSON.stringify(merged)],
+    );
   }
 
   function progressFor(userId: string) {
@@ -250,14 +280,8 @@ export function createApi(deps: ApiDeps) {
       limit(`prefs:${user.id}`, 120, 60_000);
       const body = parseBody(req);
       const theme = body.theme == null ? null : String(body.theme);
-      if (theme !== null && !(THEME_IDS as readonly string[]).includes(theme)) throw new ApiError(400, "bad_request");
-      // Unlocks only ever grow, so a device that knows fewer can't erase any.
-      const merged = THEME_IDS.filter((id) => new Set([...prefsFor(user.id).unlockedThemes, ...parseUnlocked(body.unlockedThemes)]).has(id));
-      db.run(
-        `INSERT INTO prefs (user_id, theme, unlocked_themes) VALUES (?, ?, ?)
-         ON CONFLICT(user_id) DO UPDATE SET theme = COALESCE(excluded.theme, prefs.theme), unlocked_themes = excluded.unlocked_themes`,
-        [user.id, theme, JSON.stringify(merged)],
-      );
+      if (theme !== null && !isKnownTheme(theme)) throw new ApiError(400, "bad_request");
+      saveUnlocks(user.id, theme, body.unlockedThemes);
       return respond(200, { prefs: prefsFor(user.id) });
     }
     if (method === "PUT" && path === "/api/me/progress") {
@@ -286,7 +310,40 @@ export function createApi(deps: ApiDeps) {
       return respond(200, { key: await deps.sbKey.get() });
     }
     if (method === "GET" && path === "/api/config") {
-      return respond(200, { supportUrl }, { "cache-control": "public, max-age=300" });
+      return respond(200, { supportUrl, contactEmail }, { "cache-control": "public, max-age=300" });
+    }
+
+    if (method === "POST" && path === "/api/scan") {
+      limit(`scan:${req.ip}`, 20, 60_000);
+      const code = normalizeCode(parseBody(req).code);
+      if (!code) throw new ApiError(404, "invalid_code");
+      limit(`scan-code:${code}`, 120, 60_000);
+      const user = sessionUser(db, readCookie(req.headers.cookie, COOKIE), now());
+      const { themeId } = redeemCode(db, code, user?.id ?? null, now());
+      if (user) saveUnlocks(user.id, null, [themeId]);
+      return respond(200, { themeId, summary: getPackSummary(db, themeId) });
+    }
+    if (method === "GET" && path === "/api/themes") {
+      return respond(200, { themes: listPacks(db) }, { "cache-control": "public, max-age=300" });
+    }
+    const themeMatch = /^\/api\/themes\/([^/]+)(\/logo)?$/.exec(path);
+    if (method === "GET" && themeMatch) {
+      const id = safeDecode(themeMatch[1]) ?? "";
+      if (themeMatch[2]) {
+        const logo = getLogo(db, id);
+        if (!logo) return respond(404, { error: "not_found" });
+        return {
+          status: 200,
+          headers: { "content-type": logo.type, "cache-control": "public, max-age=31536000, immutable", "x-content-type-options": "nosniff" },
+          body: logo.bytes,
+        };
+      }
+      const pack = getPack(db, id);
+      if (!pack) return respond(404, { error: "not_found" });
+      const etag = `"v${pack.version}"`;
+      const cache = { etag, "cache-control": "public, max-age=300" };
+      if (req.headers["if-none-match"] === etag) return { status: 304, headers: cache, body: "" };
+      return respond(200, pack, cache);
     }
     if (method === "GET" && path === "/api/leaderboard") {
       return respond(200, { rows: [] });

@@ -2,6 +2,9 @@ import { beforeEach, describe, expect, test } from "bun:test";
 import { openDb } from "./db";
 import { putBoard } from "./boards";
 import { createApi, type ApiRequest } from "./api";
+import { join } from "path";
+import { createCode } from "./codes";
+import { loadThemePacks } from "./themePacks";
 
 let db: ReturnType<typeof openDb>;
 let mails: Array<{ to: string; link: string }>;
@@ -248,7 +251,7 @@ describe("account deletion", () => {
 
 describe("support link", () => {
   test("is null until configured", async () => {
-    expect(json(await api(req("GET", "/api/config")))).toEqual({ supportUrl: null });
+    expect(json(await api(req("GET", "/api/config"))).supportUrl).toBeNull();
   });
   test("passes https links and drops anything else", async () => {
     const make = (supportUrl: string) =>
@@ -256,5 +259,81 @@ describe("support link", () => {
     expect(json(await make("https://ko-fi.com/dokubolaget")(req("GET", "/api/config"))).supportUrl).toBe("https://ko-fi.com/dokubolaget");
     expect(json(await make("javascript:alert(1)")(req("GET", "/api/config"))).supportUrl).toBeNull();
     expect(json(await make("http://ko-fi.com/x")(req("GET", "/api/config"))).supportUrl).toBeNull();
+  });
+});
+
+describe("club themes and scanning", () => {
+  beforeEach(() => {
+    loadThemePacks(db, join(import.meta.dir, "fixtures", "club-themes"), () => {});
+  });
+  const scan = (code: string, extra: Partial<ApiRequest> & { cookie?: string } = {}) =>
+    api(req("POST", "/api/scan", { code }, extra));
+
+  test("a good code returns the theme and its summary", async () => {
+    const { code } = createCode(db, { themeId: "club-sample", label: "Poster" });
+    const res = await scan(code);
+    expect(res.status).toBe(200);
+    expect(json(res).themeId).toBe("club-sample");
+    expect(json(res).summary.club.venue).toBe("Testpuben");
+  });
+
+  test("a logged-in scan is saved to the account by the server", async () => {
+    const cookie = await signedIn();
+    const { code } = createCode(db, { themeId: "club-sample", label: "Poster" });
+    await scan(code, { cookie });
+    expect(json(await api(req("GET", "/api/me", undefined, { cookie }))).prefs.unlockedThemes).toEqual(["club-sample"]);
+  });
+
+  test("bad and expired codes get their own errors", async () => {
+    const bad = await scan("AAAA-AAAA-AA");
+    expect([bad.status, json(bad).error]).toEqual([404, "invalid_code"]);
+    const { code } = createCode(db, { themeId: "club-sample", label: "x", expiresAt: "2020-01-01T00:00:00.000Z" });
+    const expired = await scan(code);
+    expect([expired.status, json(expired).error]).toEqual([410, "code_expired"]);
+  });
+
+  test("the 21st scan in a minute from one address is rate limited", async () => {
+    let last;
+    for (let i = 0; i < 21; i++) last = await scan("AAAA-AAAA-AA", { ip: "9.9.9.9" });
+    expect([last!.status, json(last!).error]).toEqual([429, "rate_limited"]);
+  });
+
+  test("scans from other sites are refused", async () => {
+    const res = await scan("AAAA-AAAA-AA", { headers: { origin: "https://evil.example" } });
+    expect(res.status).toBe(403);
+  });
+
+  test("the club theme list, the theme itself and its logo", async () => {
+    const list = json(await api(req("GET", "/api/themes")));
+    expect(list.themes.map((t: any) => t.id)).toEqual(["club-sample"]);
+    const theme = await api(req("GET", "/api/themes/club-sample"));
+    expect(theme.status).toBe(200);
+    expect(theme.headers.etag).toBe('"v1"');
+    expect(json(theme).fontKit).toBe("prislista");
+    const cached = await api(req("GET", "/api/themes/club-sample", undefined, { headers: { "if-none-match": '"v1"' } }));
+    expect([cached.status, cached.body]).toEqual([304, ""]);
+    const logo = await api(req("GET", "/api/themes/club-sample/logo"));
+    expect(logo.headers["content-type"]).toBe("image/png");
+    expect(logo.headers["x-content-type-options"]).toBe("nosniff");
+    expect(logo.body instanceof Uint8Array).toBe(true);
+    expect((await api(req("GET", "/api/themes/club-ghost"))).status).toBe(404);
+  });
+
+  test("saved unlocks keep known club themes and drop unknown ones", async () => {
+    const cookie = await signedIn();
+    await api(req("PUT", "/api/me/prefs", { theme: "club-sample", unlockedThemes: ["club-sample", "club-ghost", "cyberwave"] }, { cookie }));
+    const prefs = json(await api(req("GET", "/api/me", undefined, { cookie }))).prefs;
+    expect(prefs.unlockedThemes).toEqual(["cyberwave", "club-sample"]);
+    expect(prefs.theme).toBe("club-sample");
+  });
+});
+
+describe("contact email", () => {
+  const make = (contactEmail?: string) =>
+    createApi({ db, mail: { sendReset: async () => {} }, sbKey: { get: async () => "" }, contactEmail });
+  test("is passed on when it looks like an email", async () => {
+    expect(json(await make("e@dokubolaget.se")(req("GET", "/api/config"))).contactEmail).toBe("e@dokubolaget.se");
+    expect(json(await make("not an email")(req("GET", "/api/config"))).contactEmail).toBeNull();
+    expect(json(await make()(req("GET", "/api/config"))).contactEmail).toBeNull();
   });
 });
