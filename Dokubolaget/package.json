@@ -9,7 +9,7 @@
     "find:tags": "bun run scripts/findTags.ts",
     "generate:board": "bun run scripts/generateBoard.ts",
     "confirm:board": "bun run scripts/confirmBoard.ts",
-    "build:web": "expo export --platform web",
+    "build:web": "TAMAGUI_DISABLE_SLIDER_INTERVAL=1 expo export --platform web",
     "start": "bun run server.js",
     "test": "bun test src server",
     "seed:boards": "bun run scripts/seedBoards.ts",
