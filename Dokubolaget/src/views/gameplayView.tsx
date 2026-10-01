@@ -368,7 +368,7 @@ export function GameView(props: Readonly<GameViewProps>) {
     return (
       <AlertDialog open={tutorialOpen} onOpenChange={(open)=>{if(!open) closeTutorialACB()}}>
         <AlertDialog.Trigger asChild>
-          <Pressable onPress={openTutorialACB} /*style={Style.tutorialButton}*/>
+          <Pressable onPress={openTutorialACB} accessibilityRole="button" accessibilityLabel="How to play">
             {deco ? (
               <View style={{ width: 34, height: 34, borderWidth: 1.5, borderColor: colors.accent, transform: [{ rotate: "45deg" }], alignItems: "center", justifyContent: "center" }}>
                 <Text style={{ transform: [{ rotate: "-45deg" }], fontFamily: fonts.logo, fontSize: 18, color: colors.accent }}>?</Text>
@@ -488,6 +488,9 @@ export function GameView(props: Readonly<GameViewProps>) {
         radius={radii.cell}
         index={item - 1}
         onPress={onCellPressedACB}
+        accessibilityLabel={`${formatTagLabel(sideCategories[Math.floor((item - 1) / 3)])} and ${formatTagLabel(topCategories[(item - 1) % 3])}, ${
+          selectedProduct ? `filled with ${selectedProduct.name}. Opens its info sheet.` : "empty. Opens search."
+        }`}
       >
         <CellContent item={item} selectedProduct={selectedProduct} />
       </AnimatedCellSlot>

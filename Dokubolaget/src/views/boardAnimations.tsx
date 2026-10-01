@@ -15,6 +15,8 @@ type AnimatedCellSlotProps = {
   shimmerColor: string;
   radius: number;
   onPress: () => void;
+  // Read by screen readers, e.g. "Spain and Red wine, empty".
+  accessibilityLabel: string;
   children: ReactNode;
 };
 
@@ -89,7 +91,12 @@ export function AnimatedCellSlot(props: AnimatedCellSlotProps) {
         },
       ]}
     >
-      <Pressable style={props.cellStyle} onPress={props.onPress}>
+      <Pressable
+        style={props.cellStyle}
+        onPress={props.onPress}
+        accessibilityRole="button"
+        accessibilityLabel={props.accessibilityLabel}
+      >
         {!props.filled ? (
           <Animated.View
             pointerEvents="none"
