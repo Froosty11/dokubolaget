@@ -5,6 +5,9 @@ import { connectToServer } from "./serverSync"
 import { api } from "./api"
 import { loadDeviceThemePrefs, saveDeviceThemePrefs } from "./theme/themeStorage"
 import { loadHapticsSetting } from "./theme/haptics"
+import { createClubThemes } from "./theme/clubThemes"
+import { registerClubTheme } from "./theme/registry"
+import { CLUB_THEME_ID, type ClubThemeId } from "./theme/packSchema"
 import AsyncStorage from "@react-native-async-storage/async-storage"
 import { AppState, Platform } from "react-native"
 import { todayDateKey } from "./dokuModel"
@@ -18,14 +21,37 @@ export const reactiveModel = observable(model);
 // The vibration switch is a device setting.
 loadHapticsSetting();
 
+// Club themes downloaded from the server, cached on the device.
+export const clubThemes = createClubThemes({ storage: AsyncStorage, api, register: registerClubTheme });
+
+// Downloads unlocked club themes this device doesn't have yet (a scan on
+// another device, or a cleared cache).
+function ensureUnlockedClubThemes() {
+    for (const id of reactiveModel.unlockedThemes) {
+        if (CLUB_THEME_ID.test(id) && !clubThemes.get(id)) clubThemes.ensure(id as ClubThemeId);
+    }
+}
+
 // Theme choice and unlocks live on the device too, so they survive reloads
-// for players who never log in.
+// for players who never log in. Cached club themes load first, so a club
+// theme chosen last time can be worn straight away.
 let themePrefsLoaded = false;
-loadDeviceThemePrefs().then(({ themeId, unlocked }) => {
-    reactiveModel.addUnlocks(unlocked, false);
-    if (themeId) reactiveModel.setThemeId(themeId);
-    themePrefsLoaded = true;
-    if (typeof window !== "undefined") serverSync.refresh();
+(typeof window !== "undefined" ? clubThemes.loadCache() : Promise.resolve())
+    .catch((error) => console.warn("Club theme cache failed:", error))
+    .then(() => loadDeviceThemePrefs())
+    .then(async ({ themeId, unlocked }) => {
+        reactiveModel.addUnlocks(unlocked, false);
+        if (themeId) reactiveModel.setThemeId(themeId);
+        themePrefsLoaded = true;
+        if (typeof window === "undefined") return;
+        reactiveModel.setClubSummaries(clubThemes.summaries());
+        await serverSync.refresh();
+        reactiveModel.setClubSummaries(await clubThemes.refresh(reactiveModel.unlockedThemes));
+        // The theme chosen last time may only just have downloaded.
+        if (themeId) reactiveModel.setThemeId(themeId);
+    });
+reaction(() => reactiveModel.unlockedThemes.join(","), () => {
+    if (themePrefsLoaded) ensureUnlockedClubThemes();
 });
 reaction(
     () => [reactiveModel.themeId, reactiveModel.unlockedThemes.join(",")],
@@ -97,7 +123,10 @@ if (Platform.OS === "web" && typeof document !== "undefined") {
 
 if (typeof window !== "undefined") {
     api.config()
-        .then(({ supportUrl }) => reactiveModel.setSupportUrl(supportUrl))
+        .then(({ supportUrl, contactEmail }) => {
+            reactiveModel.setSupportUrl(supportUrl);
+            reactiveModel.setContactEmail(contactEmail);
+        })
         .catch(() => {});
 }
 

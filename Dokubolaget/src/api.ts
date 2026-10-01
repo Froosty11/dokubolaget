@@ -1,6 +1,8 @@
 // Client for the container's /api. Same origin in builds; during development
 // the Expo dev server (port 8081) talks to `bun run api` on port 8090.
 
+import type { PackSummary, ThemePack } from "./theme/packSchema";
+
 declare const __DEV__: boolean | undefined;
 
 const API_BASE =
@@ -26,6 +28,9 @@ const MESSAGES: Record<string, string> = {
   too_large: "That was too much data to save.",
   bad_request: "Something was off with that request. Reload and try again.",
   invalid_token: "That reset link has expired or was already used. Ask for a new one.",
+  invalid_code: "That code doesn't exist. Check the poster or scan again.",
+  code_expired: "This code has expired.",
+  code_used_up: "This code has been used up.",
 };
 
 export function errorMessage(code: string | undefined): string {
@@ -79,6 +84,12 @@ export const api = {
     }
   },
   sbKey: () => request<{ key: string }>("GET", "/api/sb-key"),
-  config: () => request<{ supportUrl: string | null }>("GET", "/api/config"),
+  config: () => request<{ supportUrl: string | null; contactEmail: string | null }>("GET", "/api/config"),
+  scan: (code: string) => request<{ themeId: string; summary: PackSummary | null }>("POST", "/api/scan", { code }),
+  themes: () => request<{ themes: PackSummary[] }>("GET", "/api/themes"),
+  theme: (id: string) => request<ThemePack>("GET", `/api/themes/${encodeURIComponent(id)}`),
+  // Logo paths from the server are relative; in development the API runs on
+  // another port.
+  logoUrl: (summary: { logoUrl: string | null }) => (summary.logoUrl ? `${API_BASE}${summary.logoUrl}` : null),
   leaderboard: () => request<{ rows: Array<{ nickname: string; score: number }> }>("GET", "/api/leaderboard"),
 };

@@ -1,3 +1,4 @@
+import type { PackSummary } from "./theme/packSchema";
 import {
   searchByName,
   searchSystembolagetProducts,
@@ -213,6 +214,18 @@ const modelBody = {
   supportUrl: null as string | null,
   setSupportUrl(url: string | null) {
     this.supportUrl = url;
+  },
+
+  // "Want your club here?" address on the pub stamps screen.
+  contactEmail: null as string | null,
+  setContactEmail(email: string | null) {
+    this.contactEmail = email;
+  },
+
+  // Every club theme the server lists (or the last saved list when offline).
+  clubSummaries: [] as PackSummary[],
+  setClubSummaries(summaries: PackSummary[]) {
+    this.clubSummaries = summaries;
   },
 
   // The logged-in player, or null.
