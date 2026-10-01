@@ -93,24 +93,24 @@ async function storeLocalCachedApiKeyACB(apiKey: string) {
   return normalizedApiKey;
 }
 
-async function readFirebaseCachedApiKeyACB() {
+async function readServerCachedApiKeyACB() {
   try {
     const value = String(
       (await readCachedSystembolagetApiKeyACB()) || "",
     ).trim();
-    debugLogACB("[SB DEBUG] Firebase key present:", Boolean(value));
+    debugLogACB("[SB DEBUG] Server key present:", Boolean(value));
     return value;
   } catch (error) {
-    debugLogACB("[SB DEBUG] Firebase read failed:", error);
+    debugLogACB("[SB DEBUG] Server key read failed:", error);
     return "";
   }
 }
 
-async function storeFirebaseCachedApiKeyACB(apiKey: string) {
+async function storeServerCachedApiKeyACB(apiKey: string) {
   try {
     await writeCachedSystembolagetApiKeyACB(apiKey, "scraper");
   } catch (error) {
-    // ignore firebase cache write failures
+    // ignore server cache write failures
   }
 }
 
@@ -341,14 +341,14 @@ async function resolveFreshApiKeyACB() {
   debugLogACB("[SB DEBUG] Fresh key extracted, writing caches");
   await Promise.all([
     storeLocalCachedApiKeyACB(extractedApiKey),
-    storeFirebaseCachedApiKeyACB(extractedApiKey),
+    storeServerCachedApiKeyACB(extractedApiKey),
   ]);
   return extractedApiKey;
 }
 
 type ResolvedApiKeyResult = {
   apiKey: string;
-  source: "env" | "memory" | "local" | "firebase" | "fresh";
+  source: "env" | "memory" | "local" | "server" | "fresh";
 };
 
 async function resolveApiKeyACB() {
@@ -378,14 +378,14 @@ async function resolveApiKeyACB() {
     } as ResolvedApiKeyResult;
   }
 
-  const firebaseCachedApiKey = await readFirebaseCachedApiKeyACB();
-  if (firebaseCachedApiKey) {
-    debugLogACB("[SB DEBUG] Using Firebase cached key");
-    cachedApiKeyACB = firebaseCachedApiKey;
-    await storeLocalCachedApiKeyACB(firebaseCachedApiKey);
+  const serverCachedApiKey = await readServerCachedApiKeyACB();
+  if (serverCachedApiKey) {
+    debugLogACB("[SB DEBUG] Using server cached key");
+    cachedApiKeyACB = serverCachedApiKey;
+    await storeLocalCachedApiKeyACB(serverCachedApiKey);
     return {
-      apiKey: firebaseCachedApiKey,
-      source: "firebase",
+      apiKey: serverCachedApiKey,
+      source: "server",
     } as ResolvedApiKeyResult;
   }
 

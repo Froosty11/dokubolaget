@@ -6,7 +6,7 @@ import { resolvePromise } from "./resolvePromise";
 import generatedBoards from "../data/generated-boards.json";
 import { doesProductMatchTagId } from "./boardTags";
 import { formatTagLabel } from "./tagDisplay";
-import { fetchBoardForDateACB } from "./firestoreModel";
+import { api, type Account } from "./api";
 import { createThemeState } from "./theme/themeState";
 import { THEMES } from "./theme/registry";
 import { unlocksForBoard } from "./theme/unlocks";
@@ -37,7 +37,7 @@ export function todayDateKey() {
   return new Date().toISOString().slice(0, 10);
 }
 
-// Fallback when Firestore has no document for the day (offline, new install
+// Fallback when the server has no board for the day (offline, new install
 // before first sync, or a date the cron hasn't reached yet). Picks
 // deterministically from the bundled pool so two players on the same date
 // still see the same board.
@@ -69,7 +69,7 @@ function pickLocalBoardForToday() {
 
 // Test hook for trying out generated boards locally: open the web app with
 // ?board=<n> (1-based) to play a specific bundled board, or ?board=random.
-// When set, the Firestore daily board is not loaded over it.
+// When set, the server's daily board is not loaded over it.
 function readBoardOverride(boardCount: number): number | null {
   if (typeof window === "undefined" || !window.location || boardCount === 0) {
     return null;
@@ -151,7 +151,7 @@ const modelBody = {
   sideCategories: initialBoardPick.board.rows,
   currentBoardIndex: initialBoardPick.boardIndex,
   bundledBoardCount,
-  boardSource: "local" as "local" | "firestore",
+  boardSource: "local" as "local" | "server",
   // True when ?board= picked a test board. Progress on it is never saved, so
   // it can't overwrite today's real board in the player's profile.
   practiceBoard: boardOverrideIndex != null,
@@ -160,31 +160,34 @@ const modelBody = {
   score: 0,
   scoreHistory: [] as Array<{ date: string; score: number }>,
 
-  // Pulls boards/{today} from Firestore (written by the seed-board GH Action)
-  // and replaces the locally-picked board. No-op if Firestore has nothing yet.
+  // Pulls today's board from the server (stored by the nightly pipeline) and
+  // replaces the locally-picked board. No-op if the server has none.
   // Safe to call repeatedly; later calls just overwrite topCategories/sideCategories.
-  async loadDailyBoardFromFirestore() {
+  async loadDailyBoard() {
     if (boardOverrideIndex != null) {
-      console.log("[BOARD] ?board override active; skipping Firestore board");
+      console.log("[BOARD] ?board override active; skipping the server board");
       resolvePromise(Promise.resolve("local"), this.boardLoadPromiseState);
       return;
     }
     const dateKey = todayDateKey();
-    console.log("[BOARD] loadDailyBoardFromFirestore start, dateKey=" + dateKey);
-    const boardPromise = fetchBoardForDateACB(dateKey);
+    console.log("[BOARD] loadDailyBoard start, dateKey=" + dateKey);
+    const boardPromise = api.board(dateKey).catch((error) => {
+      console.warn("[BOARD] board fetch failed:", error?.message ?? error);
+      return null;
+    });
     // SuspenseView treats a null result as "still loading", so a missing
-    // Firestore board would spin forever. Resolve the tracked promise with
+    // server board would spin forever. Resolve the tracked promise with
     // the source label instead: null → we keep the bundled local board.
     resolvePromise(
-      boardPromise.then((board) => (board ? "firestore" : "local")),
+      boardPromise.then((board) => (board ? "server" : "local")),
       this.boardLoadPromiseState,
     );
 
     const board = await boardPromise;
     if (!board) {
       console.log(
-        "[BOARD] no Firestore doc at boards/" + dateKey +
-          " — staying on local fallback (boardSource=" + this.boardSource + ")",
+        "[BOARD] no board for " + dateKey +
+          " on the server — staying on local fallback (boardSource=" + this.boardSource + ")",
       );
       return;
     }
@@ -194,8 +197,14 @@ const modelBody = {
     const before = boardKey(this);
     this.topCategories = board.cols;
     this.sideCategories = board.rows;
-    this.boardSource = "firestore";
+    this.boardSource = "server";
     if (boardKey(this) !== before) this.clearProgress();
+  },
+
+  // The logged-in player, or null.
+  account: null as Account | null,
+  setAccount(account: Account | null) {
+    this.account = account;
   },
 
   // The UTC day this board belongs to; the app rolls over when it changes.
@@ -397,9 +406,9 @@ const modelBody = {
     this.sideCategories = pickedBoard.board.rows;
     this.boardSource = "local";
 
-    // Refresh from Firestore in the background; updates topCategories/sideCategories
+    // Refresh from the server in the background; updates topCategories/sideCategories
     // if the seeded daily board differs from the local fallback.
-    this.loadDailyBoardFromFirestore();
+    this.loadDailyBoard();
   },
 
   boardLoadPromiseState: {},

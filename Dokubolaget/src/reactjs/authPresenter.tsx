@@ -1,9 +1,10 @@
-import {loginACB, signupACB, logoutACB, subscribeToAuthChangesCB} from "../utilities";
-import { normalizeDisplayName } from "../firestoreModel";
+import { loginACB, logoutACB, requestPasswordResetACB, signupACB } from "../utilities";
+
+const NICKNAME = /^[^@<>]{2,24}$/;
 
 export async function handleLoginACB(email: string, password: string, isSignUp: boolean, nickname = "") {
     if (isSignUp) {
-        if (!normalizeDisplayName(nickname)) {
+        if (!NICKNAME.test(nickname.trim())) {
             throw new Error("Pick a nickname of 2 to 24 characters, without @. It's shown on the leaderboard instead of your email.");
         }
         return signupACB(email, password, nickname);
@@ -15,6 +16,6 @@ export async function handleLogoutACB() {
     return logoutACB();
 }
 
-export function authObserverCB(callback: any){
-    return subscribeToAuthChangesCB(callback);
+export async function handleResetRequestACB(email: string) {
+    return requestPasswordResetACB(email);
 }

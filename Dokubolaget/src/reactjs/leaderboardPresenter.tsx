@@ -1,16 +1,8 @@
-import {
-  collection,
-  getDocs,
-  getFirestore,
-  orderBy,
-  query,
-  limit as limitQuery,
-} from "firebase/firestore";
 import { useThemedStyles } from "../theme/ThemeProvider";
 import type { Theme } from "../theme/types";
 import { useEffect, useState } from "react";
 import { StyleSheet, View } from "react-native";
-import { app, normalizeDisplayName } from "../firestoreModel";
+import { api } from "../api";
 import { LeaderBoardFormView } from "../views/leaderboardFormView";
 import { LeaderBoardResultView } from "../views/leaderboardResultView";
 
@@ -111,46 +103,23 @@ function Leaderboard({limit = 20 }: leaderboardProps) {
   useEffect(
     function loadLeaderboardACB() {
       let isMounted = true;
-      const db = getFirestore(app);
-
-      const usersQuery = query(
-        collection(db, "users"),
-        orderBy(filterMeta.categoryField, "desc"),
-        limitQuery(limit),
-      );
-
       setLoading(true);
 
-      getDocs(usersQuery)
-        .then(function toTopUsersACB(snapshot) {
-          const rows = snapshot.docs.map(function docToRowACB(doc) {
-            const data = doc.data() as any;
-            // Older accounts stored their email as the name; never show one.
-            const label =
-              normalizeDisplayName(data.displayName) ||
-              "Spelare " + (doc.id ? doc.id.slice(0, 4).toUpperCase() : "????");
-
-            return {
-              key: doc.id,
-              label,
-              value: filterMeta.displayValue(data),
-            };
+      // Scores arrive with the scoring update; until then the list is empty.
+      api
+        .leaderboard()
+        .then(function toTopUsersACB(result) {
+          const rows = result.rows.map(function toRowACB(row, index) {
+            return { key: `${row.nickname}-${index}`, label: row.nickname, value: row.score };
           });
-
-          if (isMounted) {
-            setTopUsers(rows);
-          }
+          if (isMounted) setTopUsers(rows);
         })
         .catch(function leaderboardErrorACB(error) {
           console.log("Failed to load leaderboard:", error?.message || error);
-          if (isMounted) {
-            setTopUsers([]);
-          }
+          if (isMounted) setTopUsers([]);
         })
         .finally(function leaderboardFinallyACB() {
-          if (isMounted) {
-            setLoading(false);
-          }
+          if (isMounted) setLoading(false);
         });
 
       return function cleanupACB() {
@@ -169,9 +138,9 @@ function Leaderboard({limit = 20 }: leaderboardProps) {
         ? topUsers
         : [
             {
-              label: "No scores yet",
-              value: "--",
-              detail: "No user docs found",
+              label: "Scores are coming soon",
+              value: "",
+              detail: "Rarity scores and streaks arrive with the next update.",
             },
           ],
   };

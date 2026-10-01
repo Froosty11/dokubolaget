@@ -1,7 +1,7 @@
 import { observable, reaction, configure } from "mobx";
 import { model } from "./dokuModel";
 
-import { connectToPersistence } from "./firestoreModel"
+import { connectToServer } from "./serverSync"
 import { loadDeviceThemePrefs, saveDeviceThemePrefs } from "./theme/themeStorage"
 import AsyncStorage from "@react-native-async-storage/async-storage"
 import { AppState, Platform } from "react-native"
@@ -20,6 +20,7 @@ loadDeviceThemePrefs().then(({ themeId, unlocked }) => {
     reactiveModel.addUnlocks(unlocked, false);
     if (themeId) reactiveModel.setThemeId(themeId);
     themePrefsLoaded = true;
+    if (typeof window !== "undefined") serverSync.refresh();
 });
 reaction(
     () => [reactiveModel.themeId, reactiveModel.unlockedThemes.join(",")],
@@ -32,7 +33,7 @@ reaction(
 const PROGRESS_KEY = "dokubolaget.progress";
 const canUseStorage = Platform.OS !== "web" || typeof window !== "undefined";
 
-// Whenever the board changes (startup, Firestore swap, new day), restore any
+// Whenever the board changes (startup, server board swap, new day), restore any
 // saved progress for exactly that board.
 reaction(
     () => boardKey(reactiveModel),
@@ -86,13 +87,14 @@ if (__DEV__ && typeof window !== "undefined") {
 }
 reaction(checkACB,sideEffectACB);
 
-// TODO - Impelement this
-connectToPersistence(reactiveModel, reaction)
+// Account sync with the server. Starts after the device's theme prefs are
+// read (below), so the account's theme wins over the device default.
+export const serverSync = connectToServer(reactiveModel)
 
-// Pull today's board from Firestore on app start. Falls back silently to the
+// Pull today's board from the server on app start. Falls back silently to the
 // local generated-boards.json pick already in reactiveModel.topCategories /
-// sideCategories if Firestore has no doc for today.
-reactiveModel.loadDailyBoardFromFirestore();
+// sideCategories if the server has no board for today.
+reactiveModel.loadDailyBoard();
 
 
 function checkACB() {

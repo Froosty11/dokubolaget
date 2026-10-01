@@ -1,6 +1,7 @@
 import { router } from "expo-router";
 import * as Haptics from "expo-haptics";
-import { handleLoginACB, handleLogoutACB, authObserverCB } from "../reactjs/authPresenter";
+import { handleLogoutACB } from "../reactjs/authPresenter";
+import type { Account } from "../api";
 import { FC, use, useEffect, useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { Dialog, Input, YStack } from "tamagui";
@@ -75,9 +76,13 @@ const makeOptionStyles = (theme: Theme) => ({
 
 /* === INDEXVIEW === */
 
-export function IndexView({ageGate}) {
-  const [initializing, setInitializing] = useState(true);
-  const [user, setUser] = useState(null);
+type IndexViewProps = {
+  ageGate: { isOpen: boolean; acceptAgeACB: () => void; rejectAgeACB: () => void };
+  // The logged-in player, or null.
+  account: Account | null;
+};
+
+export function IndexView({ ageGate, account }: IndexViewProps) {
   const [showLogin, setShowLogin] = useState(false);
   const [showLeaderboard, setShowLeaderboard] = useState(false);
   const { theme } = useTheme();
@@ -103,22 +108,7 @@ export function IndexView({ageGate}) {
   }
   
 
-  function handleAuthStateChangeACB(user) {
-    setUser(user);
-    if (initializing) setInitializing(false);
-  }
-
-  useEffect(() => {
-    const subscriber = authObserverCB(handleAuthStateChangeACB);
-    return () => subscriber(); // unsubscribe on unmount
-  }, []);
-
-  if (initializing) {
-    return <Text style={{fontFamily: theme.fonts.body, color: theme.colors.ink}}>Loading...</Text>;
-  }
-
-
-  const isLoggedIn = !!user;
+  const isLoggedIn = account != null;
 
   return (
     <View style={app.body}>
@@ -156,7 +146,7 @@ export function IndexView({ageGate}) {
           />
         ) : (
           <View style={{gap: 5}}>
-            <Text style={{fontFamily: theme.fonts.body, color: theme.colors.ink}}>Logged in as {user?.email || "Firebase user"}</Text>
+            <Text style={{fontFamily: theme.fonts.body, color: theme.colors.ink}}>Logged in as {account?.nickname}</Text>
             <IndexOption
               Icon={Smakprofil}
               text="Logout"

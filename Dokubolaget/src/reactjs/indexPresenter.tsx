@@ -78,7 +78,7 @@ const Index = observer(
 
         return (
             <View style={{ flex: 1 }}>
-                <IndexView ageGate={ageGate} />
+                <IndexView ageGate={ageGate} account={reactiveModel.account} />
                 {unlockCard ? (
                     <ThemeUnlockView
                         themeId={unlockCard}
