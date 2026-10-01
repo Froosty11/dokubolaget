@@ -61,3 +61,6 @@ products.json
 *.sqlite-shm
 *.sqlite-wal
 data/nightly-boards.json
+
+# Club themes: club names, logos and codes stay out of the public repo
+club-themes/
