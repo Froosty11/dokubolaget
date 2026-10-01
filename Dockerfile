@@ -32,17 +32,20 @@ FROM oven/bun:1-slim AS runtime
 
 WORKDIR /app/Dokubolaget
 
-# The runtime only needs nodemailer (password reset emails). Everything else
-# in package.json is app/build tooling, so install just this one to keep the
-# image small. Keep the version in step with devDependencies in package.json.
-RUN echo '{"name":"dokubolaget-runtime","private":true}' > package.json \
- && bun add nodemailer@10.0.13 \
+# The runtime only needs nodemailer (password reset emails) and qrcode (the
+# admin script's poster codes). Everything else
+# in package.json is app/build tooling, so install just these to keep the
+# image small. Keep the versions in step with devDependencies in package.json.
+RUN echo '{"name":"dokubolaget-runtime","private":true,"scripts":{"admin":"bun scripts/admin.ts"}}' > package.json \
+ && bun add nodemailer@10.0.13 qrcode@1.5.4 \
  && rm -rf ~/.bun/install/cache
 
 COPY --from=build /app/Dokubolaget/dist ./dist
 COPY Dokubolaget/server.js Dokubolaget/proxyPolicy.js Dokubolaget/tsconfig.json ./
 COPY Dokubolaget/server ./server
-COPY Dokubolaget/src/theme/types.ts ./src/theme/types.ts
+COPY Dokubolaget/src/theme/types.ts Dokubolaget/src/theme/packSchema.ts Dokubolaget/src/theme/contrast.ts ./src/theme/
+# Club themes: loaded into the database at startup (server/themePacks.ts).
+COPY club-themes /app/club-themes
 COPY Dokubolaget/scripts ./scripts
 COPY Dokubolaget/src/boardTags.ts ./src/boardTags.ts
 COPY Dokubolaget/data ./data

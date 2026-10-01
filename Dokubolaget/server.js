@@ -376,10 +376,17 @@ const { bundledBoardFor, getBoard, putBoard, seedBoards } = require("./server/bo
 const { createMailer } = require("./server/mail.ts");
 const { createSbKey } = require("./server/sbKey.ts");
 const { backupDb } = require("./server/backup.ts");
+const { loadThemePacks } = require("./server/themePacks.ts");
 
 const DB_PATH = process.env.DB_PATH || path.join(APP_ROOT, "data", "local.sqlite");
 fs.mkdirSync(path.dirname(DB_PATH), { recursive: true });
 const db = openDb(DB_PATH);
+
+// Club themes live in club-themes/<slug>/ next to the app (copied into the
+// image). Loaded once at startup; a newer version replaces the stored one.
+const CLUB_THEMES_DIR = process.env.CLUB_THEMES_DIR || path.join(APP_ROOT, "..", "club-themes");
+const themeLoad = loadThemePacks(db, CLUB_THEMES_DIR, (line) => log("themes", line.replace(/^\[themes\] /, "")));
+log("themes", `loaded ${themeLoad.loaded.length}, unchanged ${themeLoad.skipped.length}, broken ${Object.keys(themeLoad.errors).length} (${CLUB_THEMES_DIR})`);
 
 const api = createApi({
   db,
@@ -391,6 +398,7 @@ const api = createApi({
   devOrigins: process.env.API_DEV_CORS === "true",
   publicUrl: process.env.PUBLIC_URL,
   supportUrl: process.env.SUPPORT_URL,
+  contactEmail: process.env.CONTACT_EMAIL,
 });
 
 async function serveApi(req, res, requestUrl) {
