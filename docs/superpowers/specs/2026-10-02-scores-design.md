@@ -35,7 +35,7 @@ Review findings this covers:
 
 ## Decisions already made
 
-- **Guesses are unlimited.** Each miss in a cell takes 10 off that cell's score, but a solved cell never scores below 10.
+- **Guesses are unlimited.** Each miss in a cell takes 5 off that cell's score, at most 20 per cell, and a solved cell never scores below 10.
 - **Rarity scoring.** A solved cell is worth more the fewer players picked the same bottle. The formula is below.
 - **Scores are live and final at 04:00.** A provisional score shows straight away and is frozen when the day ends.
 - **A game day runs 04:00–04:00 Europe/Stockholm.** A night out counts as one day.
@@ -73,7 +73,7 @@ For a solved cell:
 
 ```
 pct   = (t_b + ½·h_b + k/V) / (t + ½·h + k)
-score = max(10, round(100 − 100·pct) − 10·misses)
+score = max(10, round(100 − 100·pct) − min(20, 5·misses))
 ```
 
 The terms:
@@ -292,7 +292,7 @@ The squares show the cell score: 🟪 80+, 🟩 50–79, 🟨 under 50, ⬛ unso
 
 The new text, in three short points:
 1. **Fill the grid.** Find a bottle that matches both its row and its column. Only bottles from Systembolaget's regular, local and seasonal ranges count.
-2. **Rarer scores more.** The fewer players who picked your bottle, the more it's worth. Each miss costs 10 points.
+2. **Rarer scores more.** The fewer players who picked your bottle, the more it's worth. Each miss costs 5 points, at most 20 per cell.
 3. **A new board every day at 04:00.**
 
 It opens automatically once per device (remembered in AsyncStorage), and again from the help icon on the board.
