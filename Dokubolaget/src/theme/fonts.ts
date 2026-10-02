@@ -67,31 +67,29 @@ export const FONT_KIT_LOADERS: Record<FontKitId, () => Record<string, any>> = {
 };
 
 // True once the theme's fonts are loaded. Stays false if loading fails, so
-// text keeps the always-loaded fonts (see themeWithFonts).
+// text keeps the always-loaded fonts (see themeWithFonts). Read from expo-font
+// on every render: a family must never reach a Text before it's registered,
+// because Android measures the text with a stand-in font and keeps that size.
 export function useThemeFonts(theme: Theme): boolean {
   const id = theme.id;
   const kit = fontKitFor(theme);
   const loader = kit ? FONT_KIT_LOADERS[kit] : null;
   const families = loader ? loader() : {};
   const allLoaded = Object.keys(families).every((name) => Font.isLoaded(name));
-  const [ready, setReady] = useState(allLoaded);
+  const [, setLoadedCount] = useState(0);
 
   useEffect(() => {
-    if (allLoaded) {
-      setReady(true);
-      return;
-    }
+    if (allLoaded) return;
     let cancelled = false;
-    setReady(false);
     Font.loadAsync(families)
       .then(() => {
-        if (!cancelled) setReady(true);
+        if (!cancelled) setLoadedCount((count) => count + 1);
       })
       .catch((error) => console.warn(`Fonts for theme ${id} failed to load:`, error));
     return () => {
       cancelled = true;
     };
-  }, [id, kit]);
+  }, [id, kit, allLoaded]);
 
-  return ready;
+  return allLoaded;
 }

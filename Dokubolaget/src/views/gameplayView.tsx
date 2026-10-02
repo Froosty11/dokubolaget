@@ -422,7 +422,9 @@ export function GameView(props: Readonly<GameViewProps>) {
         pulseColor={colors.pulse}
         radius={radii.cell}
       >
-        <View style={[
+        {/* Keyed by theme: on Android, restyling this view in place for a new
+            theme leaves its icon and label unpainted, so it's rebuilt instead. */}
+        <View key={theme.id} style={[
           board.category,
           { borderColor: axis === "col" ? colors.headerCol : colors.headerRow },
           stitched ? { borderColor: colors.cellBorder, backgroundColor: colors.headerLabelBg } : null,
