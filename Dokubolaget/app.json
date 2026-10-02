@@ -2,26 +2,69 @@
   "expo": {
     "name": "Dokubolaget",
     "slug": "dokubolaget",
+    "owner": "froosty11",
     "scheme": "dokubolaget",
     "version": "1.0.0",
     "orientation": "portrait",
+    "icon": "./assets/app/icon.png",
     "newArchEnabled": true,
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/a787d490-d588-4163-a5c7-08c1823d3a77"
+    },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.dokubolaget.app"
+      "bundleIdentifier": "se.dokubolaget.app",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
-      "package": "com.dokubolaget.app",
+      "package": "se.dokubolaget.app",
       "adaptiveIcon": {
-        "backgroundColor": "#ffffff"
-      }
+        "foregroundImage": "./assets/app/adaptive-icon.png",
+        "backgroundColor": "#007a33"
+      },
+      "intentFilters": [
+        {
+          "action": "VIEW",
+          "autoVerify": true,
+          "data": [
+            {
+              "scheme": "https",
+              "host": "dokubolaget.se",
+              "pathPrefix": "/scan/"
+            }
+          ],
+          "category": [
+            "BROWSABLE",
+            "DEFAULT"
+          ]
+        }
+      ]
     },
     "web": {
       "bundler": "metro",
       "output": "static"
     },
     "plugins": [
-      "expo-router"
-    ]
+      "expo-router",
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/app/splash-icon.png",
+          "imageWidth": 220,
+          "backgroundColor": "#007a33"
+        }
+      ]
+    ],
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "a787d490-d588-4163-a5c7-08c1823d3a77"
+      }
+    }
   }
 }
