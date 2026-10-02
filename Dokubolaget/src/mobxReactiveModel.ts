@@ -4,6 +4,7 @@ import { model } from "./dokuModel";
 import { connectToServer } from "./serverSync"
 import { api } from "./api"
 import { loadDeviceThemePrefs, saveDeviceThemePrefs } from "./theme/themeStorage"
+import { UNLOCK_ALL_FROM_BUILD } from "./theme/themeState"
 import { loadHapticsSetting } from "./theme/haptics"
 import { createClubThemes } from "./theme/clubThemes"
 import { registerClubTheme } from "./theme/registry"
@@ -47,6 +48,9 @@ let themePrefsLoaded = false;
         reactiveModel.setClubSummaries(clubThemes.summaries());
         await serverSync.refresh();
         reactiveModel.setClubSummaries(await clubThemes.refresh(reactiveModel.unlockedThemes));
+        if (UNLOCK_ALL_FROM_BUILD) {
+            for (const summary of reactiveModel.clubSummaries) clubThemes.ensure(summary.id);
+        }
     });
 reaction(() => reactiveModel.unlockedThemes.join(","), () => {
     if (themePrefsLoaded) ensureUnlockedClubThemes();

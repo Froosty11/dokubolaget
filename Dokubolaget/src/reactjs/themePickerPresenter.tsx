@@ -6,6 +6,7 @@ import { THEMES, clubTheme, isBuiltInThemeId } from "../theme/registry";
 import type { PackSummary } from "../theme/packSchema";
 import { useTheme } from "../theme/ThemeProvider";
 import type { ThemeId } from "../theme/types";
+import { UNLOCK_ALL_FROM_BUILD } from "../theme/themeState";
 import { themeCardState } from "../theme/unlocks";
 import { ThemePickerView } from "../views/themePickerView";
 
@@ -21,8 +22,11 @@ export const ThemePicker = observer(function ThemePicker({ model }: { model: The
   const ctx = { unlocked: model.unlockedThemes, longestStreak: model.longestStreak, loggedIn: model.loggedIn };
   const cards = THEMES.map((theme) => ({ theme, card: themeCardState(theme, ctx, id, available) }));
   // Unlocked club themes after the built-in ones; any not downloaded yet are
-  // listed by name.
-  const clubIds = model.unlockedThemes.filter((unlocked) => !isBuiltInThemeId(unlocked));
+  // listed by name. Unlock-all test builds list every club theme.
+  const unlockedClubs = model.unlockedThemes.filter((unlocked) => !isBuiltInThemeId(unlocked));
+  const clubIds = UNLOCK_ALL_FROM_BUILD
+    ? [...new Set([...unlockedClubs, ...model.clubSummaries.map((summary) => summary.id)])]
+    : unlockedClubs;
   const clubCards = clubIds.flatMap((clubId) => {
     const theme = clubTheme(clubId);
     return theme ? [{ theme, card: themeCardState(theme, ctx, id, available) }] : [];

@@ -11,8 +11,8 @@ function isAlwaysAvailable(id: ThemeId) {
 }
 
 // Local test builds only: `EXPO_PUBLIC_UNLOCK_ALL_THEMES=true` at build time
-// offers every theme. Production builds never set it.
-const UNLOCK_ALL_FROM_BUILD = process.env.EXPO_PUBLIC_UNLOCK_ALL_THEMES === "true";
+// offers every theme, club themes included. Production builds never set it.
+export const UNLOCK_ALL_FROM_BUILD = process.env.EXPO_PUBLIC_UNLOCK_ALL_THEMES === "true";
 
 // Theme choice and unlocks. A plain object with getters, merged into the MobX
 // model (see dokuModel.ts), so it stays testable without React or the network.
