@@ -18,9 +18,9 @@ export function SupportLink({ url, color }: Props) {
       hitSlop={8}
       style={{ flexDirection: "row", alignItems: "center", alignSelf: "center", gap: 6 }}
     >
-      <MaterialCommunityIcons name="coffee-outline" size={16} color={ink} />
+      <MaterialCommunityIcons name="beer-outline" size={16} color={ink} />
       <Text style={{ fontFamily: theme.fonts.body, fontSize: 13, color: ink, textDecorationLine: "underline" }}>
-        Enjoying Dokubolaget? Buy me a coffee
+        Enjoying Dokubolaget? Buy me a beer
       </Text>
     </Pressable>
   );
