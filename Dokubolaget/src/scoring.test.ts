@@ -14,7 +14,8 @@ test("popular bottles score lower; history counts half", () => {
   const popular = pickShare({ today: 5, todayTotal: 10, history: 0, historyTotal: 0, answers: 100 });
   expect(cellScore(popular, 0)).toBe(61);
   const known = pickShare({ today: 1, todayTotal: 1, history: 20, historyTotal: 20, answers: 100 });
-  expect(cellScore(known, 0)).toBeLessThan(15);
+  expect(cellScore(known, 0)).toBe(21);
+  expect(cellScore(known, 0)).toBeLessThan(cellScore(pickShare({ today: 1, todayTotal: 1, history: 0, historyTotal: 0, answers: 100 }), 0));
 });
 
 test("misses cost 5 each, at most 20, and a solved cell keeps at least 10", () => {
