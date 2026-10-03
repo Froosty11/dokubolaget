@@ -33,7 +33,7 @@ test("verdicts: correct, near, miss and rejections", async () => {
   expect((await guess("d:a", "2026-10-02", 1, "1001")).verdict).toBe("correct");
   const near = await guess("d:a", "2026-10-02", 2, "1005"); // Spain, but red not white
   expect(near).toEqual({ verdict: "near", matchedTagId: "Country:Spanien" });
-  expect((await guess("d:a", "2026-10-02", 5, "1001")).verdict).toBe("miss"); // France × white
+  expect((await guess("d:a", "2026-10-02", 5, "1005")).verdict).toBe("miss"); // France × white
   expect(await guess("d:a", "2026-10-02", 4, "1002")).toEqual({ verdict: "rejected", reason: "not_playable" });
   expect(await guess("d:a", "2026-10-02", 2, "1001")).toEqual({ verdict: "rejected", reason: "already_used", usedInCell: 1 });
 });

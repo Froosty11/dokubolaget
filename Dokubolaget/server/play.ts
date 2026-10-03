@@ -166,19 +166,14 @@ export function createPlay(deps: { db: Database; catalog: Catalog; now?: () => D
     const product = await catalog.get(productNumber); // CatalogUnavailable propagates (→ 503)
     if (existing?.product_id) return { verdict: "rejected" };
     if (!product) return { verdict: "rejected", reason: "not_playable" };
+    const used = db
+      .query("SELECT cell FROM cell_results WHERE day = ? AND player = ? AND practice = ? AND product_id = ? AND cell <> ?")
+      .get(day, player, flag, productNumber, cell) as { cell: number } | null;
+    if (used) return { verdict: "rejected", reason: "already_used", usedInCell: used.cell };
 
     const matchesRow = doesProductMatchTagId(product, target.rowTag);
     const matchesCol = doesProductMatchTagId(product, target.colTag);
     const verdict: GuessVerdict = matchesRow && matchesCol ? "correct" : matchesRow || matchesCol ? "near" : "miss";
-    // A flat miss doesn't claim the bottle for this cell, so reuse elsewhere
-    // doesn't matter; only a partial (near) or full (correct) match can be
-    // blocked by "you already used this one over there".
-    if (verdict !== "miss") {
-      const used = db
-        .query("SELECT cell FROM cell_results WHERE day = ? AND player = ? AND practice = ? AND product_id = ? AND cell <> ?")
-        .get(day, player, flag, productNumber, cell) as { cell: number } | null;
-      if (used) return { verdict: "rejected", reason: "already_used", usedInCell: used.cell };
-    }
     const playedDay = today();
     db.transaction(() => {
       db.run("INSERT OR IGNORE INTO seen_guesses (id, day) VALUES (?, ?)", [`${player}:${id}`, playedDay]);
