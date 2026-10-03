@@ -2,6 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { buildCandidateTags } from "../src/boardTags";
+import { isPlayable } from "../src/playable";
 
 /*
 Approximate generation prompt used for this script family:
@@ -70,7 +71,7 @@ function loadProducts(): Product[] {
   if (!Array.isArray(parsed)) {
     throw new Error("Expected products.json to be an array");
   }
-  return parsed as Product[];
+  return (parsed as Product[]).filter(isPlayable);
 }
 
 function countByStringField(products: Product[], field: string) {

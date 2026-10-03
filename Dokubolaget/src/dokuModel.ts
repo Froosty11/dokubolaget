@@ -11,13 +11,22 @@ import { api, type Account } from "./api";
 import { createThemeState } from "./theme/themeState";
 import { THEMES } from "./theme/registry";
 import { unlocksForBoard } from "./theme/unlocks";
-import { addRejected, cellUsingProduct, withImagesOnly } from "./searchHelpers";
+import { addRejected, cellUsingProduct, onlyPlayable, withImagesOnly } from "./searchHelpers";
 import { boardKey, type BoardProgress } from "./progress";
 
 export type BoardTag = {
   id: string;
   label: string;
   family: string;
+};
+
+type SearchResult = {
+  id: string;
+  name: any;
+  producer: any;
+  country: any;
+  image: string | null;
+  raw: any;
 };
 
 type GeneratedBoard = {
@@ -448,7 +457,7 @@ const modelBody = {
     this.searchParams.query = query;
   },
 
-  normalizeSearchResults(rawResponse: any) {
+  normalizeSearchResults(rawResponse: any): SearchResult[] {
     const products = Array.isArray(rawResponse?.products)
       ? rawResponse.products
       : [];
@@ -502,6 +511,7 @@ const modelBody = {
 
     const searchPromise = searchByName(query, { pageSize: 30 })
       .then(this.normalizeSearchResults)
+      .then((results: SearchResult[]) => onlyPlayable(results))
       .then(withImagesOnly);
 
     resolvePromise(searchPromise, this.searchResultsPromiseState);

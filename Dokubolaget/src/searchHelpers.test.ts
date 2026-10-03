@@ -81,3 +81,14 @@ test("withImagesOnly drops results without a product photo", () => {
   const results = [{ id: "a", image: "https://x/a.webp" }, { id: "b", image: null }, { id: "c" }, { id: "d", image: "" }];
   expect(withImagesOnly(results).map((r) => r.id)).toEqual(["a"]);
 });
+
+import { onlyPlayable } from "./searchHelpers";
+
+test("search drops products outside the shelf ranges", () => {
+  const results = [
+    { id: "1", raw: { assortmentText: "Fast sortiment" } },
+    { id: "2", raw: { assortmentText: "Ordervaror" } },
+    { id: "3", raw: { assortmentText: "Säsong" } },
+  ];
+  expect(onlyPlayable(results).map((r) => r.id)).toEqual(["1", "3"]);
+});

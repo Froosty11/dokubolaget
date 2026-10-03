@@ -1,6 +1,8 @@
 // Small pure helpers for search and the board, kept free of React and
 // the network so they can be unit tested.
 
+import { isPlayable } from "./playable";
+
 // Records a wrongly guessed product for a cell. Returns the same map when
 // nothing changes, so MobX doesn't see a pointless update.
 export function addRejected(map: Record<number, string[]>, cell: number, productId: string) {
@@ -101,4 +103,9 @@ export function rowFields(raw: any, redact: ReadonlySet<string>): RowField[] {
 // apart and rarely the bottle the player has in mind.
 export function withImagesOnly<T extends { image?: string | null }>(results: T[]): T[] {
   return results.filter((result) => Boolean(result.image));
+}
+
+// Search only offers bottles that can be answers (see playable.ts).
+export function onlyPlayable<T extends { raw?: any }>(results: T[]): T[] {
+  return results.filter((result) => isPlayable(result.raw));
 }
