@@ -52,8 +52,8 @@ export function connectToServer(model: SyncedModel, options: { announced: Announ
 
   // Logged out, the device is its own player again and today's board stays
   // with the account, so the device starts clean (not a confusing revert).
+  // forgetToday() runs first, while the session still exists.
   async function startCleanBoard() {
-    await options.play?.forgetToday().catch(() => {});
     model.resetDailyBoard?.();
     model.syncNotice = "Logged out. Today's board stays with your account.";
     await options.play?.refresh().catch(() => {});
@@ -118,6 +118,7 @@ export function connectToServer(model: SyncedModel, options: { announced: Announ
     },
     async logout() {
       synced = false;
+      await options.play?.forgetToday().catch(() => {});
       await api.logout().catch(() => {});
       model.setAccount(null);
       model.setLoggedIn(false);
@@ -127,6 +128,7 @@ export function connectToServer(model: SyncedModel, options: { announced: Announ
     // The server also ends the session. The theme saved on this device stays,
     // as it would for any logged-out player; today's board starts clean.
     async deleteAccount(email: string, password: string) {
+      await options.play?.forgetToday().catch(() => {});
       await api.deleteAccount(email, password);
       synced = false;
       model.setAccount(null);

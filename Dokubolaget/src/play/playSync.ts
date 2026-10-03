@@ -1,5 +1,6 @@
 // Sends guesses to the server through the outbox and keeps the board in step
 // with the server's record of it (which wins: it checks every pick).
+import { reaction } from "mobx";
 import { ApiRequestError } from "../api";
 import type { BoardResult, GuessRequest, GuessResponse } from "./types";
 import { flushOutbox, type Outbox, type OutboxItem } from "./outbox";
@@ -14,7 +15,10 @@ type PlayModel = {
   applyServerBoard(board: BoardResult, pendingCells: Set<number>): void;
   applyGuessResponse(cell: number, res: GuessResponse): void;
   addUnlocks(ids: any[], announce: boolean | "board" | "streak" | "scan"): unknown;
+  syncNotice?: string | null;
 };
+
+export const DROPPED_NOTICE = "A few guesses from the last board couldn't be sent before 04:00.";
 
 // Worth sending again later: offline, rate limited, or the server (or the
 // catalogue behind it) briefly unavailable. Anything else is final.
@@ -23,6 +27,11 @@ const RETRY = new Set([0, 429, 502, 503, 504]);
 export function createPlaySync(deps: { api: PlayApi; outbox: Outbox; model: PlayModel; today: () => string }) {
   const { api, outbox, model } = deps;
   let flushing: Promise<void> | null = null;
+  // Bumped whenever a daily guess is queued or answered, per cell, so a
+  // refresh can tell which cells moved on while it waited for the server.
+  let guessSeq = 0;
+  const touched = new Map<number, number>();
+  const touch = (cell: number) => touched.set(cell, ++guessSeq);
 
   async function send(item: OutboxItem) {
     try {
@@ -32,6 +41,7 @@ export function createPlaySync(deps: { api: PlayApi; outbox: Outbox; model: Play
       const mine = item.practice
         ? model.playMode === "archive" && model.practiceDay === item.day
         : model.playMode === "daily" && model.boardDate === item.day;
+      if (!item.practice) touch(item.cell);
       if (mine) model.applyGuessResponse(item.cell, res);
       if (res.newUnlocks?.length) model.addUnlocks(res.newUnlocks, "board");
       return "done" as const;
@@ -42,23 +52,40 @@ export function createPlaySync(deps: { api: PlayApi; outbox: Outbox; model: Play
     }
   }
 
+  // Sends the queue in order. Guesses queued while a pass is running go out
+  // in the same flush; a pass stopped by a retryable error waits for the next
+  // trigger (a guess, a resume, coming back online or the periodic retry).
   function flush() {
     flushing ??= (async () => {
-      await outbox.dropEndedDays(deps.today());
-      await flushOutbox(outbox, send);
+      for (;;) {
+        if ((await outbox.dropEndedDays(deps.today())) > 0) model.syncNotice = DROPPED_NOTICE;
+        const result = await flushOutbox(outbox, send);
+        if (result === "stopped" || outbox.items().length === 0) break;
+      }
     })().finally(() => {
       flushing = null;
     });
     return flushing;
   }
 
+  const dailyPending = (day: string) =>
+    outbox.items().filter((i) => !i.practice && i.day === day).map((i) => i.cell);
+
   async function refresh() {
     await flush();
     if (model.playMode !== "daily" || model.boardStatus !== "ready") return;
+    const startDay = model.boardDate;
+    const startSeq = guessSeq;
+    const pendingAtStart = dailyPending(startDay);
     try {
       const board = await api.playToday();
-      if (board.day !== model.boardDate) return;
-      const pending = new Set(outbox.items().filter((i) => !i.practice && i.day === board.day).map((i) => i.cell));
+      // The player may have moved on while the request was out.
+      if (model.playMode !== "daily" || model.boardStatus !== "ready") return;
+      if (board.day !== model.boardDate || board.day !== startDay) return;
+      // Cells with a guess queued, or queued or answered since the request
+      // went out, keep the device's state: the response may predate them.
+      const pending = new Set([...pendingAtStart, ...dailyPending(board.day)]);
+      for (const [cell, seq] of touched) if (seq > startSeq) pending.add(cell);
       model.applyServerBoard(board, pending);
     } catch {
       // Offline: the device's own record stands until the next refresh.
@@ -74,17 +101,27 @@ export function createPlaySync(deps: { api: PlayApi; outbox: Outbox; model: Play
       const practice = model.playMode === "archive";
       const day = practice ? model.practiceDay : model.boardDate;
       if (!day) return;
+      if (!practice) touch(cell);
       outbox
         .add({ day, cell, productNumber, practice })
         .then(() => flush())
         .catch((error) => console.warn("Sending a guess failed:", error?.message ?? error));
     };
+    // A new board, a new day or back from the archive: catch up with the server.
+    reaction(
+      () => [model.boardStatus, model.boardDate, model.playMode],
+      () => {
+        refresh();
+      },
+    );
   }
 
   // After logging out, today's board belongs to the account: guesses for it
   // still waiting here are dropped (archive practice ones are kept).
+  // Called before the session ends, so what can still be sent for the
+  // account is sent first.
   async function forgetToday() {
-    await flushing?.catch(() => {});
+    await flush().catch(() => {});
     const today = deps.today();
     for (const item of outbox.items().filter((i) => !i.practice && i.day === today)) await outbox.remove(item.id);
   }

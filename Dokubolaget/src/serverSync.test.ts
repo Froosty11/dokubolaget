@@ -120,3 +120,17 @@ test("logging out starts a clean board on the device instead of reverting the ac
   expect(model.serverBoard?.day).toBe(day); // play was refreshed
   expect(outbox.items().map((i) => i.practice)).toEqual([true]);
 });
+
+test("logging out sends what it can for the account before the session ends", async () => {
+  const model = makeModel();
+  const order: string[] = [];
+  globalThis.fetch = (async (url: string) => {
+    order.push(String(url).replace(/^.*\/api/, "/api"));
+    return new Response(JSON.stringify({ ok: true, user: null }));
+  }) as any;
+  const play = { forgetToday: async () => void order.push("forgetToday"), refresh: async () => void order.push("refresh") };
+  const sync = connectToServer(model, { announced: { read: async () => [], write: async () => {} }, play });
+  await sync.logout();
+  expect(order.indexOf("forgetToday")).toBeLessThan(order.indexOf("/api/auth/logout"));
+  expect(order.at(-1)).toBe("refresh");
+});

@@ -64,23 +64,36 @@ export function setDeviceIdProvider(fn: () => Promise<string | null>) {
   deviceIdProvider = fn;
 }
 
+// A hung call fails after this long (status 0), so queued guesses retry
+// instead of blocking everything behind them.
+const TIMEOUT_MS = 10_000;
+
 async function request<T>(method: string, path: string, body?: unknown): Promise<T> {
   const deviceId = deviceIdProvider ? await deviceIdProvider().catch(() => null) : null;
   const headers: Record<string, string> = {};
   if (body !== undefined) headers["Content-Type"] = "application/json";
   if (deviceId) headers["X-Doku-Device"] = deviceId;
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);
   let response: Response;
+  let data: any;
   try {
     response = await fetch(`${API_BASE}${path}`, {
       method,
       credentials: "include",
       headers,
       body: body === undefined ? undefined : JSON.stringify(body),
+      signal: controller.signal,
+    });
+    data = await response.json().catch((error) => {
+      if (controller.signal.aborted) throw error;
+      return null;
     });
   } catch {
     throw new ApiRequestError(0, undefined);
+  } finally {
+    clearTimeout(timer);
   }
-  const data = await response.json().catch(() => null);
   if (!response.ok) throw new ApiRequestError(response.status, data?.error);
   return data as T;
 }

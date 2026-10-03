@@ -16,7 +16,7 @@ const emptyBoard = (day: string) => ({
 function fakeModel() {
   return observable({
     boardDate: "2026-10-02", playMode: "daily" as const, practiceDay: null as string | null, boardStatus: "ready" as const,
-    guessListener: null as any, applied: [] as any[], responses: [] as any[], unlocks: [] as string[],
+    guessListener: null as any, applied: [] as any[], responses: [] as any[], unlocks: [] as string[], syncNotice: null as string | null,
     applyServerBoard(board: any, pending: Set<number>) { this.applied.push({ board, pending: [...pending] }); },
     applyGuessResponse(cell: number, res: any) { this.responses.push({ cell, res }); },
     addUnlocks(ids: string[]) { this.unlocks.push(...ids); return ids; },
@@ -97,4 +97,96 @@ test("forgetToday drops today's daily guesses but keeps practice ones", async ()
   await outbox.add({ day: "2026-09-20", cell: 2, productNumber: "1002", practice: true });
   await sync.forgetToday();
   expect(outbox.items().map((i) => [i.day, i.practice])).toEqual([["2026-09-20", true]]);
+});
+
+const tick = (ms = 0) => new Promise((resolve) => setTimeout(resolve, ms));
+function deferred<T>() {
+  let resolve!: (v: T) => void;
+  const promise = new Promise<T>((r) => (resolve = r));
+  return { promise, resolve };
+}
+
+test("a guess added while a flush is running is sent in the same flush cycle (review finding 1)", async () => {
+  const model = fakeModel();
+  const outbox = createOutbox(memory());
+  const sent: any[] = [];
+  const api = {
+    guess: async (g: any) => { await tick(50); sent.push(g); return { verdict: "miss", cell: {}, board: emptyBoard("2026-10-02"), newUnlocks: [] }; },
+    playToday: async () => emptyBoard("2026-10-02"),
+  };
+  const sync = createPlaySync({ api: api as any, outbox, model: model as any, today: () => "2026-10-02" });
+  await sync.start();
+  model.guessListener!({ cell: 1, productNumber: "1001" });
+  await tick(10);
+  model.guessListener!({ cell: 1, productNumber: "1002" });
+  await tick(0);
+  await sync.flush();
+  expect(sent.map((g) => g.productNumber)).toEqual(["1001", "1002"]);
+  expect(outbox.items()).toEqual([]);
+});
+
+test("a stale playToday doesn't revert a cell whose guess was sent meanwhile (review finding 3)", async () => {
+  const model = fakeModel();
+  const outbox = createOutbox(memory());
+  const today = deferred<any>();
+  let calls = 0;
+  const api = {
+    guess: async (g: any) => ({ verdict: "correct", cell: { cell: g.cell, productNumber: g.productNumber }, board: emptyBoard("2026-10-02"), newUnlocks: [] }),
+    playToday: () => (calls++ === 0 ? today.promise : Promise.resolve(emptyBoard("2026-10-02"))),
+  };
+  const sync = createPlaySync({ api: api as any, outbox, model: model as any, today: () => "2026-10-02" });
+  await sync.start();
+  const refreshing = sync.refresh();
+  await tick(0);
+  model.guessListener!({ cell: 3, productNumber: "1003" });
+  await sync.flush();
+  expect(outbox.items()).toEqual([]);
+  today.resolve(emptyBoard("2026-10-02")); // built before the guess arrived
+  await refreshing;
+  expect(model.applied.at(-1).pending).toContain(3);
+});
+
+test("a refresh that resolves after entering the archive leaves the practice board alone (review finding 3)", async () => {
+  const model = fakeModel();
+  const outbox = createOutbox(memory());
+  const today = deferred<any>();
+  const api = { guess: async () => ({}), playToday: () => today.promise };
+  const sync = createPlaySync({ api: api as any, outbox, model: model as any, today: () => "2026-10-02" });
+  await sync.start();
+  const refreshing = sync.refresh();
+  await tick(0);
+  model.playMode = "archive" as any;
+  model.practiceDay = "2026-09-20";
+  today.resolve(emptyBoard("2026-10-02"));
+  await refreshing;
+  expect(model.applied).toEqual([]);
+});
+
+test("leaving the archive refreshes the daily board (review finding 4)", async () => {
+  const model = fakeModel();
+  const outbox = createOutbox(memory());
+  let calls = 0;
+  const api = { guess: async () => ({}), playToday: async () => (calls++, emptyBoard("2026-10-02")) };
+  const sync = createPlaySync({ api: api as any, outbox, model: model as any, today: () => "2026-10-02" });
+  await sync.start();
+  model.playMode = "archive" as any;
+  await tick(5);
+  const before = calls;
+  model.playMode = "daily" as any;
+  await tick(5);
+  expect(calls).toBe(before + 1);
+  expect(model.applied).toHaveLength(1);
+});
+
+test("guesses dropped at 04:00 leave a notice", async () => {
+  const model = fakeModel();
+  const storage = memory();
+  await storage.setItem("dokubolaget.outbox", JSON.stringify([{ id: "a", day: "2026-10-01", cell: 1, productNumber: "1001", practice: false }]));
+  const outbox = createOutbox(storage);
+  const api = { guess: async () => ({}), playToday: async () => emptyBoard("2026-10-02") };
+  const sync = createPlaySync({ api: api as any, outbox, model: model as any, today: () => "2026-10-02" });
+  await sync.start();
+  await sync.flush();
+  expect(outbox.items()).toEqual([]);
+  expect(model.syncNotice).toBe("A few guesses from the last board couldn't be sent before 04:00.");
 });

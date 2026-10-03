@@ -33,8 +33,13 @@ reactiveModel.boardCache = {
         const raw = await AsyncStorage.getItem(`dokubolaget.board.${day}`);
         return raw ? JSON.parse(raw) : null;
     },
-    write: async (day, board) =>
-        AsyncStorage.setItem(`dokubolaget.board.${day}`, JSON.stringify({ rows: board.rows, cols: board.cols })),
+    // Only this game day's board is kept.
+    write: async (day, board) => {
+        const key = `dokubolaget.board.${day}`;
+        await AsyncStorage.setItem(key, JSON.stringify({ rows: board.rows, cols: board.cols }));
+        const old = (await AsyncStorage.getAllKeys()).filter((k) => k.startsWith("dokubolaget.board.") && k !== key);
+        if (old.length) await AsyncStorage.removeMany(old);
+    },
 };
 
 // The vibration switch is a device setting.
@@ -141,9 +146,9 @@ reaction(
 // Guesses go to the server through a queue kept on the device; the board is
 // reconciled with the server's record whenever it's ready or the app resumes.
 export const playSync = createPlaySync({ api, outbox: createOutbox(AsyncStorage), model: reactiveModel, today: () => gameDay() });
+// (play sync refreshes by itself on a new board, a new day or leaving the archive.)
 if (typeof window !== "undefined") {
     playSync.start().then(() => playSync.refresh());
-    reaction(() => [reactiveModel.boardStatus, reactiveModel.boardDate], () => playSync.refresh());
 }
 
 // A new day (04:00) while the app is open or resumed: start the new board
@@ -167,7 +172,15 @@ if (Platform.OS === "web" && typeof document !== "undefined") {
         if (document.visibilityState === "visible") onResume();
     });
 }
-if (typeof window !== "undefined") setInterval(rollOverIfNewDay, 60_000);
+// While the app is open: roll over at 04:00 and retry guesses still queued
+// (offline, or the server was briefly unavailable).
+if (typeof window !== "undefined") {
+    setInterval(() => {
+        rollOverIfNewDay();
+        playSync.flush();
+    }, 30_000);
+    if (Platform.OS === "web") window.addEventListener?.("online", () => playSync.refresh());
+}
 
 if (typeof window !== "undefined") {
     api.config()

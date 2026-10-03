@@ -23,6 +23,7 @@ import { boardKey, type BoardProgress } from "./progress";
 import { gameDay } from "./gameDay";
 import { buildShareText as composeShareText } from "./shareText";
 import type { BoardResult, GuessResponse } from "./play/types";
+import { reconcileBoard, serverPick, type CellInfo } from "./play/reconcile";
 
 export type BoardTag = {
   id: string;
@@ -112,8 +113,7 @@ function pickInitialBoard() {
 
 const initialBoardPick = pickInitialBoard();
 
-// The server's verdict on a solved cell.
-export type CellInfo = { score: number | null; share: number | null; unicorn: boolean };
+export type { CellInfo };
 
 export type GuessFeedback = {
   kind: "correct" | "near" | "miss";
@@ -414,43 +414,26 @@ const modelBody = {
 
   // The server's record wins, except for cells with guesses still on their way.
   applyServerBoard(board: BoardResult, pendingCells: Set<number>) {
-    const products = { ...this.selectedProductsByCell };
-    const info: Record<number, CellInfo> = {};
-    const misses = { ...this.missesByCell };
-    let reverted = false;
-    let added = false;
-    for (const cell of board.cells) {
-      if (pendingCells.has(cell.cell)) {
-        if (this.cellInfo[cell.cell]) info[cell.cell] = this.cellInfo[cell.cell];
-        continue;
-      }
-      if (cell.productNumber && cell.product) {
-        if (String(products[cell.cell]?.raw?.productNumber ?? "") !== cell.productNumber) {
-          if (!products[cell.cell]) added = true;
-          products[cell.cell] = productToResult(cell.product);
-        }
-        info[cell.cell] = { score: cell.score, share: cell.share, unicorn: cell.unicorn };
-      } else if (products[cell.cell]) {
-        delete products[cell.cell];
-        reverted = true;
-      }
-      misses[cell.cell] = Math.max(Number(misses[cell.cell] || 0), cell.misses);
-    }
+    const next = reconcileBoard(
+      { products: this.selectedProductsByCell, info: this.cellInfo, misses: this.missesByCell },
+      board,
+      pendingCells,
+    );
     // Cells filled from the account (another device) aren't celebrated here.
-    if (added && Object.keys(products).length !== this.filledCellCount) this.justRestored = true;
-    this.selectedProductsByCell = products;
-    this.cellInfo = info;
-    this.missesByCell = misses;
+    if (next.added && Object.keys(next.products).length !== this.filledCellCount) this.justRestored = true;
+    this.selectedProductsByCell = next.products;
+    this.cellInfo = next.info;
+    this.missesByCell = next.misses;
     this.serverBoard = board;
-    if (reverted) this.syncNotice = "Couldn't verify a pick, so that cell is empty again. Try another bottle.";
+    if (next.reverted) this.syncNotice = "Couldn't verify a pick, so that cell is empty again. Try another bottle.";
   },
 
   applyGuessResponse(cell: number, res: GuessResponse) {
     if (res.verdict === "correct") {
       this.cellInfo = { ...this.cellInfo, [cell]: { score: res.cell.score, share: res.cell.share, unicorn: res.cell.unicorn } };
       // The server accepted a pick this device judged wrong: its verdict wins.
-      if (!this.selectedProductsByCell[cell] && res.cell.product) {
-        this.selectedProductsByCell = { ...this.selectedProductsByCell, [cell]: productToResult(res.cell.product) };
+      if (!this.selectedProductsByCell[cell] && res.cell.productNumber) {
+        this.selectedProductsByCell = { ...this.selectedProductsByCell, [cell]: serverPick(res.cell) };
       }
     } else if (
       this.selectedProductsByCell[cell] &&
