@@ -80,6 +80,40 @@ const MIGRATIONS: string[] = [
   );
   CREATE INDEX code_redemptions_code ON code_redemptions(code_id, user_id);
   `,
+  // 3: scores. One row per player per cell; practice rows (archive play) are
+  // kept apart. played_day is the game day the guess was made, so history for
+  // a day only counts what came before it.
+  `
+  CREATE TABLE cell_results (
+    day TEXT NOT NULL,
+    player TEXT NOT NULL,
+    cell INTEGER NOT NULL,
+    practice INTEGER NOT NULL DEFAULT 0,
+    pair_key TEXT NOT NULL,
+    product_id TEXT,
+    misses INTEGER NOT NULL DEFAULT 0,
+    played_day TEXT NOT NULL,
+    solved_at TEXT,
+    PRIMARY KEY (day, player, cell, practice)
+  );
+  CREATE INDEX cell_results_pair ON cell_results (pair_key, played_day, product_id);
+  CREATE INDEX cell_results_day ON cell_results (day, practice, pair_key, product_id);
+  CREATE INDEX cell_results_player ON cell_results (player, practice, day);
+  CREATE TABLE daily_scores (
+    day TEXT NOT NULL,
+    user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    score INTEGER NOT NULL,
+    solved INTEGER NOT NULL,
+    misses INTEGER NOT NULL,
+    unicorns INTEGER NOT NULL,
+    finished INTEGER NOT NULL,
+    perfect INTEGER NOT NULL,
+    PRIMARY KEY (day, user_id)
+  );
+  CREATE INDEX daily_scores_user ON daily_scores (user_id, day);
+  CREATE TABLE frozen_days (day TEXT PRIMARY KEY, frozen_at TEXT NOT NULL);
+  CREATE TABLE seen_guesses (id TEXT PRIMARY KEY, day TEXT NOT NULL);
+  `,
 ];
 
 export function nowIso(now: Date = new Date()) {

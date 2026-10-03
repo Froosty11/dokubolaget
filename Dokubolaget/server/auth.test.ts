@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import { openDb } from "./db";
 import {
-  ApiError, RateLimiter, createResetToken, login, logout, resetPassword, sessionUser, setNickname, signup,
+  ApiError, RateLimiter, createResetToken, deleteAccount, login, logout, resetPassword, sessionUser, setNickname, signup,
 } from "./auth";
 
 const fresh = () => openDb(":memory:");
@@ -161,4 +161,14 @@ describe("review fixes", () => {
     for (let i = 0; i < 10_050; i++) limiter.hit(`short-${i}`, 10, 60_000);
     expect(limiter.hit("long", 1, 3_600_000)).toBe(false);
   });
+});
+
+test("deleting an account removes its guesses", async () => {
+  const db = fresh();
+  await signup(db, { email: "a@b.se", password: "hemligt123", nickname: "Ab" });
+  const userId = (db.query("SELECT id FROM users").get() as any).id;
+  db.run("INSERT INTO cell_results (day, player, cell, practice, pair_key, product_id, misses, played_day) VALUES ('2026-10-02', ?, 1, 0, 'a|b', '1', 0, '2026-10-02')", [`u:${userId}`]);
+  db.run("INSERT INTO cell_results (day, player, cell, practice, pair_key, product_id, misses, played_day) VALUES ('2026-10-02', 'd:other', 1, 0, 'a|b', '1', 0, '2026-10-02')");
+  await deleteAccount(db, { email: "a@b.se", password: "hemligt123" });
+  expect((db.query("SELECT COUNT(*) AS n FROM cell_results").get() as any).n).toBe(1);
 });

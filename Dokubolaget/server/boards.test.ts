@@ -44,6 +44,19 @@ test("addDaysUtc crosses month ends", () => {
   expect(addDaysUtc("2026-09-30", 1)).toBe("2026-10-01");
 });
 
+test("a board whose day has started is never replaced", () => {
+  const db = openDb(":memory:");
+  const a = { rows: [{ id: "a", label: "A", family: "f" }], cols: [{ id: "b", label: "B", family: "f" }] };
+  const b = { rows: [{ id: "c", label: "C", family: "f" }], cols: [{ id: "d", label: "D", family: "f" }] };
+  expect(putBoard(db, "2026-10-02", a, { today: "2026-10-02" })).toBe(true);
+  expect(putBoard(db, "2026-10-02", b, { today: "2026-10-02" })).toBe(false);
+  expect(getBoard(db, "2026-10-02", "2026-10-02")!.rows[0].id).toBe("a");
+  // A future day can still be regenerated.
+  putBoard(db, "2026-10-03", a, { today: "2026-10-02" });
+  expect(putBoard(db, "2026-10-03", b, { today: "2026-10-02" })).toBe(true);
+  expect(getBoard(db, "2026-10-03", "2026-10-03")!.rows[0].id).toBe("c");
+});
+
 import { bundledBoardFor } from "./boards";
 
 test("bundled pick matches the app's offline pick for the same date", () => {

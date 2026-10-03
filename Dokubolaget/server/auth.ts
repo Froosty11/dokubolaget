@@ -92,7 +92,10 @@ export async function login(db: Database, input: { email: unknown; password: unk
 // left open on a shared device can't delete it.
 export async function deleteAccount(db: Database, input: { email: unknown; password: unknown }) {
   const userId = await verifyCredentials(db, input);
-  db.run("DELETE FROM users WHERE id = ?", [userId]);
+  db.transaction(() => {
+    db.run("DELETE FROM cell_results WHERE player = ?", [`u:${userId}`]);
+    db.run("DELETE FROM users WHERE id = ?", [userId]);
+  })();
   return userId;
 }
 

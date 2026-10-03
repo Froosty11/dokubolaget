@@ -24,3 +24,10 @@ test("foreign keys are enforced", () => {
   expect((db.query("PRAGMA foreign_keys").get() as any).foreign_keys).toBe(1);
   expect(() => db.run("INSERT INTO sessions (token_hash, user_id, created_at, expires_at) VALUES ('t', 'nobody', 'x', 'y')")).toThrow();
 });
+
+test("migration 3 adds the scoring tables", () => {
+  const db = openDb(":memory:");
+  const tables = (db.query("SELECT name FROM sqlite_master WHERE type = 'table'").all() as any[]).map((r) => r.name);
+  for (const name of ["cell_results", "daily_scores", "frozen_days", "seen_guesses"]) expect(tables).toContain(name);
+  expect((db.query("SELECT MAX(version) AS v FROM schema_version").get() as any).v).toBe(3);
+});

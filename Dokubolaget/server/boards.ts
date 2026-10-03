@@ -28,8 +28,11 @@ export function addDaysUtc(dateKey: string, offset: number) {
 
 const stripTag = (tag: any): BoardTag => ({ id: String(tag.id), label: String(tag.label), family: String(tag.family) });
 
-export function putBoard(db: Database, date: string, board: GeneratedBoard) {
+// Writes a board. With `today`, a day that has already started is never
+// replaced (players are mid-board); returns false when it refused.
+export function putBoard(db: Database, date: string, board: GeneratedBoard, opts: { today?: string } = {}): boolean {
   if (!DATE.test(date)) throw new Error(`Bad board date ${date}`);
+  if (opts.today && date <= opts.today && db.query("SELECT 1 FROM boards WHERE date = ?").get(date)) return false;
   db.run(
     `INSERT INTO boards (date, rows, cols, counts, score, difficulty, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)
      ON CONFLICT(date) DO UPDATE SET rows = excluded.rows, cols = excluded.cols, counts = excluded.counts,
@@ -44,9 +47,10 @@ export function putBoard(db: Database, date: string, board: GeneratedBoard) {
       nowIso(),
     ],
   );
+  return true;
 }
 
-// Boards are readable once their (UTC) day has started, never earlier.
+// Boards are readable once their game day (see src/gameDay.ts) has started, never earlier.
 export function getBoard(db: Database, date: string, today: string): StoredBoard | null {
   if (!DATE.test(date) || date > today) return null;
   const row = db.query("SELECT * FROM boards WHERE date = ?").get(date) as any;
@@ -62,14 +66,14 @@ export function getBoard(db: Database, date: string, today: string): StoredBoard
 }
 
 // Writes `days` boards starting at `startDate`, cycling through the pool.
-export function seedBoards(db: Database, boards: GeneratedBoard[], startDate: string, days: number) {
+// Days up to `today` that already have a board are left alone.
+export function seedBoards(db: Database, boards: GeneratedBoard[], startDate: string, days: number, today?: string) {
   if (boards.length === 0) throw new Error("No boards to seed");
   const written: string[] = [];
   db.transaction(() => {
     for (let offset = 0; offset < days; offset += 1) {
       const date = addDaysUtc(startDate, offset);
-      putBoard(db, date, boards[offset % boards.length]);
-      written.push(date);
+      if (putBoard(db, date, boards[offset % boards.length], { today })) written.push(date);
     }
   })();
   return written;
