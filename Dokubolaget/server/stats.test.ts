@@ -108,3 +108,32 @@ test("archive month: past days with boards and your result", () => {
   expect(september.find((d) => d.day === "2026-09-29")!.result).toBeNull();
   expect(archiveMonth(db, play, "2026-10", "2026-10-02", [], null).map((d) => d.day)).toEqual(["2026-10-01"]);
 });
+
+test("streak leaderboard ranks ties by longest streak (fix round 1 finding)", () => {
+  for (const day of ["2026-09-01", "2026-09-02", "2026-09-03", "2026-09-04", "2026-09-05", "2026-09-06", "2026-09-07", "2026-09-08", "2026-09-09", "2026-09-10"]) {
+    putBoard(db, day, BOARD);
+    playDay(`u:${anna}`, day, 9);
+  }
+  for (const day of ["2026-09-30", "2026-10-01"]) {
+    playDay(`u:${anna}`, day, 9);
+    playDay(`u:${bo}`, day, 9);
+  }
+  catchUpFreeze(db, play, "2026-10-02");
+  const streak = leaderboard(db, play, "streak", "2026-10-02", null);
+  expect(streak.rows.map((r) => [r.nickname, r.rank, r.value, r.longest])).toEqual([
+    ["Anna", 1, 2, 10],
+    ["Bo", 2, 2, 2],
+  ]);
+});
+
+test("a broken streak still gets your own row at zero (fix round 1 ruling)", () => {
+  for (const day of ["2026-09-01", "2026-09-02", "2026-09-03"]) {
+    putBoard(db, day, BOARD);
+    playDay(`u:${bo}`, day, 9);
+  }
+  playDay(`u:${anna}`, "2026-10-01", 9);
+  catchUpFreeze(db, play, "2026-10-02");
+  const streak = leaderboard(db, play, "streak", "2026-10-02", bo);
+  expect(streak.rows.map((r) => r.nickname)).toEqual(["Anna"]);
+  expect(streak.me).toEqual({ rank: 2, nickname: "Bo", value: 0, longest: 3 });
+});

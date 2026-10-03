@@ -69,23 +69,37 @@ function nicknames(db: Database, ids: string[]): Map<string, string> {
   return new Map(rows.map((r) => [r.id, r.nickname]));
 }
 
-// Highest first; equal values share a rank; names break ties for a stable order.
+// Highest first; a shared rank requires both value and longest to match (streak
+// ties break on longest); names break ties for a stable order. A zero-value
+// entry never appears in rows, but if it's the caller's own entry it still
+// surfaces as `me`, ranked just after the last real row.
 function rank(values: Map<string, { value: number; longest?: number }>, db: Database, userId: string | null) {
   const names = nicknames(db, [...values.keys()]);
-  const entries = [...values.entries()]
-    .filter(([id, v]) => names.has(id) && v.value > 0)
-    .map(([id, v]) => ({ id, nickname: names.get(id)!, ...v }))
+  const all = [...values.entries()]
+    .filter(([id]) => names.has(id))
+    .map(([id, v]) => ({ id, nickname: names.get(id)!, ...v }));
+  const entries = all
+    .filter((e) => e.value > 0)
     .sort((a, b) => b.value - a.value || (b.longest ?? 0) - (a.longest ?? 0) || a.nickname.localeCompare(b.nickname));
   let lastValue: number | null = null;
+  let lastLongest: number | null = null;
   let lastRank = 0;
   const ranked = entries.map((e, index) => {
-    if (e.value !== lastValue) {
+    if (e.value !== lastValue || (e.longest ?? 0) !== lastLongest) {
       lastRank = index + 1;
       lastValue = e.value;
+      lastLongest = e.longest ?? 0;
     }
     return { id: e.id, row: { rank: lastRank, nickname: e.nickname, value: e.value, ...(e.longest != null ? { longest: e.longest } : {}) } };
   });
-  return { rows: ranked.slice(0, TOP).map((r) => r.row), me: ranked.find((r) => r.id === userId)?.row ?? null };
+  const rows = ranked.slice(0, TOP).map((r) => r.row);
+  const mine = ranked.find((r) => r.id === userId)?.row ?? ownZeroRow(all, ranked.length, userId);
+  return { rows, me: mine };
+}
+
+function ownZeroRow(all: Array<{ id: string; nickname: string; value: number; longest?: number }>, rankedCount: number, userId: string | null) {
+  const own = userId ? all.find((e) => e.id === userId && e.value === 0) : undefined;
+  return own ? { rank: rankedCount + 1, nickname: own.nickname, value: 0, ...(own.longest != null ? { longest: own.longest } : {}) } : null;
 }
 
 function frozenSums(db: Database, where: string, params: string[]) {
