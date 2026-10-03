@@ -107,10 +107,10 @@ function Leaderboard({limit = 20 }: leaderboardProps) {
 
       // Scores arrive with the scoring update; until then the list is empty.
       api
-        .leaderboard()
+        .leaderboard("today")
         .then(function toTopUsersACB(result) {
           const rows = result.rows.map(function toRowACB(row, index) {
-            return { key: `${row.nickname}-${index}`, label: row.nickname, value: row.score };
+            return { key: `${row.nickname}-${index}`, label: row.nickname, value: row.value };
           });
           if (isMounted) setTopUsers(rows);
         })

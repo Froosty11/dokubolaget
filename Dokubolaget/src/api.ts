@@ -2,6 +2,17 @@
 // the Expo dev server (port 8081) talks to `bun run api` on port 8090.
 
 import type { PackSummary, ThemePack } from "./theme/packSchema";
+import type {
+  CellAnswers,
+  Period,
+  GuessRequest,
+  GuessResponse,
+  BoardResult,
+  Leaderboard,
+  ArchiveDay,
+  ArchiveDetail,
+  UserStats,
+} from "./play/types";
 
 declare const __DEV__: boolean | undefined;
 
@@ -12,7 +23,7 @@ const API_BASE =
 export type Account = { id: string; email: string; nickname: string };
 export type ServerPrefs = { theme: string | null; unlockedThemes: string[] };
 export type ServerProgress = { date: string; boardKey: string; data: any } | null;
-export type Me = { user: Account | null; prefs: ServerPrefs | null; progress: ServerProgress };
+export type Me = { user: Account | null; prefs: ServerPrefs | null; progress: ServerProgress; stats: UserStats | null };
 
 const MESSAGES: Record<string, string> = {
   email_taken: "There's already an account with that email. Try logging in.",
@@ -31,6 +42,10 @@ const MESSAGES: Record<string, string> = {
   invalid_code: "That code doesn't exist. Check the poster or scan again.",
   code_expired: "This code has expired.",
   code_used_up: "This code has been used up.",
+  no_player: "Couldn't identify this device. Restart the app and try again.",
+  day_over: "That board has ended. A new one started at 04:00.",
+  not_finished: "Finish the board to see today's answers.",
+  catalog_unavailable: "Couldn't check that bottle right now. It'll be checked when the connection is back.",
 };
 
 export function errorMessage(code: string | undefined): string {
@@ -43,13 +58,23 @@ export class ApiRequestError extends Error {
   }
 }
 
+let deviceIdProvider: (() => Promise<string | null>) | null = null;
+// Set once at startup (mobxReactiveModel.ts); keeps this module free of storage.
+export function setDeviceIdProvider(fn: () => Promise<string | null>) {
+  deviceIdProvider = fn;
+}
+
 async function request<T>(method: string, path: string, body?: unknown): Promise<T> {
+  const deviceId = deviceIdProvider ? await deviceIdProvider().catch(() => null) : null;
+  const headers: Record<string, string> = {};
+  if (body !== undefined) headers["Content-Type"] = "application/json";
+  if (deviceId) headers["X-Doku-Device"] = deviceId;
   let response: Response;
   try {
     response = await fetch(`${API_BASE}${path}`, {
       method,
       credentials: "include",
-      headers: body === undefined ? undefined : { "Content-Type": "application/json" },
+      headers,
       body: body === undefined ? undefined : JSON.stringify(body),
     });
   } catch {
@@ -91,5 +116,11 @@ export const api = {
   // Logo paths from the server are relative; in development the API runs on
   // another port.
   logoUrl: (summary: { logoUrl: string | null }) => (summary.logoUrl ? `${API_BASE}${summary.logoUrl}` : null),
-  leaderboard: () => request<{ rows: Array<{ nickname: string; score: number }> }>("GET", "/api/leaderboard"),
+  guess: (g: GuessRequest) => request<GuessResponse>("POST", "/api/play/guess", g),
+  playToday: () => request<BoardResult>("GET", "/api/play/today"),
+  answers: (day: string) => request<{ answers: CellAnswers[] }>("GET", `/api/play/answers?day=${encodeURIComponent(day)}`),
+  claim: () => request<{ board: BoardResult; newUnlocks: string[] }>("POST", "/api/play/claim", {}),
+  leaderboard: (period: Period) => request<Leaderboard>("GET", `/api/leaderboard?period=${period}`),
+  archiveMonth: (month: string) => request<{ days: ArchiveDay[] }>("GET", `/api/archive?month=${encodeURIComponent(month)}`),
+  archiveDay: (day: string) => request<ArchiveDetail>("GET", `/api/archive/${encodeURIComponent(day)}`),
 };
