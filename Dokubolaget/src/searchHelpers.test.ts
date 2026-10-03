@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { addRejected, formatKronor, groupResultsByType } from "./searchHelpers";
+import { addRejected, formatKronor, groupResultsByType, productToResult } from "./searchHelpers";
 
 describe("addRejected", () => {
   test("adds a product id to its cell once", () => {
@@ -91,4 +91,17 @@ test("search drops products outside the shelf ranges", () => {
     { id: "3", raw: { assortmentText: "Säsong" } },
   ];
   expect(onlyPlayable(results).map((r) => r.id)).toEqual(["1", "3"]);
+});
+
+test("productToResult turns a catalogue product into a search result", () => {
+  const raw = { productId: "p1", productNumber: "1001", productNameBold: "Vin", producerName: "Prod", country: "Sverige", images: [{}] };
+  expect(productToResult(raw)).toEqual({
+    id: "p1",
+    name: "Vin",
+    producer: "Prod",
+    country: "Sverige",
+    image: "https://product-cdn.systembolaget.se/productimages/p1/p1_100.webp",
+    raw,
+  });
+  expect(productToResult({ productNumber: "2002" }).image).toBeNull();
 });

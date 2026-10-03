@@ -61,6 +61,17 @@ export function createThemeState({ unlockAll = UNLOCK_ALL_FROM_BUILD }: { unlock
       }
       return fresh;
     },
+    // The account's stats from the server (null when logged out).
+    stats: null as null | { currentStreak: number; longestStreak: number; finishedCount: number; unicorns: number },
+    setStats(stats: any) {
+      this.stats = stats;
+    },
+    // Queues "New theme unlocked" cards for themes the account already has.
+    queueAnnouncements(ids: ThemeId[]) {
+      const fresh = ids.filter((id) => !this.pendingUnlocks.includes(id));
+      this.pendingUnlocks = [...this.pendingUnlocks, ...fresh];
+      this.pendingSources = { ...this.pendingSources, ...Object.fromEntries(fresh.map((id) => [id, "board" as UnlockSource])) };
+    },
     applyStreak(longest: number) {
       this.longestStreak = Number.isFinite(longest) ? longest : 0;
       this.addUnlocks(unlocksForStreak(THEMES, { longestStreak: this.longestStreak, loggedIn: this.loggedIn }), "streak");

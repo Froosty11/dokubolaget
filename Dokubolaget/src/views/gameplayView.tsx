@@ -21,7 +21,6 @@ type BoardTag = {
 };
 
 type GameViewProps = {
-  score: number;
   onCellPressed: (cell: number) => void;
   topCategories: BoardTag[];
   sideCategories: BoardTag[];
@@ -53,7 +52,6 @@ type CellContentProps = {
 
 export function GameView(props: Readonly<GameViewProps>) {
   const {
-    score,
     onCellPressed,
     topCategories,
     sideCategories,

@@ -3,6 +3,38 @@
 
 import { isPlayable } from "./playable";
 
+export type SearchResult = {
+  id: string;
+  name: any;
+  producer: any;
+  country: any;
+  image: string | null;
+  raw: any;
+};
+
+// Systembolaget's thumbnail for a product, when it has a photo.
+function thumbnailUrl(product: any): string | null {
+  const hasImageMetadata = Array.isArray(product?.images) && product.images.length > 0;
+  if (!hasImageMetadata) return null;
+  const productId = String(product?.productId || product?.productNumber || "").trim();
+  if (!productId) return null;
+  return "https://product-cdn.systembolaget.se/productimages/" + productId + "/" + productId + "_100.webp";
+}
+
+// A catalogue product (from search or from the server's board) in the shape
+// the board and search list use.
+export function productToResult(product: any, index = 0): SearchResult {
+  const id = product?.productId || product?.productNumber || product?.id || String(index);
+  return {
+    id: String(id),
+    name: product?.productNameBold || product?.productNameThin || product?.productName || "Unknown",
+    producer: product?.producerName || product?.supplierName || "",
+    country: product?.country || product?.originLevel1 || "",
+    image: thumbnailUrl(product),
+    raw: product,
+  };
+}
+
 // Records a wrongly guessed product for a cell. Returns the same map when
 // nothing changes, so MobX doesn't see a pointless update.
 export function addRejected(map: Record<number, string[]>, cell: number, productId: string) {

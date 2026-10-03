@@ -1,90 +1,76 @@
 import { afterEach, expect, test } from "bun:test";
 import { observable } from "mobx";
 import { createThemeState } from "./theme/themeState";
-import { boardKey } from "./progress";
 import { connectToServer } from "./serverSync";
 
-const tags = (prefix: string) => [{ id: `${prefix}1` }, { id: `${prefix}2` }, { id: `${prefix}3` }];
 const realFetch = globalThis.fetch;
 afterEach(() => {
   globalThis.fetch = realFetch;
 });
 
 function makeModel() {
-  const base = {
-    account: null as any,
-    setAccount(account: any) {
-      this.account = account;
-    },
-    practiceBoard: false,
-    boardDate: "2026-10-01",
-    boardSettled: false,
-    topCategories: tags("bundledTop"),
-    sideCategories: tags("bundledSide"),
-    selectedProductsByCell: {} as Record<number, any>,
-    missesByCell: {} as Record<number, number>,
-    rejectedByCell: {} as Record<number, string[]>,
-    get filledCellCount() {
-      return Object.keys(this.selectedProductsByCell).length;
-    },
-    applyProgress(progress: any) {
-      this.selectedProductsByCell = progress.selectedProductsByCell;
-      this.missesByCell = progress.missesByCell;
-      this.rejectedByCell = progress.rejectedByCell;
-    },
-  };
+  const base = { account: null as any, setAccount(a: any) { this.account = a; } };
   return observable(Object.defineProperties(base, Object.getOwnPropertyDescriptors(createThemeState())) as any);
 }
 
-function stubServer(progressBoardKey: string) {
-  const writes: any[] = [];
-  globalThis.fetch = (async (url: string, init?: RequestInit) => {
+function stubServer(unlocked: string[], longestStreak: number) {
+  const calls: string[] = [];
+  globalThis.fetch = (async (url: string) => {
+    calls.push(String(url));
     if (String(url).endsWith("/api/me")) {
-      return new Response(
-        JSON.stringify({
-          user: { id: "u", email: "a@b.se", nickname: "A" },
-          prefs: { theme: null, unlockedThemes: [] },
-          progress: {
-            date: "2026-10-01",
-            boardKey: progressBoardKey,
-            data: { selectedProductsByCell: { 1: { id: "p1" }, 2: { id: "p2" } }, missesByCell: {}, rejectedByCell: {} },
-          },
-        }),
-      );
+      return new Response(JSON.stringify({
+        user: { id: "u", email: "a@b.se", nickname: "A" },
+        prefs: { theme: null, unlockedThemes: unlocked },
+        progress: null,
+        stats: { currentStreak: longestStreak, longestStreak, finishedCount: longestStreak, unicorns: 0 },
+      }));
     }
-    writes.push({ url: String(url), body: init?.body ? JSON.parse(String(init.body)) : null });
-    return new Response(JSON.stringify({ ok: true, prefs: { theme: "prislista", unlockedThemes: [] } }));
+    return new Response(JSON.stringify({ ok: true, prefs: { theme: "prislista", unlockedThemes: unlocked }, board: null, newUnlocks: [] }));
   }) as any;
-  return writes;
+  return calls;
 }
 
-const tick = (ms = 0) => new Promise((resolve) => setTimeout(resolve, ms));
-
-test("progress saved on another device is applied once the server's board arrives", async () => {
+test("the account's streak comes from the server's stats", async () => {
   const model = makeModel();
-  const serverKey = boardKey({ topCategories: tags("dailyTop"), sideCategories: tags("dailySide") });
-  stubServer(serverKey);
-  const sync = connectToServer(model);
+  stubServer(["modern"], 9);
+  const sync = connectToServer(model, { announced: { read: async () => ["modern"], write: async () => {} } });
   await sync.refresh();
-  expect(model.filledCellCount).toBe(0); // still on the bundled board
-  model.topCategories = tags("dailyTop");
-  model.sideCategories = tags("dailySide");
-  model.boardSettled = true;
-  await tick();
-  expect(model.filledCellCount).toBe(2);
+  expect(model.longestStreak).toBe(9);
+  expect(model.unlockedThemes).toContain("modern");
 });
 
-test("nothing is pushed for a board that isn't the settled daily board", async () => {
+test("earned themes the device hasn't announced are queued once", async () => {
   const model = makeModel();
-  const writes = stubServer("someOtherBoard");
-  const sync = connectToServer(model);
+  stubServer(["cyberwave", "modern"], 7);
+  let stored: string[] = ["cyberwave"];
+  const sync = connectToServer(model, { announced: { read: async () => stored, write: async (ids) => void (stored = ids) } });
   await sync.refresh();
-  model.selectedProductsByCell = { 5: { id: "p5" } };
-  await tick(900);
-  const mine = () => writes.filter((w) => w.url.endsWith("/api/me/progress") && w.body?.data?.selectedProductsByCell?.["5"]);
-  expect(mine()).toHaveLength(0);
-  model.boardSettled = true;
-  model.selectedProductsByCell = { 5: { id: "p5" }, 6: { id: "p6" } };
-  await tick(900);
-  expect(mine()).toHaveLength(1);
+  expect(model.shiftPendingUnlock()).toBe("modern");
+  expect(stored).toEqual(["cyberwave", "modern"]);
+});
+
+test("logging in claims the device's board", async () => {
+  const model = makeModel();
+  const calls = stubServer([], 0);
+  const sync = connectToServer(model, { announced: { read: async () => [], write: async () => {} } });
+  await sync.afterLogin();
+  expect(calls.some((c) => c.endsWith("/api/play/claim"))).toBe(true);
+});
+
+test("a theme announced during play isn't announced again on the next start", async () => {
+  const model = makeModel();
+  stubServer(["cyberwave"], 0);
+  let stored: string[] | null = [];
+  const announced = { read: async () => stored, write: async (ids: string[]) => void (stored = ids) };
+  const sync = connectToServer(model, { announced });
+  await sync.refresh();
+  expect(model.shiftPendingUnlock()).toBe("cyberwave");
+  // A finished board earns Speakeasy; the guess response announces it.
+  model.addUnlocks(["speakeasy"], "board");
+  expect(model.shiftPendingUnlock()).toBe("speakeasy");
+  await new Promise((resolve) => setTimeout(resolve, 0));
+  stubServer(["cyberwave", "speakeasy"], 0);
+  const next = makeModel();
+  await connectToServer(next, { announced }).refresh();
+  expect(next.shiftPendingUnlock()).toBeNull();
 });

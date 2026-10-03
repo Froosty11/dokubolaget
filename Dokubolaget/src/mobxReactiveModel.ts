@@ -2,7 +2,11 @@ import { observable, reaction, configure } from "mobx";
 import { model } from "./dokuModel";
 
 import { connectToServer } from "./serverSync"
-import { api } from "./api"
+import { api, setDeviceIdProvider } from "./api"
+import { createDeviceId } from "./deviceId"
+import { createOutbox } from "./play/outbox"
+import { createPlaySync } from "./play/playSync"
+import { gameDay } from "./gameDay"
 import { loadDeviceThemePrefs, saveDeviceThemePrefs } from "./theme/themeStorage"
 import { UNLOCK_ALL_FROM_BUILD } from "./theme/themeState"
 import { loadHapticsSetting } from "./theme/haptics"
@@ -11,13 +15,27 @@ import { registerClubTheme } from "./theme/registry"
 import { CLUB_THEME_ID, type ClubThemeId } from "./theme/packSchema"
 import AsyncStorage from "@react-native-async-storage/async-storage"
 import { AppState, Platform } from "react-native"
-import { todayDateKey } from "./dokuModel"
 import { boardKey, restoreProgress, serializeProgress } from "./progress"
 
 
 configure({ enforceActions: "never" });
 
 export const reactiveModel = observable(model);
+
+// Every API call carries this install's random ID, so a player who isn't
+// logged in still gets a score. Set before anything talks to the server.
+setDeviceIdProvider(createDeviceId(AsyncStorage));
+
+// Boards fetched from the server are cached, so a cold start offline still
+// gets today's real board.
+reactiveModel.boardCache = {
+    read: async (day) => {
+        const raw = await AsyncStorage.getItem(`dokubolaget.board.${day}`);
+        return raw ? JSON.parse(raw) : null;
+    },
+    write: async (day, board) =>
+        AsyncStorage.setItem(`dokubolaget.board.${day}`, JSON.stringify({ rows: board.rows, cols: board.cols })),
+};
 
 // The vibration switch is a device setting.
 loadHapticsSetting();
@@ -62,30 +80,43 @@ reaction(
     },
 );
 
-// Today's board progress survives reloads and app switches (device only).
+// Today's board progress survives reloads and app switches (a device cache of
+// the daily board; the server's record wins once play sync reaches it).
 const PROGRESS_KEY = "dokubolaget.progress";
 const canUseStorage = Platform.OS !== "web" || typeof window !== "undefined";
+const notDailyBoard = () => reactiveModel.playMode !== "daily" || reactiveModel.boardStatus !== "ready";
+const progressKey = () => `${reactiveModel.boardDate}|${boardKey(reactiveModel)}`;
+// Saves wait until saved progress for the board on screen has been read, so a
+// freshly cleared board never overwrites it first.
+let progressReadFor: string | null = null;
 
-// Whenever the board changes (startup, server board swap, new day), restore any
-// saved progress for exactly that board.
+// Whenever the board is ready (startup, a new day, back from the archive),
+// restore any saved progress for exactly that board.
 reaction(
-    () => boardKey(reactiveModel),
-    (key) => {
-        if (!canUseStorage || reactiveModel.practiceBoard || reactiveModel.filledCellCount > 0) return;
+    () => [progressKey(), reactiveModel.boardStatus, reactiveModel.playMode].join("#"),
+    () => {
+        if (!canUseStorage || notDailyBoard()) return;
+        const key = progressKey();
+        if (reactiveModel.filledCellCount > 0) {
+            progressReadFor = key;
+            return;
+        }
+        progressReadFor = null;
         AsyncStorage.getItem(PROGRESS_KEY)
             .then((raw) => {
-                const progress = restoreProgress(raw, reactiveModel.boardDate, key);
-                // Re-check after the async read: account progress may have
+                if (progressKey() !== key) return;
+                progressReadFor = key;
+                const progress = restoreProgress(raw, reactiveModel.boardDate, boardKey(reactiveModel));
+                // Re-check after the async read: the server's record may have
                 // landed meanwhile, and a smaller device copy mustn't replace it.
-                if (
-                    progress &&
-                    boardKey(reactiveModel) === key &&
-                    Object.keys(progress.selectedProductsByCell).length > reactiveModel.filledCellCount
-                ) {
+                if (progress && Object.keys(progress.selectedProductsByCell).length > reactiveModel.filledCellCount) {
                     reactiveModel.applyProgress(progress);
                 }
             })
-            .catch((error) => console.warn("Progress read failed:", error));
+            .catch((error) => {
+                progressReadFor = key;
+                console.warn("Progress read failed:", error);
+            });
     },
     { fireImmediately: true },
 );
@@ -97,7 +128,7 @@ reaction(
         reactiveModel.rejectedByCell,
     ],
     () => {
-        if (!canUseStorage || reactiveModel.practiceBoard) return;
+        if (!canUseStorage || notDailyBoard() || progressReadFor !== progressKey()) return;
         const raw = serializeProgress(reactiveModel.boardDate, boardKey(reactiveModel), {
             selectedProductsByCell: reactiveModel.selectedProductsByCell,
             missesByCell: reactiveModel.missesByCell,
@@ -107,21 +138,36 @@ reaction(
     },
 );
 
-// A new day while the app is open (or resumed from the background): start
-// the new board instead of staying on yesterday's.
+// Guesses go to the server through a queue kept on the device; the board is
+// reconciled with the server's record whenever it's ready or the app resumes.
+export const playSync = createPlaySync({ api, outbox: createOutbox(AsyncStorage), model: reactiveModel, today: () => gameDay() });
+if (typeof window !== "undefined") {
+    playSync.start().then(() => playSync.refresh());
+    reaction(() => [reactiveModel.boardStatus, reactiveModel.boardDate], () => playSync.refresh());
+}
+
+// A new day (04:00) while the app is open or resumed: start the new board
+// instead of staying on yesterday's.
 function rollOverIfNewDay() {
-    if (!reactiveModel.practiceBoard && reactiveModel.boardDate !== todayDateKey()) {
+    if (reactiveModel.playMode !== "test" && reactiveModel.boardDate !== gameDay()) {
         reactiveModel.generateGame();
     }
 }
+function onResume() {
+    rollOverIfNewDay();
+    // Started offline: try for the real board again now the connection may be back.
+    if (reactiveModel.playMode === "daily" && reactiveModel.boardStatus === "offline") reactiveModel.loadDailyBoard();
+    playSync.refresh();
+}
 AppState.addEventListener("change", (state) => {
-    if (state === "active") rollOverIfNewDay();
+    if (state === "active") onResume();
 });
 if (Platform.OS === "web" && typeof document !== "undefined") {
     document.addEventListener("visibilitychange", () => {
-        if (document.visibilityState === "visible") rollOverIfNewDay();
+        if (document.visibilityState === "visible") onResume();
     });
 }
+if (typeof window !== "undefined") setInterval(rollOverIfNewDay, 60_000);
 
 if (typeof window !== "undefined") {
     api.config()
@@ -135,26 +181,20 @@ if (typeof window !== "undefined") {
 if (__DEV__ && typeof window !== "undefined") {
     (window as any).__doku = reactiveModel; // screenshot tool + console debugging
 }
-reaction(checkACB,sideEffectACB);
-
 // Account sync with the server. Starts after the device's theme prefs are
-// read (below), so the account's theme wins over the device default.
-export const serverSync = connectToServer(reactiveModel)
+// read (above), so the account's theme wins over the device default.
+const ANNOUNCED_KEY = "dokubolaget.announcedUnlocks";
+export const serverSync = connectToServer(reactiveModel, {
+    announced: {
+        read: async () => {
+            const raw = await AsyncStorage.getItem(ANNOUNCED_KEY);
+            const parsed = raw ? JSON.parse(raw) : null;
+            return Array.isArray(parsed) ? parsed : null;
+        },
+        write: async (ids) => AsyncStorage.setItem(ANNOUNCED_KEY, JSON.stringify(ids)),
+    },
+});
 
-// Pull today's board from the server on app start. Falls back silently to the
-// local generated-boards.json pick already in reactiveModel.topCategories /
-// sideCategories if the server has no board for today.
+// Today's board: the server's, else the device's cached copy, else the
+// bundled pick played offline as practice. Never swapped once shown.
 reactiveModel.loadDailyBoard();
-
-
-function checkACB() {
-    //TODO
-    // return myModel.currentCell ?
-    return true;
-}
-
-function sideEffectACB() {
-    //TODO
-    // myModel.currentCellEffect() ?
-
-}

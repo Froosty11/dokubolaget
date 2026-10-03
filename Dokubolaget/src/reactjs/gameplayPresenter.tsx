@@ -26,7 +26,6 @@ function todayKey() {
 
 type GameplayProps = {
   model: {
-    score: number;
     setCurrentCell: (cell: number) => void
     topCategories: BoardTag[]
     sideCategories: BoardTag[]
@@ -211,7 +210,6 @@ const Gameplay = observer(function GameRender({ model }: GameplayProps) {
             server's one when that lookup finishes), so don't gate the
             game on the background refresh — on web it takes seconds. */}
         <GameView
-          score={model.score}
           onCellPressed={handleCellPress}
           topCategories={model.topCategories}
           sideCategories={model.sideCategories}

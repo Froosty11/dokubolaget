@@ -98,8 +98,6 @@ export const api = {
   setNickname: (nickname: string) => request<{ user: Account }>("PATCH", "/api/me", { nickname }),
   putPrefs: (prefs: { theme: string; unlockedThemes: string[] }) =>
     request<{ prefs: ServerPrefs }>("PUT", "/api/me/prefs", prefs),
-  putProgress: (progress: { date: string; boardKey: string; data: unknown }) =>
-    request<{ ok: true }>("PUT", "/api/me/progress", progress),
   board: async (date: string) => {
     try {
       return await request<{ rows: any[]; cols: any[]; counts?: number[]; score?: number }>("GET", `/api/boards/${date}`);

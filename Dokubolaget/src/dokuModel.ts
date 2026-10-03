@@ -11,22 +11,23 @@ import { api, type Account } from "./api";
 import { createThemeState } from "./theme/themeState";
 import { THEMES } from "./theme/registry";
 import { unlocksForBoard } from "./theme/unlocks";
-import { addRejected, cellUsingProduct, onlyPlayable, withImagesOnly } from "./searchHelpers";
+import {
+  addRejected,
+  cellUsingProduct,
+  onlyPlayable,
+  productToResult,
+  withImagesOnly,
+  type SearchResult,
+} from "./searchHelpers";
 import { boardKey, type BoardProgress } from "./progress";
+import { gameDay } from "./gameDay";
+import { buildShareText as composeShareText } from "./shareText";
+import type { BoardResult, GuessResponse } from "./play/types";
 
 export type BoardTag = {
   id: string;
   label: string;
   family: string;
-};
-
-type SearchResult = {
-  id: string;
-  name: any;
-  producer: any;
-  country: any;
-  image: string | null;
-  raw: any;
 };
 
 type GeneratedBoard = {
@@ -43,8 +44,10 @@ type GeneratedBoardFile = {
 
 const generatedBoardsFile = generatedBoards as GeneratedBoardFile;
 
+// The game day (04:00 to 04:00 Stockholm). Kept under this name for the
+// existing importers.
 export function todayDateKey() {
-  return new Date().toISOString().slice(0, 10);
+  return gameDay();
 }
 
 // Fallback when the server has no board for the day (offline, new install
@@ -63,7 +66,7 @@ function pickLocalBoardForToday() {
     };
   }
 
-  const todayKey = todayDateKey();
+  const todayKey = gameDay();
   let hash = 0;
   for (let index = 0; index < todayKey.length; index += 1) {
     const codePoint = todayKey.codePointAt(index) ?? 0;
@@ -79,7 +82,7 @@ function pickLocalBoardForToday() {
 
 // Test hook for trying out generated boards locally: open the web app with
 // ?board=<n> (1-based) to play a specific bundled board, or ?board=random.
-// When set, the server's daily board is not loaded over it.
+// When set, the server's daily board is not loaded and nothing is sent.
 function readBoardOverride(boardCount: number): number | null {
   if (typeof window === "undefined" || !window.location || boardCount === 0) {
     return null;
@@ -109,6 +112,9 @@ function pickInitialBoard() {
 
 const initialBoardPick = pickInitialBoard();
 
+// The server's verdict on a solved cell.
+export type CellInfo = { score: number | null; share: number | null; unicorn: boolean };
+
 export type GuessFeedback = {
   kind: "correct" | "near" | "miss";
   isCorrect: boolean;
@@ -125,31 +131,6 @@ function doesProductMatchTag(product: any, tag: BoardTag | undefined) {
   return doesProductMatchTagId(product, String(tag.id || ""));
 }
 
-function getProductThumbnailUrlACB(product: any) {
-  const hasImageMetadata =
-    Array.isArray(product?.images) && product.images.length > 0;
-
-  if (!hasImageMetadata) {
-    return null;
-  }
-
-  const productId = String(
-    product?.productId || product?.productNumber || "",
-  ).trim();
-
-  if (!productId) {
-    return null;
-  }
-
-  return (
-    "https://product-cdn.systembolaget.se/productimages/" +
-    productId +
-    "/" +
-    productId +
-    "_100.webp"
-  );
-}
-
 /* 
    The Model keeps the state of the application (Application State). 
    It is an abstract object, i.e. it knows nothing about graphics and interaction.
@@ -161,62 +142,93 @@ const modelBody = {
   sideCategories: initialBoardPick.board.rows,
   currentBoardIndex: initialBoardPick.boardIndex,
   bundledBoardCount,
-  boardSource: "local" as "local" | "server",
-  // True when ?board= picked a test board. Progress on it is never saved, so
-  // it can't overwrite today's real board in the player's profile.
-  practiceBoard: boardOverrideIndex != null,
+  // "loading" until today's board is known; "offline" when the server and
+  // the device's cache had nothing, so the bundled board is played as practice.
+  boardStatus: "loading" as "loading" | "ready" | "offline",
+  // "test" when ?board= picked a bundled board; "archive" while practising a
+  // past day. Only the daily board scores.
+  playMode: (boardOverrideIndex != null ? "test" : "daily") as "daily" | "archive" | "test",
+  // The past day being practised in archive mode.
+  practiceDay: null as string | null,
+  // True for any board whose progress isn't the player's daily record (test,
+  // archive or offline). Device progress isn't saved for it.
+  get practiceBoard() {
+    return this.playMode !== "daily" || this.boardStatus === "offline";
+  },
   gameCells: [1, 2, 3, 4, 5, 6, 7, 8, 9],
   selectedProductsByCell: {} as Record<number, any>,
-  score: 0,
-  scoreHistory: [] as Array<{ date: string; score: number }>,
+  // The server's verdict per solved cell (score, share of players, unicorn).
+  cellInfo: {} as Record<number, CellInfo>,
+  // The server's last word on this board.
+  serverBoard: null as BoardResult | null,
+  // Set when a new day replaced an unfinished board; the board shows a toast.
+  rolloverNotice: null as { score: number } | null,
+  // A short message when the server overruled a pick.
+  syncNotice: null as string | null,
+  // Play sync (play/playSync.ts) listens here for every judged guess.
+  guessListener: null as ((g: { cell: number; productNumber: string }) => void) | null,
+  // Called by mobxReactiveModel with the device's cache of fetched boards.
+  boardCache: null as null | {
+    read(day: string): Promise<{ rows: any[]; cols: any[] } | null>;
+    write(day: string, board: { rows: any[]; cols: any[] }): Promise<void>;
+  },
+  get boardScore() {
+    return Object.values(this.cellInfo as Record<number, CellInfo>).reduce((sum, info) => sum + (info.score ?? 0), 0);
+  },
+  get boardMisses() {
+    return Object.values(this.missesByCell as Record<number, number>).reduce((sum, n) => sum + Number(n || 0), 0);
+  },
+  get finished() {
+    return this.filledCellCount === 9;
+  },
 
-  // Pulls today's board from the server (stored by the nightly pipeline) and
-  // replaces the locally-picked board. No-op if the server has none.
-  // Safe to call repeatedly; later calls just overwrite topCategories/sideCategories.
-  async loadDailyBoard() {
-    if (boardOverrideIndex != null) {
-      console.log("[BOARD] ?board override active; skipping the server board");
-      resolvePromise(Promise.resolve("local"), this.boardLoadPromiseState);
-      this.boardSettled = true;
-      return;
-    }
-    this.boardSettled = false;
-    const dateKey = todayDateKey();
-    console.log("[BOARD] loadDailyBoard start, dateKey=" + dateKey);
-    const boardPromise = api.board(dateKey).catch((error) => {
-      console.warn("[BOARD] board fetch failed:", error?.message ?? error);
-      return null;
-    });
-    // SuspenseView treats a null result as "still loading", so a missing
-    // server board would spin forever. Resolve the tracked promise with
-    // the source label instead: null → we keep the bundled local board.
-    resolvePromise(
-      boardPromise.then((board) => (board ? "server" : "local")),
-      this.boardLoadPromiseState,
-    );
-
-    const board = await boardPromise;
-    if (!board) {
-      this.boardSettled = true;
-      console.log(
-        "[BOARD] no board for " + dateKey +
-          " on the server — staying on local fallback (boardSource=" + this.boardSource + ")",
-      );
-      return;
-    }
-    // Swapping in the daily board: progress made on the bundled fallback
-    // board doesn't belong to it. Saved progress for this board is restored
-    // by the persistence reaction (mobxReactiveModel.ts).
-    const before = boardKey(this);
+  setBoard(board: { rows: any[]; cols: any[] }, status: "ready" | "offline") {
+    const changed = boardKey({ topCategories: board.cols, sideCategories: board.rows }) !== boardKey(this);
     this.topCategories = board.cols;
     this.sideCategories = board.rows;
-    this.boardSource = "server";
-    if (boardKey(this) !== before) this.clearProgress();
+    if (changed) {
+      this.clearProgress();
+      this.cellInfo = {};
+    }
+    this.boardStatus = status;
     this.boardSettled = true;
   },
 
-  // True once today's board is final (the server's, or the bundled fallback
-  // when the server has none). Account progress waits for it.
+  // Loads today's board without swapping it later: the server's board, else
+  // the one cached on the device, else the bundled pick played offline as
+  // practice. Saved progress for it is restored by mobxReactiveModel.ts.
+  async loadDailyBoard() {
+    if (this.playMode === "test") {
+      this.boardStatus = "ready";
+      this.boardSettled = true;
+      return;
+    }
+    const day = gameDay();
+    this.boardDate = day;
+    this.boardStatus = "loading";
+    this.boardSettled = false;
+    const board = await api.board(day).catch((error) => {
+      console.warn("[BOARD] board fetch failed:", error?.message ?? error);
+      return null;
+    });
+    if (day !== this.boardDate) return; // a rollover started meanwhile
+    if (board) {
+      this.boardCache?.write(day, board).catch(() => {});
+      this.setBoard(board, "ready");
+      return;
+    }
+    const cached = await this.boardCache?.read(day).catch(() => null);
+    if (day !== this.boardDate) return;
+    if (cached) {
+      this.setBoard(cached, "ready");
+      return;
+    }
+    // Offline with nothing cached: play the bundled board as practice.
+    this.setBoard(pickLocalBoardForToday().board, "offline");
+  },
+
+  // True once today's board is final (the server's, the cached one, or the
+  // bundled fallback when offline).
   boardSettled: false,
 
   // "Support Dokubolaget" page (Ko-fi), when the server has one configured.
@@ -243,8 +255,8 @@ const modelBody = {
     this.account = account;
   },
 
-  // The UTC day this board belongs to; the app rolls over when it changes.
-  boardDate: todayDateKey(),
+  // The game day this board belongs to; the app rolls over when it changes.
+  boardDate: gameDay(),
 
   // Set when progress was restored from storage, so the presenter doesn't
   // celebrate a board that was finished earlier. The presenter clears it.
@@ -337,12 +349,16 @@ const modelBody = {
       asNumber,
     );
     if (usedIn != null) {
-      const reason = `Already used in ${"ABC"[(usedIn - 1) % 3]}${Math.floor((usedIn - 1) / 3) + 1}.`;
+      const usedRow = this.sideCategories[Math.floor((usedIn - 1) / 3)];
+      const usedCol = this.topCategories[(usedIn - 1) % 3];
+      const reason = `Already used for ${formatTagLabel(usedRow)} × ${formatTagLabel(usedCol)}.`;
       this.lastFeedback = { kind: "miss", isCorrect: false, message: reason, cell: asNumber };
       return { isValid: false, kind: "used" as const, reason };
     }
 
     const validation = this.validateCellResult(cell, result);
+    // Every judged guess (correct, near or miss) goes to the server too.
+    const productNumber = String(result?.raw?.productNumber ?? "");
 
     if (!validation.isValid) {
       if (validation.kind === "near" || validation.kind === "miss") {
@@ -355,6 +371,7 @@ const modelBody = {
           asNumber,
           String(result?.id ?? result?.raw?.productId ?? ""),
         );
+        if (productNumber) this.guessListener?.({ cell: asNumber, productNumber });
       }
       this.lastFeedback = {
         kind: validation.kind === "near" ? "near" : "miss",
@@ -382,6 +399,7 @@ const modelBody = {
       message: "",
       cell: asNumber,
     };
+    if (productNumber) this.guessListener?.({ cell: asNumber, productNumber });
 
     return {
       isValid: true,
@@ -394,60 +412,145 @@ const modelBody = {
     return Object.keys(this.selectedProductsByCell).length;
   },
 
-  // Wordle-style grid for sharing a finished (or partial) board.
-  buildShareText() {
-    const rows: string[] = [];
-    for (let row = 0; row < 3; row += 1) {
-      let line = "";
-      for (let col = 0; col < 3; col += 1) {
-        const cell = row * 3 + col + 1;
-        if (!this.selectedProductsByCell[cell]) line += "⬜";
-        else line += (this.missesByCell[cell] || 0) === 0 ? "🟩" : "🟨";
+  // The server's record wins, except for cells with guesses still on their way.
+  applyServerBoard(board: BoardResult, pendingCells: Set<number>) {
+    const products = { ...this.selectedProductsByCell };
+    const info: Record<number, CellInfo> = {};
+    const misses = { ...this.missesByCell };
+    let reverted = false;
+    let added = false;
+    for (const cell of board.cells) {
+      if (pendingCells.has(cell.cell)) {
+        if (this.cellInfo[cell.cell]) info[cell.cell] = this.cellInfo[cell.cell];
+        continue;
       }
-      rows.push(line);
+      if (cell.productNumber && cell.product) {
+        if (String(products[cell.cell]?.raw?.productNumber ?? "") !== cell.productNumber) {
+          if (!products[cell.cell]) added = true;
+          products[cell.cell] = productToResult(cell.product);
+        }
+        info[cell.cell] = { score: cell.score, share: cell.share, unicorn: cell.unicorn };
+      } else if (products[cell.cell]) {
+        delete products[cell.cell];
+        reverted = true;
+      }
+      misses[cell.cell] = Math.max(Number(misses[cell.cell] || 0), cell.misses);
     }
+    // Cells filled from the account (another device) aren't celebrated here.
+    if (added && Object.keys(products).length !== this.filledCellCount) this.justRestored = true;
+    this.selectedProductsByCell = products;
+    this.cellInfo = info;
+    this.missesByCell = misses;
+    this.serverBoard = board;
+    if (reverted) this.syncNotice = "Couldn't verify a pick, so that cell is empty again. Try another bottle.";
+  },
+
+  applyGuessResponse(cell: number, res: GuessResponse) {
+    if (res.verdict === "correct") {
+      this.cellInfo = { ...this.cellInfo, [cell]: { score: res.cell.score, share: res.cell.share, unicorn: res.cell.unicorn } };
+      // The server accepted a pick this device judged wrong: its verdict wins.
+      if (!this.selectedProductsByCell[cell] && res.cell.product) {
+        this.selectedProductsByCell = { ...this.selectedProductsByCell, [cell]: productToResult(res.cell.product) };
+      }
+    } else if (
+      this.selectedProductsByCell[cell] &&
+      String(this.selectedProductsByCell[cell]?.raw?.productNumber ?? "") === String(res.cell?.productNumber ?? "__none")
+    ) {
+      // already solved with this product: keep it
+    } else if (this.selectedProductsByCell[cell] && !res.cell?.productNumber) {
+      const next = { ...this.selectedProductsByCell };
+      delete next[cell];
+      this.selectedProductsByCell = next;
+      this.syncNotice =
+        res.reason === "not_playable"
+          ? "That bottle isn't on the regular shelves, so it doesn't count. Try another."
+          : "Couldn't verify that pick. Try another bottle.";
+    }
+    this.serverBoard = res.board;
+  },
+
+  // Archive practice: the daily board is put aside and restored on exit.
+  dailySnapshot: null as null | {
+    top: any[];
+    side: any[];
+    products: Record<number, any>;
+    misses: Record<number, number>;
+    rejected: Record<number, string[]>;
+    info: any;
+  },
+  enterArchive(day: string, board: { rows: any[]; cols: any[] }, practice: BoardResult) {
+    if (this.playMode === "daily") {
+      this.dailySnapshot = {
+        top: this.topCategories,
+        side: this.sideCategories,
+        products: this.selectedProductsByCell,
+        misses: this.missesByCell,
+        rejected: this.rejectedByCell,
+        info: this.cellInfo,
+      };
+    }
+    this.playMode = "archive";
+    this.practiceDay = day;
+    this.topCategories = board.cols;
+    this.sideCategories = board.rows;
+    this.clearProgress();
+    this.cellInfo = {};
+    this.applyServerBoard(practice, new Set());
+    this.justRestored = true;
+  },
+  exitArchive() {
+    const snap = this.dailySnapshot;
+    this.playMode = "daily";
+    this.practiceDay = null;
+    if (snap) {
+      this.topCategories = snap.top;
+      this.sideCategories = snap.side;
+      this.selectedProductsByCell = snap.products;
+      this.missesByCell = snap.misses;
+      this.rejectedByCell = snap.rejected;
+      this.cellInfo = snap.info;
+      this.justRestored = true;
+    }
+    this.dailySnapshot = null;
+  },
+
+  // Share text for a finished (or partial) board, coloured by cell score.
+  buildShareText() {
     const origin =
       typeof window !== "undefined" && window.location?.origin
         ? window.location.origin
         : "https://dokubolaget.se";
-    return [
-      `Dokubolaget ${todayDateKey()} ${this.filledCellCount}/9`,
-      ...rows,
-      origin,
-    ].join("\n");
+    const cells = this.gameCells.map((cell) => ({
+      solved: Boolean(this.selectedProductsByCell[cell]),
+      score: this.cellInfo[cell]?.score ?? null,
+      unicorn: this.cellInfo[cell]?.unicorn ?? false,
+    }));
+    return composeShareText({
+      day: this.practiceDay ?? this.boardDate,
+      score: this.boardScore,
+      misses: this.boardMisses,
+      cells,
+      url: origin,
+    });
   },
 
   clearLastFeedback() {
     this.lastFeedback = null;
   },
 
+  // A new game day: note an unfinished board's score, then load the new board.
   generateGame() {
-    this.boardDate = todayDateKey();
-    if (this.score > 0) {
-      this.scoreHistory = [
-        ...this.scoreHistory,
-        { date: new Date().toISOString().slice(0, 10), score: this.score },
-      ];
+    if (this.playMode === "archive") this.exitArchive();
+    if (this.boardStatus === "ready" && this.filledCellCount > 0 && !this.finished) {
+      this.rolloverNotice = { score: this.boardScore };
     }
-
-    this.gameCells = [1, 2, 3, 4, 5, 6, 7, 8, 9];
     this.selectedProductsByCell = {};
     this.missesByCell = {};
     this.rejectedByCell = {};
-    this.score = 0;
-
-    const pickedBoard = pickInitialBoard();
-    this.currentBoardIndex = pickedBoard.boardIndex;
-    this.topCategories = pickedBoard.board.cols;
-    this.sideCategories = pickedBoard.board.rows;
-    this.boardSource = "local";
-
-    // Refresh from the server in the background; updates topCategories/sideCategories
-    // if the seeded daily board differs from the local fallback.
+    this.cellInfo = {};
+    this.serverBoard = null;
     this.loadDailyBoard();
   },
-
-  boardLoadPromiseState: {},
 
   /* ===== Search related props ===== */
   searchParams: {} as Record<string, any>,
@@ -466,31 +569,7 @@ const modelBody = {
       .filter(function isProductACB(product: any) {
         return Boolean(product?.productNumber || product?.productNameBold);
       })
-      .map(function mapProductACB(product: any, index: number) {
-        const id =
-          product?.productId ||
-          product?.productNumber ||
-          product?.id ||
-          String(index);
-
-        const name =
-          product?.productNameBold ||
-          product?.productNameThin ||
-          product?.productName ||
-          "Unknown";
-
-        const producer = product?.producerName || product?.supplierName || "";
-        const country = product?.country || product?.originLevel1 || "";
-
-        return {
-          id: String(id),
-          name,
-          producer,
-          country,
-          image: getProductThumbnailUrlACB(product),
-          raw: product,
-        };
-      });
+      .map((product: any, index: number) => productToResult(product, index));
   },
 
   doSearch(params: any) {
@@ -518,7 +597,8 @@ const modelBody = {
   },
 
   // Called once when a real (non-practice) board reaches 9/9. Returns the
-  // themes it newly unlocked.
+  // themes it newly unlocked. Logged-out players earn them on the device; for
+  // accounts the server grants the same ones (addUnlocks ignores duplicates).
   recordBoardComplete(this: any) {
     if (this.practiceBoard) return [];
     const misses = Object.values(this.missesByCell as Record<number, number>).reduce(
