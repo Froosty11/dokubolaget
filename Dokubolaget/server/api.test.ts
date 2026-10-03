@@ -3,32 +3,40 @@ import { openDb } from "./db";
 import { putBoard } from "./boards";
 import { createApi, type ApiRequest } from "./api";
 import { join } from "path";
+import { createCatalog } from "./catalog";
 import { createCode } from "./codes";
+import { createPlay } from "./play";
 import { loadThemePacks } from "./themePacks";
 
 let db: ReturnType<typeof openDb>;
 let mails: Array<{ to: string; link: string }>;
 let api: ReturnType<typeof createApi>;
+let clock: Date;
 const TODAY = "2026-10-01";
 
 beforeEach(() => {
   db = openDb(":memory:");
   mails = [];
+  clock = new Date(`${TODAY}T12:00:00Z`);
+  const play = createPlay({ db, catalog: createCatalog({ path: join(import.meta.dir, "fixtures", "products.json") }), now: () => clock, cacheMs: 0 });
   api = createApi({
     db,
+    play,
     mail: { sendReset: async (to, link) => void mails.push({ to, link }) },
     sbKey: { get: async () => "abc123" },
-    now: () => new Date(`${TODAY}T12:00:00Z`),
+    now: () => clock,
     trustProxy: false,
     devOrigins: false,
     publicUrl: "https://dokubolaget.se",
   });
 });
 
-function req(method: string, path: string, body?: unknown, extra: Partial<ApiRequest> & { cookie?: string } = {}): ApiRequest {
+function req(method: string, pathWithQuery: string, body?: unknown, extra: Partial<ApiRequest> & { cookie?: string } = {}): ApiRequest {
+  const [path, query = ""] = pathWithQuery.split("?");
   return {
     method,
     path,
+    query,
     ip: extra.ip ?? "1.2.3.4",
     body: body === undefined ? "" : JSON.stringify(body),
     headers: {
@@ -132,12 +140,12 @@ describe("password reset", () => {
 describe("account data", () => {
   test("prefs validate theme ids and merge unlocks", async () => {
     const cookie = await signedIn();
-    await api(req("PUT", "/api/me/prefs", { theme: "cyberwave", unlockedThemes: ["cyberwave", "speakeasy"] }, { cookie }));
-    const res = await api(req("PUT", "/api/me/prefs", { theme: "prislista", unlockedThemes: ["modern", "bogus"] }, { cookie }));
-    expect(json(res).prefs).toEqual({ theme: "prislista", unlockedThemes: ["cyberwave", "speakeasy", "modern"] });
+    await api(req("PUT", "/api/me/prefs", { theme: "midsommar", unlockedThemes: ["prislista"] }, { cookie }));
+    const res = await api(req("PUT", "/api/me/prefs", { theme: "prislista", unlockedThemes: ["midsommar", "bogus"] }, { cookie }));
+    expect(json(res).prefs).toEqual({ theme: "prislista", unlockedThemes: ["prislista", "midsommar"] });
     const bad = await api(req("PUT", "/api/me/prefs", { theme: "hacker", unlockedThemes: [] }, { cookie }));
     expect(bad.status).toBe(400);
-    expect(json(await api(req("GET", "/api/me", undefined, { cookie }))).prefs.unlockedThemes).toContain("speakeasy");
+    expect(json(await api(req("GET", "/api/me", undefined, { cookie }))).prefs.unlockedThemes).toContain("midsommar");
   });
   test("progress round-trips for today only", async () => {
     const cookie = await signedIn();
@@ -165,7 +173,7 @@ describe("boards and misc", () => {
   });
   test("sb-key and leaderboard", async () => {
     expect(json(await api(req("GET", "/api/sb-key")))).toEqual({ key: "abc123" });
-    expect(json(await api(req("GET", "/api/leaderboard")))).toEqual({ rows: [] });
+    expect(json(await api(req("GET", "/api/leaderboard?period=today")))).toEqual({ period: "today", provisional: true, rows: [], me: null });
   });
 });
 
@@ -326,11 +334,11 @@ describe("club themes and scanning", () => {
     expect((await api(req("GET", "/api/themes/club-ghost"))).status).toBe(404);
   });
 
-  test("saved unlocks keep known club themes and drop unknown ones", async () => {
+  test("saved unlocks keep known club themes and drop unknown and earned ones", async () => {
     const cookie = await signedIn();
     await api(req("PUT", "/api/me/prefs", { theme: "club-sample", unlockedThemes: ["club-sample", "club-ghost", "cyberwave"] }, { cookie }));
     const prefs = json(await api(req("GET", "/api/me", undefined, { cookie }))).prefs;
-    expect(prefs.unlockedThemes).toEqual(["cyberwave", "club-sample"]);
+    expect(prefs.unlockedThemes).toEqual(["club-sample"]);
     expect(prefs.theme).toBe("club-sample");
   });
 });
@@ -342,5 +350,96 @@ describe("contact email", () => {
     expect(json(await make("e@dokubolaget.se")(req("GET", "/api/config"))).contactEmail).toBe("e@dokubolaget.se");
     expect(json(await make("not an email")(req("GET", "/api/config"))).contactEmail).toBeNull();
     expect(json(await make()(req("GET", "/api/config"))).contactEmail).toBeNull();
+  });
+});
+
+describe("play", () => {
+  const DEVICE = "0b6f2a54-4c1e-4a8b-9d3e-1f2a3b4c5d6e";
+  const T = (id: string) => ({ id, label: id, family: "f" });
+  const BOARD = {
+    rows: [T("Country:Spanien"), T("Country:Frankrike"), T("Country:Sverige")],
+    cols: [T("Beverage:Rött vin"), T("Beverage:Vitt vin"), T("Beverage:Rosévin")],
+    counts: [[200, 50, 10], [100, 80, 5], [20, 30, 5]],
+  };
+  const dev = { headers: { "x-doku-device": DEVICE } };
+  beforeEach(() => {
+    putBoard(db, "2026-09-30", BOARD);
+    putBoard(db, TODAY, BOARD);
+  });
+
+  test("a guess needs a device id or a session", async () => {
+    const res = await api(req("POST", "/api/play/guess", { id: "g1", day: TODAY, cell: 1, productNumber: "1001" }));
+    expect([res.status, json(res).error]).toEqual([400, "no_player"]);
+    const bad = await api(req("POST", "/api/play/guess", { id: "g1", day: TODAY, cell: 1, productNumber: "1001" }, { headers: { "x-doku-device": "not-a-uuid" } }));
+    expect(bad.status).toBe(400);
+  });
+
+  test("a correct guess scores and shows on today's board", async () => {
+    const res = json(await api(req("POST", "/api/play/guess", { id: "g1", day: TODAY, cell: 1, productNumber: "1001" }, dev)));
+    expect(res.verdict).toBe("correct");
+    expect(res.cell).toMatchObject({ cell: 1, productNumber: "1001", score: 75, unicorn: true });
+    expect(res.board).toMatchObject({ solved: 1, score: 75 });
+    const today = json(await api(req("GET", "/api/play/today", undefined, dev)));
+    expect(today.cells[0].product.productNameBold).toBe("Rioja Test");
+  });
+
+  test("bad input is a 400; an ended day is day_over", async () => {
+    for (const body of [{ id: "g", day: TODAY, cell: 0, productNumber: "1001" }, { id: "g", day: TODAY, cell: 1, productNumber: "abc" }, { day: TODAY, cell: 1, productNumber: "1001" }]) {
+      expect((await api(req("POST", "/api/play/guess", body, dev))).status).toBe(400);
+    }
+    const ended = await api(req("POST", "/api/play/guess", { id: "g", day: "2026-09-30", cell: 1, productNumber: "1001" }, dev));
+    expect(json(ended).error).toBe("day_over");
+  });
+
+  test("the catalogue being down is a 503 the app can retry (review focus 3)", async () => {
+    const down = createApi({
+      db,
+      play: createPlay({ db, catalog: createCatalog({ path: null, lookup: async () => { throw new Error("down"); } }), now: () => clock }),
+      mail: { sendReset: async () => {} },
+      sbKey: { get: async () => "k" },
+      now: () => clock,
+      publicUrl: "https://dokubolaget.se",
+    });
+    const res = await down(req("POST", "/api/play/guess", { id: "g", day: TODAY, cell: 1, productNumber: "1001" }, dev));
+    expect([res.status, json(res).error]).toEqual([503, "catalog_unavailable"]);
+  });
+
+  test("answers for today unlock once your board is finished", async () => {
+    const res = await api(req("GET", `/api/play/answers?day=${TODAY}`, undefined, dev));
+    expect([res.status, json(res).error]).toEqual([403, "not_finished"]);
+    const past = await api(req("GET", "/api/play/answers?day=2026-09-30", undefined, dev));
+    expect(json(past).answers).toHaveLength(9);
+  });
+
+  test("claim after login moves the device's board and /api/me has stats", async () => {
+    await api(req("POST", "/api/play/guess", { id: "g1", day: TODAY, cell: 1, productNumber: "1001" }, dev));
+    const cookie = await signedIn();
+    const claimed = json(await api(req("POST", "/api/play/claim", {}, { cookie, ...dev })));
+    expect(claimed.board.cells[0].productNumber).toBe("1001");
+    const me = json(await api(req("GET", "/api/me", undefined, { cookie })));
+    expect(me.stats).toEqual({ currentStreak: 0, longestStreak: 0, finishedCount: 0, unicorns: 1 });
+  });
+
+  test("prefs can no longer claim earned themes", async () => {
+    const cookie = await signedIn();
+    const res = json(await api(req("PUT", "/api/me/prefs", { theme: null, unlockedThemes: ["cyberwave", "modern", "midsommar"] }, { cookie })));
+    expect(res.prefs.unlockedThemes).not.toContain("cyberwave");
+    expect(res.prefs.unlockedThemes).not.toContain("modern");
+  });
+
+  test("leaderboard periods and the archive", async () => {
+    expect((await api(req("GET", "/api/leaderboard?period=nonsense"))).status).toBe(400);
+    const month = json(await api(req("GET", "/api/archive?month=2026-09", undefined, dev)));
+    expect(month.days.map((d: any) => d.day)).toEqual(["2026-09-30"]);
+    const day = json(await api(req("GET", "/api/archive/2026-09-30", undefined, dev)));
+    expect(day.board.rows).toHaveLength(3);
+    expect(day.answers).toHaveLength(9);
+    expect((await api(req("GET", `/api/archive/${TODAY}`, undefined, dev))).status).toBe(404);
+  });
+
+  test("the device header is allowed through CORS in development", async () => {
+    const devApi = createApi({ db, play: createPlay({ db, catalog: createCatalog({ path: null }) }), mail: { sendReset: async () => {} }, sbKey: { get: async () => "k" }, devOrigins: true });
+    const res = await devApi({ method: "OPTIONS", path: "/api/play/guess", headers: { origin: "http://localhost:8081" }, body: "", ip: "1" });
+    expect(res.headers["access-control-allow-headers"]).toContain("x-doku-device");
   });
 });

@@ -396,6 +396,7 @@ async function serveApi(req, res, requestUrl) {
   const response = await api({
     method: req.method || "GET",
     path: requestUrl.pathname,
+    query: requestUrl.search.slice(1),
     headers: req.headers,
     body: Buffer.concat(chunks).toString("utf8"),
     ip: clientKey(req),

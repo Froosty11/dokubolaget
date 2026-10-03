@@ -1,13 +1,18 @@
 import type { Database } from "bun:sqlite";
+import { addDays, gameDay } from "../src/gameDay";
 import { THEME_IDS } from "../src/theme/types";
 import {
   ApiError, RateLimiter, SESSION_DAYS, createResetToken, deleteAccount, login, logout, resetPassword, sessionUser, setNickname, signup,
   type SessionUser,
 } from "./auth";
 import { getBoard } from "./boards";
+import { CatalogUnavailable } from "./catalog";
 import { normalizeCode, redeemCode } from "./codes";
 import { nowIso } from "./db";
+import type { Play } from "./play";
+import { archiveMonth, leaderboard, userStats, type Period } from "./stats";
 import { getLogo, getPack, getPackSummary, knownClubIds, listPacks } from "./themePacks";
+import { EARNED_THEMES, deviceHistoryUnlocks, earnedUnlocks, grantUnlocks } from "./unlocks";
 
 export type ApiRequest = {
   method: string;
@@ -15,11 +20,14 @@ export type ApiRequest = {
   headers: Record<string, string | undefined>;
   body: string;
   ip: string;
+  // The raw query string, without the leading "?".
+  query?: string;
 };
 export type ApiResponse = { status: number; headers: Record<string, string>; body: string | Uint8Array };
 
 export type ApiDeps = {
   db: Database;
+  play: Play;
   mail: { sendReset(to: string, link: string): Promise<void> };
   sbKey: { get(): Promise<string> };
   now?: () => Date;
@@ -98,8 +106,8 @@ export function createApi(deps: ApiDeps) {
   const { db } = deps;
   const now = deps.now ?? (() => new Date());
   const limiter = new RateLimiter(() => now().getTime());
-  const today = () => now().toISOString().slice(0, 10);
-  const yesterday = () => new Date(now().getTime() - 86_400_000).toISOString().slice(0, 10);
+  const today = () => gameDay(now());
+  const yesterday = () => addDays(today(), -1);
   // The public address, when configured: the only trusted origin and the only
   // base for links in emails (request headers can be forged).
   const publicOrigin = deps.publicUrl ? new URL(deps.publicUrl).origin : null;
@@ -128,7 +136,7 @@ export function createApi(deps: ApiDeps) {
     return {
       "access-control-allow-origin": origin,
       "access-control-allow-credentials": "true",
-      "access-control-allow-headers": "content-type",
+      "access-control-allow-headers": "content-type, x-doku-device",
       "access-control-allow-methods": "GET, POST, PUT, PATCH, OPTIONS",
       vary: "Origin",
     };
@@ -188,8 +196,11 @@ export function createApi(deps: ApiDeps) {
   }
 
   // Unlocks only ever grow, so a device that knows fewer can't erase any.
+  // Earned themes (cyberwave, speakeasy, modern) are server-granted only;
+  // the client can't claim them through this route.
   function saveUnlocks(userId: string, theme: string | null, ids: unknown) {
-    const merged = parseUnlocked([...prefsFor(userId).unlockedThemes, ...parseUnlocked(ids, knownClubIds(db))], knownClubIds(db));
+    const requested = parseUnlocked(ids, knownClubIds(db)).filter((id) => !(EARNED_THEMES as readonly string[]).includes(id));
+    const merged = parseUnlocked([...prefsFor(userId).unlockedThemes, ...requested], knownClubIds(db));
     db.run(
       `INSERT INTO prefs (user_id, theme, unlocked_themes) VALUES (?, ?, ?)
        ON CONFLICT(user_id) DO UPDATE SET theme = COALESCE(excluded.theme, prefs.theme), unlocked_themes = excluded.unlocked_themes`,
@@ -211,6 +222,33 @@ export function createApi(deps: ApiDeps) {
     const origin = req.headers.origin;
     if (deps.devOrigins && origin && DEV_ORIGIN.test(origin)) return origin;
     return null;
+  }
+
+  const DEVICE_ID = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+  const PERIODS = new Set(["today", "yesterday", "week", "all", "streak"]);
+  const DAY = /^\d{4}-\d{2}-\d{2}$/;
+
+  function deviceIdOf(req: ApiRequest): string | null {
+    const raw = req.headers["x-doku-device"];
+    if (raw == null) return null;
+    if (!DEVICE_ID.test(raw)) throw new ApiError(400, "bad_request");
+    return raw.toLowerCase();
+  }
+
+  // Who is playing: the account when logged in, else this device.
+  function playerOf(req: ApiRequest) {
+    const user = sessionUser(db, readCookie(req.headers.cookie, COOKIE), now());
+    const deviceId = deviceIdOf(req);
+    if (!user && !deviceId) throw new ApiError(400, "no_player");
+    const player = user ? `u:${user.id}` : `d:${deviceId}`;
+    const players = user && deviceId ? [`u:${user.id}`, `d:${deviceId}`] : [player];
+    return { user, deviceId, player, players };
+  }
+
+  function grantFor(userId: string) {
+    const board = deps.play.playerBoard(today(), [`u:${userId}`]);
+    const stats = userStats(db, deps.play, userId, today());
+    return grantUnlocks(db, userId, earnedUnlocks({ finished: board.finished, perfect: board.perfect, longestStreak: stats.longestStreak }));
   }
 
   async function route(req: ApiRequest): Promise<ApiResponse> {
@@ -266,8 +304,8 @@ export function createApi(deps: ApiDeps) {
 
     if (method === "GET" && path === "/api/me") {
       const user = sessionUser(db, readCookie(req.headers.cookie, COOKIE), now());
-      if (!user) return respond(200, { user: null, prefs: null, progress: null });
-      return respond(200, { user, prefs: prefsFor(user.id), progress: progressFor(user.id) });
+      if (!user) return respond(200, { user: null, prefs: null, progress: null, stats: null });
+      return respond(200, { user, prefs: prefsFor(user.id), progress: progressFor(user.id), stats: userStats(db, deps.play, user.id, today()) });
     }
     if (method === "PATCH" && path === "/api/me") {
       const user = requireUser(req);
@@ -357,8 +395,76 @@ export function createApi(deps: ApiDeps) {
       if (req.headers["if-none-match"] === etag) return { status: 304, headers: cache, body: "" };
       return respond(200, pack, cache);
     }
+    if (method === "POST" && path === "/api/play/guess") {
+      const who = playerOf(req);
+      limit(`guess:${who.player}`, 120, 60_000);
+      limit(`guess-ip:${req.ip}`, 1200, 60_000);
+      const body = parseBody(req);
+      const day = String(body.day ?? "");
+      const cell = Number(body.cell);
+      const productNumber = String(body.productNumber ?? "");
+      const id = String(body.id ?? "");
+      const practice = body.practice === true;
+      if (!DAY.test(day) || !Number.isInteger(cell) || cell < 1 || cell > 9 || !/^\d{1,12}$/.test(productNumber) || !/^[\w-]{1,64}$/.test(id)) {
+        throw new ApiError(400, "bad_request");
+      }
+      let outcome;
+      try {
+        outcome = await deps.play.recordGuess(who.player, { id, day, cell, productNumber, practice });
+      } catch (error) {
+        if (error instanceof CatalogUnavailable) throw new ApiError(503, "catalog_unavailable");
+        throw error;
+      }
+      const board = deps.play.playerBoard(day, [who.player], practice);
+      const newUnlocks = who.user && !practice && outcome.verdict === "correct" ? grantFor(who.user.id) : [];
+      return respond(200, { ...outcome, cell: board.cells[cell - 1], board, newUnlocks });
+    }
+    if (method === "GET" && path === "/api/play/today") {
+      const who = playerOf(req);
+      return respond(200, deps.play.playerBoard(today(), who.players));
+    }
+    if (method === "GET" && path === "/api/play/answers") {
+      const who = playerOf(req);
+      const day = new URLSearchParams(req.query ?? "").get("day") ?? today();
+      if (!DAY.test(day) || day > today()) throw new ApiError(400, "bad_request");
+      if (day === today() && !deps.play.playerBoard(day, who.players).finished) throw new ApiError(403, "not_finished");
+      return respond(200, { answers: deps.play.answers(day, who.players) });
+    }
+    if (method === "POST" && path === "/api/play/claim") {
+      const user = requireUser(req);
+      const deviceId = deviceIdOf(req);
+      if (deviceId) deps.play.claim(user.id, deviceId);
+      const newUnlocks = [
+        ...grantFor(user.id),
+        ...(deviceId ? grantUnlocks(db, user.id, deviceHistoryUnlocks(db, deviceId)) : []),
+      ];
+      return respond(200, { board: deps.play.playerBoard(today(), [`u:${user.id}`]), newUnlocks });
+    }
     if (method === "GET" && path === "/api/leaderboard") {
-      return respond(200, { rows: [] });
+      const period = new URLSearchParams(req.query ?? "").get("period") ?? "today";
+      if (!PERIODS.has(period)) throw new ApiError(400, "bad_request");
+      const user = sessionUser(db, readCookie(req.headers.cookie, COOKIE), now());
+      return respond(200, leaderboard(db, deps.play, period as Period, today(), user?.id ?? null));
+    }
+    if (method === "GET" && path === "/api/archive") {
+      const who = playerOf(req);
+      const month = new URLSearchParams(req.query ?? "").get("month") ?? today().slice(0, 7);
+      if (!/^\d{4}-\d{2}$/.test(month)) throw new ApiError(400, "bad_request");
+      return respond(200, { days: archiveMonth(db, deps.play, month, today(), who.players, who.user?.id ?? null) });
+    }
+    const archiveMatch = /^\/api\/archive\/(\d{4}-\d{2}-\d{2})$/.exec(path);
+    if (method === "GET" && archiveMatch) {
+      const who = playerOf(req);
+      const day = archiveMatch[1];
+      if (day >= today() || !deps.play.hasBoard(day)) return respond(404, { error: "not_found" });
+      const board = getBoard(db, day, today())!;
+      return respond(200, {
+        day,
+        board: { rows: board.rows, cols: board.cols },
+        mine: deps.play.playerBoard(day, who.players),
+        practice: deps.play.playerBoard(day, who.players, true),
+        answers: deps.play.answers(day, who.players),
+      });
     }
     return respond(404, { error: "not_found" });
   }
