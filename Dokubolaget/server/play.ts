@@ -187,6 +187,11 @@ export function createPlay(deps: { db: Database; catalog: Catalog; now?: () => D
     const playedDay = today();
 
     const outcome = db.transaction((): GuessOutcome => {
+      // The catalog lookup above can be slow enough to straddle the 04:00
+      // rollover. Re-check fresh, inside the transaction, that the day
+      // hasn't ended underneath this guess — write nothing if it has.
+      if (!practice && day !== today()) throw new ApiError(400, "day_over");
+
       // A duplicate id that's already been recorded (its insert landed while
       // we were awaiting the lookup, or a concurrent call for the exact same
       // id just committed) is a replay: report the stored effect, write

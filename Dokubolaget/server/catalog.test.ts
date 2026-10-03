@@ -1,6 +1,6 @@
 import { expect, test } from "bun:test";
 import { join } from "path";
-import { CatalogUnavailable, createCatalog } from "./catalog";
+import { CatalogUnavailable, createCatalog, systembolagetLookup } from "./catalog";
 
 const FIXTURE = join(import.meta.dir, "fixtures", "products.json");
 
@@ -44,4 +44,16 @@ test("a failing lookup is 'unavailable', not 'not playable', and isn't cached", 
 
 test("a missing file gives an empty catalogue", async () => {
   expect(createCatalog({ path: "/nope/products.json" }).size).toBe(0);
+});
+
+test("a Systembolaget lookup that never answers times out as CatalogUnavailable (fix round 1)", async () => {
+  const sbKey = { get: async () => "test-key" };
+  // Mimics what the real fetch does on abort: never settle on its own, only
+  // reject once the signal fires.
+  const hangingFetch = ((_url: string, init: { signal: AbortSignal }) =>
+    new Promise((_resolve, reject) => {
+      init.signal.addEventListener("abort", () => reject(new DOMException("The operation was aborted.", "AbortError")));
+    })) as unknown as typeof fetch;
+  const catalog = createCatalog({ path: null, lookup: systembolagetLookup(sbKey, hangingFetch, 5) });
+  await expect(catalog.get("1001")).rejects.toBeInstanceOf(CatalogUnavailable);
 });

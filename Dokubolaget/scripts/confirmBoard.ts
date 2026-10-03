@@ -45,7 +45,7 @@ type BoardFile = {
 
 const scriptDir = path.dirname(fileURLToPath(import.meta.url));
 const projectRoot = path.resolve(scriptDir, "..");
-const productsPath = path.resolve(projectRoot, "..", "products.json");
+const productsPath = process.env.PRODUCTS_PATH || path.resolve(projectRoot, "..", "products.json");
 
 function parseArgs() {
   const defaults = {

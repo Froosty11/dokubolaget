@@ -9,7 +9,8 @@ import { isPlayable } from "../src/playable";
 const root = path.resolve(import.meta.dir, "..");
 const minIndex = process.argv.indexOf("--min");
 const MIN = minIndex === -1 ? 5 : Number(process.argv[minIndex + 1]);
-const products = (JSON.parse(fs.readFileSync(path.resolve(root, "..", "products.json"), "utf8")) as any[]).filter(isPlayable);
+const productsPath = process.env.PRODUCTS_PATH || path.resolve(root, "..", "products.json");
+const products = (JSON.parse(fs.readFileSync(productsPath, "utf8")) as any[]).filter(isPlayable);
 const file = path.join(root, "data", "generated-boards.json");
 const pool = JSON.parse(fs.readFileSync(file, "utf8"));
 

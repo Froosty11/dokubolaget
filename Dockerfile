@@ -50,15 +50,17 @@ COPY Dokubolaget/scripts ./scripts
 COPY Dokubolaget/src/boardTags.ts Dokubolaget/src/gameDay.ts Dokubolaget/src/playable.ts Dokubolaget/src/scoring.ts ./src/
 COPY Dokubolaget/data ./data
 
-# The daily catalog download is written to /app/products.json, and the
-# database lives in /data, so the unprivileged user needs to own both.
+# The daily catalog download and the database both live on the /data volume
+# (PRODUCTS_PATH, DB_PATH below), so a container recreate doesn't start with
+# an empty catalogue; the unprivileged user needs to own it.
 RUN mkdir -p /data && chown -R bun:bun /app /data
 VOLUME /data
 USER bun
 
 ENV NODE_ENV=production \
     PORT=8080 \
-    DB_PATH=/data/dokubolaget.sqlite
+    DB_PATH=/data/dokubolaget.sqlite \
+    PRODUCTS_PATH=/data/products.json
 
 EXPOSE 8080
 

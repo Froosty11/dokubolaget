@@ -70,11 +70,16 @@ export type Catalog = ReturnType<typeof createCatalog>;
 
 const SEARCH = "https://api-extern.systembolaget.se/sb-api-ecommerce/v1/productsearch/search";
 
-export function systembolagetLookup(sbKey: { get(): Promise<string> }, fetchFn: typeof fetch = fetch) {
+export function systembolagetLookup(
+  sbKey: { get(): Promise<string> },
+  fetchFn: typeof fetch = fetch,
+  timeoutMs = 10_000,
+) {
   return async (productNumber: string) => {
     const key = await sbKey.get();
     const response = await fetchFn(`${SEARCH}?textQuery=${encodeURIComponent(productNumber)}&size=10`, {
       headers: { "Ocp-Apim-Subscription-Key": key },
+      signal: AbortSignal.timeout(timeoutMs),
     });
     if (!response.ok) throw new Error(`Systembolaget search HTTP ${response.status}`);
     const data: any = await response.json();

@@ -51,6 +51,34 @@ test("a guess for a day that has ended is refused (review focus 2)", async () =>
   expect(play.playerBoard("2026-10-01", ["d:a"]).solved).toBe(0);
 });
 
+test("a guess whose catalogue lookup straddles the 04:00 rollover is refused, not written (fix round 1)", async () => {
+  const real = createCatalog({ path: FIXTURE });
+  let resolveLookup: () => void = () => {};
+  const pending = new Promise<void>((resolve) => {
+    resolveLookup = resolve;
+  });
+  const slowCatalog = {
+    reload: real.reload,
+    getKnown: real.getKnown,
+    get size() {
+      return real.size;
+    },
+    get: async (productNumber: string) => {
+      await pending;
+      return real.get(productNumber);
+    },
+  };
+  clock = new Date("2026-10-03T01:59:00Z"); // 03:59 Stockholm: still game day 2026-10-02
+  play = createPlay({ db, catalog: slowCatalog as any, now: () => clock, cacheMs: 0 });
+
+  const pendingGuess = guess("d:a", "2026-10-02", 1, "1001");
+  clock = new Date("2026-10-03T02:01:00Z"); // 04:01 Stockholm: game day has turned to 2026-10-03
+  resolveLookup();
+
+  await expect(pendingGuess).rejects.toMatchObject({ status: 400, code: "day_over" });
+  expect(play.playerBoard("2026-10-02", ["d:a"]).solved).toBe(0);
+});
+
 test("scores: the first solver scores high; a crowd on one bottle lowers it", async () => {
   await guess("d:a", "2026-10-02", 1, "1001");
   expect(play.playerBoard("2026-10-02", ["d:a"]).cells[0].score).toBe(75);

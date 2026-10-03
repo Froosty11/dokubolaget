@@ -17,6 +17,9 @@
 // Environment:
 //   PORT                          listen port (default 8080)
 //   DB_PATH                       SQLite file (default ./data/local.sqlite)
+//   PRODUCTS_PATH                 catalog mirror file (default ../products.json);
+//                                 in the container, set to the /data volume so a
+//                                 redeploy doesn't start with an empty catalogue
 //   PUBLIC_URL                    base URL for links in emails (default: request origin)
 //   SMTP_URL / MAIL_FROM          send password reset emails (else logged)
 //   SEED_ENABLED                  "false" to disable the nightly pipeline
@@ -44,7 +47,7 @@ const { clientAddress } = require("./server/net.ts");
 
 const APP_ROOT = __dirname;
 const DIST_DIR = path.join(APP_ROOT, "dist");
-const PRODUCTS_PATH = path.resolve(APP_ROOT, "..", "products.json");
+const PRODUCTS_PATH = process.env.PRODUCTS_PATH || path.resolve(APP_ROOT, "..", "products.json");
 const PORT = Number(process.env.PORT) || 8080;
 
 const CATALOG_URL =
@@ -596,7 +599,12 @@ function startSeeding() {
     seedState.enabled = true;
     if (process.env.SEED_ON_START !== "false") {
       // Fresh boards for the coming days only; today's is never replaced.
-      runSeedPipeline(addDays(gameDay(), 1), BOARDS_AHEAD).catch(() => {});
+      runSeedPipeline(addDays(gameDay(), 1), BOARDS_AHEAD).catch(() => {
+        // The mirror is occasionally down at deploy time; retry once so the
+        // catalogue doesn't sit empty until the next nightly run.
+        log("seed", "Retrying in 30 minutes");
+        setTimeout(() => runSeedPipeline(addDays(gameDay(), 1), BOARDS_AHEAD).catch(() => {}), 30 * 60 * 1000);
+      });
     }
   }
   scheduleNightly();
