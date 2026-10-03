@@ -148,6 +148,16 @@ export function createPlay(deps: { db: Database; catalog: Catalog; now?: () => D
     };
   }
 
+  // What "replaying the same guess id" resolves to, read fresh: correct if
+  // the cell ended up solved with this product, otherwise miss. Used both by
+  // the fast pre-check and, authoritatively, inside the write transaction
+  // (where a concurrent in-flight duplicate may only just have landed).
+  function cellRow(day: string, player: string, cell: number, flag: number) {
+    return db
+      .query("SELECT product_id FROM cell_results WHERE day = ? AND player = ? AND cell = ? AND practice = ?")
+      .get(day, player, cell, flag) as { product_id: string | null } | null;
+  }
+
   async function recordGuess(
     player: string,
     input: { id: string; day: string; cell: number; productNumber: string; practice: boolean },
@@ -157,47 +167,80 @@ export function createPlay(deps: { db: Database; catalog: Catalog; now?: () => D
     if (practice && day >= today()) throw new ApiError(400, "bad_request");
     const target = boardCells(boardFor(day))[cell - 1];
     const flag = practice ? 1 : 0;
-    const existing = db
-      .query("SELECT product_id FROM cell_results WHERE day = ? AND player = ? AND cell = ? AND practice = ?")
-      .get(day, player, cell, flag) as { product_id: string | null } | null;
+    const seenId = `${player}:${id}`;
+
+    // Fast pre-checks, before the (possibly slow) catalog lookup: skip it
+    // outright when the answer is already known. These are optimizations
+    // only — everything here is re-checked fresh inside the transaction
+    // below, because another request for the same player can land while
+    // this one is awaiting the lookup.
+    const existing = cellRow(day, player, cell, flag);
     if (existing?.product_id === productNumber) return { verdict: "correct" };
-    if (db.query("SELECT 1 FROM seen_guesses WHERE id = ?").get(`${player}:${id}`)) return { verdict: "miss" };
+    if (db.query("SELECT 1 FROM seen_guesses WHERE id = ?").get(seenId)) return { verdict: "miss" };
 
     const product = await catalog.get(productNumber); // CatalogUnavailable propagates (→ 503)
-    if (existing?.product_id) return { verdict: "rejected" };
     if (!product) return { verdict: "rejected", reason: "not_playable" };
-    const used = db
-      .query("SELECT cell FROM cell_results WHERE day = ? AND player = ? AND practice = ? AND product_id = ? AND cell <> ?")
-      .get(day, player, flag, productNumber, cell) as { cell: number } | null;
-    if (used) return { verdict: "rejected", reason: "already_used", usedInCell: used.cell };
 
     const matchesRow = doesProductMatchTagId(product, target.rowTag);
     const matchesCol = doesProductMatchTagId(product, target.colTag);
     const verdict: GuessVerdict = matchesRow && matchesCol ? "correct" : matchesRow || matchesCol ? "near" : "miss";
     const playedDay = today();
-    db.transaction(() => {
-      db.run("INSERT OR IGNORE INTO seen_guesses (id, day) VALUES (?, ?)", [`${player}:${id}`, playedDay]);
+
+    const outcome = db.transaction((): GuessOutcome => {
+      // A duplicate id that's already been recorded (its insert landed while
+      // we were awaiting the lookup, or a concurrent call for the exact same
+      // id just committed) is a replay: report the stored effect, write
+      // nothing.
+      const inserted = db.run("INSERT OR IGNORE INTO seen_guesses (id, day) VALUES (?, ?)", [seenId, playedDay]);
+      if (inserted.changes === 0) {
+        const row = cellRow(day, player, cell, flag);
+        return { verdict: row?.product_id === productNumber ? "correct" : "miss" };
+      }
+
+      // Re-check the cell and "already used" rules against current state —
+      // a concurrent guess (different id) may have solved this cell, or
+      // claimed this product elsewhere, while we were awaiting the lookup.
+      // This applies whatever this guess's own verdict would be: a bottle
+      // already placed on the board can't be placed again, even where it
+      // would otherwise only be a near or a flat miss.
+      const row = cellRow(day, player, cell, flag);
+      if (row?.product_id === productNumber) return { verdict: "correct" };
+      if (row?.product_id) return { verdict: "rejected" };
+      const used = db
+        .query("SELECT cell FROM cell_results WHERE day = ? AND player = ? AND practice = ? AND product_id = ? AND cell <> ?")
+        .get(day, player, flag, productNumber, cell) as { cell: number } | null;
+      if (used) return { verdict: "rejected", reason: "already_used", usedInCell: used.cell };
+
       if (verdict === "correct") {
-        db.run(
+        const result = db.run(
           `INSERT INTO cell_results (day, player, cell, practice, pair_key, product_id, misses, played_day, solved_at)
            VALUES (?, ?, ?, ?, ?, ?, 0, ?, ?)
            ON CONFLICT(day, player, cell, practice) DO UPDATE SET product_id = excluded.product_id,
-             solved_at = excluded.solved_at, played_day = excluded.played_day`,
+             solved_at = excluded.solved_at, played_day = excluded.played_day
+           WHERE cell_results.product_id IS NULL`,
           [day, player, cell, flag, target.pair, productNumber, playedDay, nowIso(now())],
         );
-      } else {
-        db.run(
-          `INSERT INTO cell_results (day, player, cell, practice, pair_key, product_id, misses, played_day)
-           VALUES (?, ?, ?, ?, ?, NULL, 1, ?)
-           ON CONFLICT(day, player, cell, practice) DO UPDATE SET misses = misses + 1`,
-          [day, player, cell, flag, target.pair, playedDay],
-        );
+        if (result.changes === 0) {
+          // The guard above refused the write after all (belt and
+          // suspenders for the re-check just above); report what's
+          // actually there rather than claim a write that didn't happen.
+          const after = cellRow(day, player, cell, flag);
+          return after?.product_id === productNumber ? { verdict: "correct" } : { verdict: "rejected" };
+        }
+        return { verdict };
       }
+
+      db.run(
+        `INSERT INTO cell_results (day, player, cell, practice, pair_key, product_id, misses, played_day)
+         VALUES (?, ?, ?, ?, ?, NULL, 1, ?)
+         ON CONFLICT(day, player, cell, practice) DO UPDATE SET misses = misses + 1`,
+        [day, player, cell, flag, target.pair, playedDay],
+      );
+      return verdict === "near" ? { verdict, matchedTagId: matchesRow ? target.rowTag : target.colTag } : { verdict };
     })();
+
     cache.delete(day);
-    return verdict === "near"
-      ? { verdict, matchedTagId: matchesRow ? target.rowTag : target.colTag }
-      : { verdict };
+    return outcome;
   }
 
   function productName(productNumber: string) {

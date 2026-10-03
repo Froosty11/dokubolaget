@@ -119,3 +119,40 @@ test("claim moves today's device rows onto the account, cell by cell", async () 
   expect(board.cells[1].productNumber).toBe("1004");
   expect(play.playerBoard("2026-10-02", ["d:dev"]).cells[1].productNumber).toBe("1004"); // left behind, not duplicated
 });
+
+// A catalog whose lookup for "9001" (not in the mirror) takes 30ms, so a
+// concurrent request can land in the middle of it — used to reproduce races
+// across the `await catalog.get(...)` in recordGuess.
+const slowCatalog = () =>
+  createCatalog({
+    path: FIXTURE,
+    lookup: async (n: string) => {
+      await new Promise((resolve) => setTimeout(resolve, 30));
+      return n === "9001" ? { productNumber: "9001", assortmentText: "Fast sortiment", country: "Spanien", categoryLevel2: "Rött vin" } : null;
+    },
+  });
+
+test("a retry while the original guess is still in flight is not counted twice (race 1)", async () => {
+  const racing = createPlay({ db, catalog: slowCatalog(), now: () => clock, cacheMs: 0 });
+  // Cell 5 is France × white; "9001" is Spain × red, a flat miss there.
+  // Two concurrent calls share the same id, as a client retry would.
+  await Promise.all([
+    racing.recordGuess("d:a", { id: "race1", day: "2026-10-02", cell: 5, productNumber: "9001", practice: false }),
+    racing.recordGuess("d:a", { id: "race1", day: "2026-10-02", cell: 5, productNumber: "9001", practice: false }),
+  ]);
+  expect(racing.playerBoard("2026-10-02", ["d:a"]).cells[4].misses).toBe(1);
+});
+
+test("a solved cell can't be overwritten by a slower guess racing a faster one (race 2)", async () => {
+  const racing = createPlay({ db, catalog: slowCatalog(), now: () => clock, cacheMs: 0 });
+  // Both "9001" (slow lookup) and "1001" (already in the mirror, fast) fully
+  // match cell 1 (Spain × red). "1001" resolves first; "9001" must find the
+  // cell already solved and not clobber it.
+  const [slow, fast] = await Promise.all([
+    racing.recordGuess("d:a", { id: "slow", day: "2026-10-02", cell: 1, productNumber: "9001", practice: false }),
+    racing.recordGuess("d:a", { id: "fast", day: "2026-10-02", cell: 1, productNumber: "1001", practice: false }),
+  ]);
+  expect(fast.verdict).toBe("correct");
+  expect(slow.verdict).not.toBe("correct");
+  expect(racing.playerBoard("2026-10-02", ["d:a"]).cells[0].productNumber).toBe("1001");
+});
