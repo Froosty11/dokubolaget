@@ -185,6 +185,15 @@ if (__DEV__ && typeof window !== "undefined") {
 // read (above), so the account's theme wins over the device default.
 const ANNOUNCED_KEY = "dokubolaget.announcedUnlocks";
 export const serverSync = connectToServer(reactiveModel, {
+    // After logging out, today's guesses and the device's saved copy of the
+    // account's board are dropped, so the account's cells never come back.
+    play: {
+        forgetToday: async () => {
+            await playSync.forgetToday();
+            await AsyncStorage.removeItem(PROGRESS_KEY).catch(() => {});
+        },
+        refresh: () => playSync.refresh(),
+    },
     announced: {
         read: async () => {
             const raw = await AsyncStorage.getItem(ANNOUNCED_KEY);

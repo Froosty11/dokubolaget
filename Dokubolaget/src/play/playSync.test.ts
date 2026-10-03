@@ -86,3 +86,15 @@ test("archive practice guesses carry the past day and practice flag", async () =
   await sync.flush();
   expect(sent[0]).toMatchObject({ day: "2026-09-20", practice: true });
 });
+
+test("forgetToday drops today's daily guesses but keeps practice ones", async () => {
+  const model = fakeModel();
+  const outbox = createOutbox(memory());
+  const api = { guess: async () => { throw new ApiRequestError(0, undefined); }, playToday: async () => emptyBoard("2026-10-02") };
+  const sync = createPlaySync({ api: api as any, outbox, model: model as any, today: () => "2026-10-02" });
+  await sync.start();
+  await outbox.add({ day: "2026-10-02", cell: 1, productNumber: "1001", practice: false });
+  await outbox.add({ day: "2026-09-20", cell: 2, productNumber: "1002", practice: true });
+  await sync.forgetToday();
+  expect(outbox.items().map((i) => [i.day, i.practice])).toEqual([["2026-09-20", true]]);
+});

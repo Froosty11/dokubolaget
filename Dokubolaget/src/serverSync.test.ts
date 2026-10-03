@@ -74,3 +74,49 @@ test("a theme announced during play isn't announced again on the next start", as
   await connectToServer(next, { announced }).refresh();
   expect(next.shiftPendingUnlock()).toBeNull();
 });
+
+test("logging out starts a clean board on the device instead of reverting the account's cells", async () => {
+  const { createPlaySync } = await import("./play/playSync");
+  const { createOutbox } = await import("./play/outbox");
+  const data = new Map<string, string>();
+  const storage = { getItem: async (k: string) => data.get(k) ?? null, setItem: async (k: string, v: string) => void data.set(k, v) };
+  const model = makeModel();
+  Object.assign(model, {
+    boardDate: "2026-10-02", playMode: "daily", practiceDay: null, boardStatus: "ready", guessListener: null,
+    selectedProductsByCell: { 1: { raw: { productNumber: "1001" } }, 2: { raw: { productNumber: "1002" } } },
+    missesByCell: { 3: 1 }, cellInfo: { 1: { score: 80, share: 0.1, unicorn: false } }, serverBoard: null, syncNotice: null,
+  });
+  model.resetDailyBoard = function () {
+    this.selectedProductsByCell = {};
+    this.missesByCell = {};
+    this.cellInfo = {};
+    this.serverBoard = null;
+  };
+  // Like the real model: a filled cell the server doesn't have is reverted with a notice.
+  model.applyServerBoard = function (board: any) {
+    for (const cell of board.cells) if (!cell.productNumber && this.selectedProductsByCell[cell.cell]) this.syncNotice = "Couldn't verify a pick.";
+    this.serverBoard = board;
+  };
+  model.applyGuessResponse = () => {};
+  const day = "2026-10-02";
+  const empty = { day, cells: Array.from({ length: 9 }, (_, i) => ({ cell: i + 1, productNumber: null, product: null, misses: 0, score: null, share: null, unicorn: false })), score: 0, solved: 0, misses: 0, unicorns: 0, finished: false, perfect: false };
+  globalThis.fetch = (async (url: string) => {
+    if (String(url).endsWith("/api/play/today")) return new Response(JSON.stringify(empty));
+    if (String(url).endsWith("/api/play/guess")) return new Response(JSON.stringify({ error: "catalog_unavailable" }), { status: 503 });
+    if (String(url).endsWith("/api/me")) return new Response(JSON.stringify({ user: null, prefs: null, progress: null, stats: null }));
+    return new Response(JSON.stringify({ ok: true }));
+  }) as any;
+  const outbox = createOutbox(storage);
+  const { api } = await import("./api");
+  const play = createPlaySync({ api, outbox, model, today: () => day });
+  await play.start();
+  await outbox.add({ day, cell: 4, productNumber: "1004", practice: false });
+  await outbox.add({ day: "2026-09-20", cell: 5, productNumber: "1005", practice: true });
+  const sync = connectToServer(model, { announced: { read: async () => [], write: async () => {} }, play });
+  await sync.logout();
+  expect(model.selectedProductsByCell).toEqual({});
+  expect(model.cellInfo).toEqual({});
+  expect(model.syncNotice).toBe("Logged out. Today's board stays with your account.");
+  expect(model.serverBoard?.day).toBe(day); // play was refreshed
+  expect(outbox.items().map((i) => i.practice)).toEqual([true]);
+});

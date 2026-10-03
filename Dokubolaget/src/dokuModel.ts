@@ -469,6 +469,18 @@ const modelBody = {
     this.serverBoard = res.board;
   },
 
+  // Empties today's board on the device (after logging out, the board stays
+  // with the account). In the archive, the daily board put aside is emptied.
+  resetDailyBoard() {
+    if (this.playMode === "archive" && this.dailySnapshot) {
+      this.dailySnapshot = { ...this.dailySnapshot, products: {}, misses: {}, rejected: {}, info: {} };
+      return;
+    }
+    this.clearProgress();
+    this.cellInfo = {};
+    this.serverBoard = null;
+  },
+
   // Archive practice: the daily board is put aside and restored on exit.
   dailySnapshot: null as null | {
     top: any[];

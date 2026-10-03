@@ -81,5 +81,13 @@ export function createPlaySync(deps: { api: PlayApi; outbox: Outbox; model: Play
     };
   }
 
-  return { start, flush, refresh };
+  // After logging out, today's board belongs to the account: guesses for it
+  // still waiting here are dropped (archive practice ones are kept).
+  async function forgetToday() {
+    await flushing?.catch(() => {});
+    const today = deps.today();
+    for (const item of outbox.items().filter((i) => !i.practice && i.day === today)) await outbox.remove(item.id);
+  }
+
+  return { start, flush, refresh, forgetToday };
 }

@@ -9,7 +9,12 @@ type SyncedModel = Parameters<typeof applyAccountThemeData>[0] & {
   setAccount(account: Account | null): void;
   setStats?(stats: UserStats | null): void;
   queueAnnouncements(ids: any[]): void;
+  resetDailyBoard?(): void;
+  syncNotice?: string | null;
 };
+
+// Play sync, as far as account sync needs it (play/playSync.ts).
+type PlayHooks = { forgetToday(): Promise<void>; refresh(): Promise<void> };
 
 // The device's list of earned themes it has already announced.
 type AnnouncedStore = { read(): Promise<string[] | null>; write(ids: string[]): Promise<void> };
@@ -26,7 +31,7 @@ function debounce(fn: () => void, ms: number) {
 // with the server. Guesses go through play sync (play/playSync.ts) whether
 // logged in or not. Call refresh() once device prefs are loaded, and
 // afterLogin() after logging in or signing up.
-export function connectToServer(model: SyncedModel, options: { announced: AnnouncedStore }) {
+export function connectToServer(model: SyncedModel, options: { announced: AnnouncedStore; play?: PlayHooks }) {
   // Writes start only after the account has been read, so this device's
   // defaults never overwrite what the account already has.
   let synced = false;
@@ -43,6 +48,15 @@ export function connectToServer(model: SyncedModel, options: { announced: Announ
     api.putPrefs({ theme: model.themeId, unlockedThemes: model.unlockedThemes }).catch((error) =>
       console.warn("Saving theme failed:", error?.message ?? error),
     );
+  }
+
+  // Logged out, the device is its own player again and today's board stays
+  // with the account, so the device starts clean (not a confusing revert).
+  async function startCleanBoard() {
+    await options.play?.forgetToday().catch(() => {});
+    model.resetDailyBoard?.();
+    model.syncNotice = "Logged out. Today's board stays with your account.";
+    await options.play?.refresh().catch(() => {});
   }
 
   async function refresh() {
@@ -108,15 +122,17 @@ export function connectToServer(model: SyncedModel, options: { announced: Announ
       model.setAccount(null);
       model.setLoggedIn(false);
       model.setStats?.(null);
+      await startCleanBoard();
     },
-    // The server also ends the session. What's saved on this device (theme,
-    // today's board) stays, as it would for any logged-out player.
+    // The server also ends the session. The theme saved on this device stays,
+    // as it would for any logged-out player; today's board starts clean.
     async deleteAccount(email: string, password: string) {
       await api.deleteAccount(email, password);
       synced = false;
       model.setAccount(null);
       model.setLoggedIn(false);
       model.setStats?.(null);
+      await startCleanBoard();
     },
   };
 }
