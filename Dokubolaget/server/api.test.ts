@@ -7,6 +7,7 @@ import { createCatalog } from "./catalog";
 import { createCode } from "./codes";
 import { createPlay } from "./play";
 import { loadThemePacks } from "./themePacks";
+import { grantUnlocks } from "./unlocks";
 
 let db: ReturnType<typeof openDb>;
 let mails: Array<{ to: string; link: string }>;
@@ -441,5 +442,45 @@ describe("play", () => {
     const devApi = createApi({ db, play: createPlay({ db, catalog: createCatalog({ path: null }) }), mail: { sendReset: async () => {} }, sbKey: { get: async () => "k" }, devOrigins: true });
     const res = await devApi({ method: "OPTIONS", path: "/api/play/guess", headers: { origin: "http://localhost:8081" }, body: "", ip: "1" });
     expect(res.headers["access-control-allow-headers"]).toContain("x-doku-device");
+  });
+
+  test("prefs refuse an unearned earned theme, but allow one the account holds", async () => {
+    const cookie = await signedIn();
+    const bad = await api(req("PUT", "/api/me/prefs", { theme: "cyberwave", unlockedThemes: [] }, { cookie }));
+    expect(bad.status).toBe(400);
+    const me = json(await api(req("GET", "/api/me", undefined, { cookie })));
+    grantUnlocks(db, me.user.id, ["cyberwave"]);
+    const ok = await api(req("PUT", "/api/me/prefs", { theme: "cyberwave", unlockedThemes: [] }, { cookie }));
+    expect(json(ok).prefs.theme).toBe("cyberwave");
+  });
+
+  test("finishing today's board on the last correct guess unlocks cyberwave", async () => {
+    const cookie = await signedIn();
+    const guesses: Array<[number, string]> = [
+      [1, "1001"], [2, "1004"], [3, "1009"], [4, "1010"], [5, "1003"], [6, "1011"], [7, "1006"], [8, "1007"], [9, "1008"],
+    ];
+    let last;
+    for (const [cell, productNumber] of guesses) {
+      last = await api(req("POST", "/api/play/guess", { id: `fin${cell}`, day: TODAY, cell, productNumber }, { cookie }));
+    }
+    expect(json(last!).newUnlocks).toContain("cyberwave");
+  });
+
+  test("the 121st guess in a minute from one player returns 429 rate_limited", async () => {
+    let last;
+    for (let i = 0; i < 121; i++) {
+      // A miss (wrong country and category) on the same cell, so no distinct
+      // products are needed to exhaust the per-player guess budget.
+      last = await api(req("POST", "/api/play/guess", { id: `m${i}`, day: TODAY, cell: 1, productNumber: "1003" }, dev));
+    }
+    expect([last!.status, json(last!).error]).toEqual([429, "rate_limited"]);
+  });
+
+  test("the 301st read in a minute from one IP returns 429 on /api/leaderboard", async () => {
+    let last;
+    for (let i = 0; i < 301; i++) {
+      last = await api(req("GET", "/api/leaderboard?period=today", undefined, { ip: "7.7.7.7" }));
+    }
+    expect([last!.status, json(last!).error]).toEqual([429, "rate_limited"]);
   });
 });

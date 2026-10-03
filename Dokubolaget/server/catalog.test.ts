@@ -6,7 +6,7 @@ const FIXTURE = join(import.meta.dir, "fixtures", "products.json");
 
 test("keeps only playable products, without the heavy fields", async () => {
   const catalog = createCatalog({ path: FIXTURE });
-  expect(catalog.size).toBe(4);
+  expect(catalog.size).toBe(10);
   expect((await catalog.get("1001"))!.productNameBold).toBe("Rioja Test");
   expect((await catalog.get("1001"))!.priceHistory).toBeUndefined();
   expect(await catalog.get("1002")).toBeNull();

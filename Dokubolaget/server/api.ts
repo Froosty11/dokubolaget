@@ -10,7 +10,7 @@ import { CatalogUnavailable } from "./catalog";
 import { normalizeCode, redeemCode } from "./codes";
 import { nowIso } from "./db";
 import type { Play } from "./play";
-import { archiveMonth, leaderboard, userStats, type Period } from "./stats";
+import { archiveMonth, leaderboard, userStats, type Leaderboard, type Period } from "./stats";
 import { getLogo, getPack, getPackSummary, knownClubIds, listPacks } from "./themePacks";
 import { EARNED_THEMES, deviceHistoryUnlocks, earnedUnlocks, grantUnlocks } from "./unlocks";
 
@@ -251,6 +251,28 @@ export function createApi(deps: ApiDeps) {
     return grantUnlocks(db, userId, earnedUnlocks({ finished: board.finished, perfect: board.perfect, longestStreak: stats.longestStreak }));
   }
 
+  // `today`/`week`/`streak` scan every player; cached briefly so a busy
+  // leaderboard screen doesn't recompute it on every poll. Expired entries
+  // are dropped whenever we read, and the whole map is cleared if it ever
+  // grows past LEADERBOARD_CACHE_MAX (one entry per period/day/viewer).
+  const LEADERBOARD_CACHE_MS = 30_000;
+  const LEADERBOARD_CACHE_MAX = 500;
+  const leaderboardCache = new Map<string, { at: number; value: Leaderboard }>();
+
+  function leaderboardCached(period: Period, userId: string | null): Leaderboard {
+    const nowMs = now().getTime();
+    for (const [key, entry] of leaderboardCache) {
+      if (nowMs - entry.at >= LEADERBOARD_CACHE_MS) leaderboardCache.delete(key);
+    }
+    const key = `${period}|${today()}|${userId ?? ""}`;
+    const hit = leaderboardCache.get(key);
+    if (hit) return hit.value;
+    const value = leaderboard(db, deps.play, period, today(), userId);
+    if (leaderboardCache.size >= LEADERBOARD_CACHE_MAX) leaderboardCache.clear();
+    leaderboardCache.set(key, { at: nowMs, value });
+    return value;
+  }
+
   async function route(req: ApiRequest): Promise<ApiResponse> {
     const { method, path } = req;
     if (WRITE_METHODS.has(method)) checkWrite(req);
@@ -319,6 +341,11 @@ export function createApi(deps: ApiDeps) {
       const body = parseBody(req);
       const theme = body.theme == null ? null : String(body.theme);
       if (theme !== null && !isKnownTheme(theme)) throw new ApiError(400, "bad_request");
+      // An earned theme can only be selected once the account actually holds
+      // it; a client can't jump straight to cyberwave/speakeasy/modern.
+      if (theme !== null && (EARNED_THEMES as readonly string[]).includes(theme) && !prefsFor(user.id).unlockedThemes.includes(theme)) {
+        throw new ApiError(400, "bad_request");
+      }
       saveUnlocks(user.id, theme, body.unlockedThemes);
       return respond(200, { prefs: prefsFor(user.id) });
     }
@@ -420,10 +447,12 @@ export function createApi(deps: ApiDeps) {
       return respond(200, { ...outcome, cell: board.cells[cell - 1], board, newUnlocks });
     }
     if (method === "GET" && path === "/api/play/today") {
+      limit(`read:${req.ip}`, 300, 60_000);
       const who = playerOf(req);
       return respond(200, deps.play.playerBoard(today(), who.players));
     }
     if (method === "GET" && path === "/api/play/answers") {
+      limit(`read:${req.ip}`, 300, 60_000);
       const who = playerOf(req);
       const day = new URLSearchParams(req.query ?? "").get("day") ?? today();
       if (!DAY.test(day) || day > today()) throw new ApiError(400, "bad_request");
@@ -431,6 +460,7 @@ export function createApi(deps: ApiDeps) {
       return respond(200, { answers: deps.play.answers(day, who.players) });
     }
     if (method === "POST" && path === "/api/play/claim") {
+      limit(`read:${req.ip}`, 300, 60_000);
       const user = requireUser(req);
       const deviceId = deviceIdOf(req);
       if (deviceId) deps.play.claim(user.id, deviceId);
@@ -441,12 +471,14 @@ export function createApi(deps: ApiDeps) {
       return respond(200, { board: deps.play.playerBoard(today(), [`u:${user.id}`]), newUnlocks });
     }
     if (method === "GET" && path === "/api/leaderboard") {
+      limit(`read:${req.ip}`, 300, 60_000);
       const period = new URLSearchParams(req.query ?? "").get("period") ?? "today";
       if (!PERIODS.has(period)) throw new ApiError(400, "bad_request");
       const user = sessionUser(db, readCookie(req.headers.cookie, COOKIE), now());
-      return respond(200, leaderboard(db, deps.play, period as Period, today(), user?.id ?? null));
+      return respond(200, leaderboardCached(period as Period, user?.id ?? null));
     }
     if (method === "GET" && path === "/api/archive") {
+      limit(`read:${req.ip}`, 300, 60_000);
       const who = playerOf(req);
       const month = new URLSearchParams(req.query ?? "").get("month") ?? today().slice(0, 7);
       if (!/^\d{4}-\d{2}$/.test(month)) throw new ApiError(400, "bad_request");
@@ -454,6 +486,7 @@ export function createApi(deps: ApiDeps) {
     }
     const archiveMatch = /^\/api\/archive\/(\d{4}-\d{2}-\d{2})$/.exec(path);
     if (method === "GET" && archiveMatch) {
+      limit(`read:${req.ip}`, 300, 60_000);
       const who = playerOf(req);
       const day = archiveMatch[1];
       if (day >= today() || !deps.play.hasBoard(day)) return respond(404, { error: "not_found" });

@@ -3,5 +3,11 @@
   { "productNumber": "1002", "productId": "10020", "productNameBold": "Rioja Order", "assortmentText": "Ordervaror", "country": "Spanien", "categoryLevel2": "Rött vin", "price": 99 },
   { "productNumber": "1003", "productId": "10030", "productNameBold": "Chablis Test", "assortmentText": "Lokalt & Småskaligt", "country": "Frankrike", "categoryLevel2": "Vitt vin", "price": 189 },
   { "productNumber": "1004", "productId": "10040", "productNameBold": "Tempranillo Blanco", "assortmentText": "Fast sortiment", "country": "Spanien", "categoryLevel2": "Vitt vin", "price": 109 },
-  { "productNumber": "1005", "productId": "10050", "productNameBold": "Garnacha Test", "assortmentText": "Säsong", "country": "Spanien", "categoryLevel2": "Rött vin", "price": 149 }
+  { "productNumber": "1005", "productId": "10050", "productNameBold": "Garnacha Test", "assortmentText": "Säsong", "country": "Spanien", "categoryLevel2": "Rött vin", "price": 149 },
+  { "productNumber": "1006", "productId": "10060", "productNameBold": "Nordic Red Test", "assortmentText": "Fast sortiment", "country": "Sverige", "categoryLevel2": "Rött vin", "price": 139 },
+  { "productNumber": "1007", "productId": "10070", "productNameBold": "Nordic White Test", "assortmentText": "Fast sortiment", "country": "Sverige", "categoryLevel2": "Vitt vin", "price": 119 },
+  { "productNumber": "1008", "productId": "10080", "productNameBold": "Nordic Rosé Test", "assortmentText": "Fast sortiment", "country": "Sverige", "categoryLevel2": "Rosévin", "price": 115 },
+  { "productNumber": "1009", "productId": "10090", "productNameBold": "Rosado Test", "assortmentText": "Fast sortiment", "country": "Spanien", "categoryLevel2": "Rosévin", "price": 99 },
+  { "productNumber": "1010", "productId": "10100", "productNameBold": "Côtes Rouge Test", "assortmentText": "Fast sortiment", "country": "Frankrike", "categoryLevel2": "Rött vin", "price": 159 },
+  { "productNumber": "1011", "productId": "10110", "productNameBold": "Côtes Rosé Test", "assortmentText": "Fast sortiment", "country": "Frankrike", "categoryLevel2": "Rosévin", "price": 105 }
 ]
