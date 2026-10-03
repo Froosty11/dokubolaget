@@ -1,0 +1,7 @@
+[
+  { "productNumber": "1001", "productId": "10010", "productNameBold": "Rioja Test", "productNameThin": "Reserva", "assortmentText": "Fast sortiment", "country": "Spanien", "categoryLevel2": "Rött vin", "price": 129, "priceHistory": [1, 2, 3] },
+  { "productNumber": "1002", "productId": "10020", "productNameBold": "Rioja Order", "assortmentText": "Ordervaror", "country": "Spanien", "categoryLevel2": "Rött vin", "price": 99 },
+  { "productNumber": "1003", "productId": "10030", "productNameBold": "Chablis Test", "assortmentText": "Lokalt & Småskaligt", "country": "Frankrike", "categoryLevel2": "Vitt vin", "price": 189 },
+  { "productNumber": "1004", "productId": "10040", "productNameBold": "Tempranillo Blanco", "assortmentText": "Fast sortiment", "country": "Spanien", "categoryLevel2": "Vitt vin", "price": 109 },
+  { "productNumber": "1005", "productId": "10050", "productNameBold": "Garnacha Test", "assortmentText": "Säsong", "country": "Spanien", "categoryLevel2": "Rött vin", "price": 149 }
+]
