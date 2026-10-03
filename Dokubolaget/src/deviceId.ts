@@ -13,11 +13,22 @@ function uuidV4(random: () => number): string {
 
 export function createDeviceId(storage: Storage, random: () => number = Math.random) {
   let pending: Promise<string> | null = null;
-  return () =>
-    (pending ??= storage.getItem(KEY).then(async (stored) => {
-      if (stored && /^[0-9a-f-]{36}$/.test(stored)) return stored;
-      const id = uuidV4(random);
-      await storage.setItem(KEY, id);
-      return id;
-    }));
+  const uuidV4Regex = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+  return () => {
+    if (!pending) {
+      pending = (async () => {
+        try {
+          const stored = await storage.getItem(KEY);
+          if (stored && uuidV4Regex.test(stored)) return stored;
+          const id = uuidV4(random);
+          await storage.setItem(KEY, id);
+          return id;
+        } catch (error) {
+          pending = null;
+          throw error;
+        }
+      })();
+    }
+    return pending;
+  };
 }
