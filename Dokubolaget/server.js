@@ -21,7 +21,6 @@
 //   SMTP_URL / MAIL_FROM          send password reset emails (else logged)
 //   SEED_ENABLED                  "false" to disable the nightly pipeline
 //   SEED_ON_START                 "false" to skip the seed run at boot
-//   SEED_HOUR_UTC / SEED_MINUTE_UTC  daily run time (default 00:05 UTC)
 //   SEED_ATTEMPTS                 generator attempts per board (default 3000)
 //   CATALOG_URL                   product catalog source (default susbolaget)
 //   TRUST_PROXY                   "true" when behind a reverse proxy, so rate
@@ -356,10 +355,19 @@ const { createMailer } = require("./server/mail.ts");
 const { createSbKey } = require("./server/sbKey.ts");
 const { backupDb } = require("./server/backup.ts");
 const { loadThemePacks } = require("./server/themePacks.ts");
+const { createCatalog, systembolagetLookup } = require("./server/catalog.ts");
+const { createPlay } = require("./server/play.ts");
+const { catchUpFreeze } = require("./server/stats.ts");
+const { gameDay, nextRollover, addDays } = require("./src/gameDay.ts");
 
 const DB_PATH = process.env.DB_PATH || path.join(APP_ROOT, "data", "local.sqlite");
 fs.mkdirSync(path.dirname(DB_PATH), { recursive: true });
 const db = openDb(DB_PATH);
+
+const sbKey = createSbKey(db);
+const catalog = createCatalog({ path: PRODUCTS_PATH, lookup: systembolagetLookup(sbKey) });
+log("catalog", `${catalog.size} playable products loaded`);
+const play = createPlay({ db, catalog });
 
 // Club themes live in club-themes/<slug>/ next to the app (copied into the
 // image). Loaded once at startup; a newer version replaces the stored one.
@@ -369,8 +377,9 @@ log("themes", `loaded ${themeLoad.loaded.length}, unchanged ${themeLoad.skipped.
 
 const api = createApi({
   db,
+  play,
   mail: createMailer(process.env),
-  sbKey: createSbKey(db),
+  sbKey,
   trustProxy: TRUST_PROXY,
   // Development only (`bun run api`): the Expo dev server runs on another
   // localhost port. Never on in a deployed container.
@@ -417,15 +426,6 @@ const seedState = {
   lastError: null,
   nextRunAt: null,
 };
-
-function dateKey(date) {
-  return date.toISOString().slice(0, 10);
-}
-
-function utcDatePlusDays(days) {
-  const now = new Date();
-  return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + days));
-}
 
 function runStep(label, command, args) {
   return new Promise((resolve, reject) => {
@@ -482,7 +482,7 @@ async function downloadCatalog() {
   log("seed", `Catalog saved (${(size / 1e6).toFixed(1)} MB)`);
 }
 
-// Generates and stores `days` boards starting at `startDate`.
+// Generates and stores `days` boards starting at `startDate` (a game-day string).
 async function runSeedPipeline(startDate, days) {
   if (seedState.running) {
     log("seed", "A run is already in progress; skipping");
@@ -491,10 +491,11 @@ async function runSeedPipeline(startDate, days) {
   seedState.running = true;
   seedState.lastRunAt = new Date().toISOString();
   const attempts = process.env.SEED_ATTEMPTS || "3000";
-  const start = dateKey(startDate);
+  const start = startDate;
 
   try {
     await downloadCatalog();
+    catalog.reload();
     await runStep("find tags", "bun", ["run", "scripts/findTags.ts", "--min-cell", "4"]);
     await runStep("generate boards", "bun", [
       "run",
@@ -511,7 +512,7 @@ async function runSeedPipeline(startDate, days) {
       attempts,
     ]);
     const generated = JSON.parse(fs.readFileSync(path.join(APP_ROOT, "data", "nightly-boards.json"), "utf8"));
-    seedBoards(db, generated.boards, start, days);
+    seedBoards(db, generated.boards, start, days, gameDay());
     seedState.lastResult = `ok: ${days} board(s) from ${start}`;
     seedState.lastError = null;
     log("seed", seedState.lastResult);
@@ -525,59 +526,28 @@ async function runSeedPipeline(startDate, days) {
   }
 }
 
-function msUntilNextRun() {
-  const hour = Number(process.env.SEED_HOUR_UTC ?? 0);
-  const minute = Number(process.env.SEED_MINUTE_UTC ?? 5);
-  const now = new Date();
-  const next = new Date(
-    Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), hour, minute, 0),
-  );
-  if (next <= now) {
-    next.setUTCDate(next.getUTCDate() + 1);
-  }
-  seedState.nextRunAt = next.toISOString();
-  return next.getTime() - now.getTime();
-}
-
 function runBackup() {
   try {
-    const file = backupDb(db, path.join(path.dirname(DB_PATH), "backups"), dateKey(utcDatePlusDays(0)));
+    const file = backupDb(db, path.join(path.dirname(DB_PATH), "backups"), gameDay());
     log("backup", `Wrote ${file}`);
   } catch (error) {
     log("backup", `FAILED: ${error && error.message ? error.message : error}`);
   }
 }
 
-function scheduleDailySeed() {
-  const delay = msUntilNextRun();
-  log("seed", `Next scheduled run at ${seedState.nextRunAt}`);
-  setTimeout(async () => {
-    if (seedState.enabled) {
-      // Seed tomorrow's board so it's in place before the next midnight.
-      try {
-        await runSeedPipeline(utcDatePlusDays(1), 1);
-      } catch {
-        // Retry once after 30 minutes; the catalog mirror is occasionally down.
-        log("seed", "Retrying in 30 minutes");
-        setTimeout(() => runSeedPipeline(utcDatePlusDays(1), 1).catch(() => {}), 30 * 60 * 1000);
-      }
-    }
-    ensureBundledBoards();
-    runBackup();
-    scheduleDailySeed();
-  }, delay);
-}
+const BOARDS_AHEAD = 3;
 
-// Today's and tomorrow's boards always exist: if the pipeline hasn't stored
-// one (first boot, seeding off, catalog mirror down), use the bundled pool
-// with the same pick the app uses offline.
-function ensureBundledBoards() {
+// Every day from today to BOARDS_AHEAD days out has a board. Missing days get
+// the bundled pick (the app uses the same pick offline). Days that have
+// started are never replaced.
+function ensureBoardsAhead() {
   try {
     const pool = JSON.parse(fs.readFileSync(path.join(APP_ROOT, "data", "generated-boards.json"), "utf8")).boards;
-    for (const offset of [0, 1]) {
-      const date = dateKey(utcDatePlusDays(offset));
+    const today = gameDay();
+    for (let offset = 0; offset <= BOARDS_AHEAD; offset += 1) {
+      const date = addDays(today, offset);
       if (!getBoard(db, date, "9999-12-31")) {
-        putBoard(db, date, bundledBoardFor(date, pool));
+        putBoard(db, date, bundledBoardFor(date, pool), { today });
         log("seed", `Stored bundled board for ${date}`);
       }
     }
@@ -586,19 +556,50 @@ function ensureBundledBoards() {
   }
 }
 
+function freezeEndedDays() {
+  try {
+    const frozen = catchUpFreeze(db, play, gameDay());
+    if (frozen.length) log("scores", `Froze ${frozen.join(", ")}`);
+  } catch (error) {
+    log("scores", `Freeze FAILED: ${error && error.message ? error.message : error}`);
+  }
+}
+
+// 04:00 Stockholm: freeze the day that ended, refresh the catalogue and the
+// coming boards, back up. A minute's margin so gameDay() has turned.
+function scheduleNightly() {
+  const at = nextRollover(new Date()).getTime() + 60_000;
+  seedState.nextRunAt = new Date(at).toISOString();
+  log("seed", `Next nightly run at ${seedState.nextRunAt}`);
+  setTimeout(async () => {
+    freezeEndedDays();
+    if (seedState.enabled) {
+      try {
+        await runSeedPipeline(addDays(gameDay(), 1), BOARDS_AHEAD);
+      } catch {
+        log("seed", "Retrying in 30 minutes");
+        setTimeout(() => runSeedPipeline(addDays(gameDay(), 1), BOARDS_AHEAD).catch(() => {}), 30 * 60 * 1000);
+      }
+    }
+    ensureBoardsAhead();
+    runBackup();
+    scheduleNightly();
+  }, at - Date.now());
+}
+
 function startSeeding() {
-  ensureBundledBoards();
+  freezeEndedDays();
+  ensureBoardsAhead();
   if (process.env.SEED_ENABLED === "false") {
     log("seed", "Disabled via SEED_ENABLED=false; serving bundled boards");
   } else {
     seedState.enabled = true;
     if (process.env.SEED_ON_START !== "false") {
-      // Cover today and tomorrow on boot with freshly generated boards.
-      runSeedPipeline(utcDatePlusDays(0), 2).catch(() => {});
+      // Fresh boards for the coming days only; today's is never replaced.
+      runSeedPipeline(addDays(gameDay(), 1), BOARDS_AHEAD).catch(() => {});
     }
   }
-  // Runs nightly either way: the backup happens even with seeding off.
-  scheduleDailySeed();
+  scheduleNightly();
 }
 
 // ---------------------------------------------------------------------------

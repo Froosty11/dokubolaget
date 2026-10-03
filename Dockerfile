@@ -47,7 +47,7 @@ COPY Dokubolaget/src/theme/types.ts Dokubolaget/src/theme/packSchema.ts Dokubola
 # Club themes: loaded into the database at startup (server/themePacks.ts).
 COPY club-themes /app/club-themes
 COPY Dokubolaget/scripts ./scripts
-COPY Dokubolaget/src/boardTags.ts ./src/boardTags.ts
+COPY Dokubolaget/src/boardTags.ts Dokubolaget/src/gameDay.ts Dokubolaget/src/playable.ts Dokubolaget/src/scoring.ts ./src/
 COPY Dokubolaget/data ./data
 
 # The daily catalog download is written to /app/products.json, and the
