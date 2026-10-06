@@ -152,8 +152,12 @@ function fakeProduct(n) {
     },
   };
 }
+// Also seeds cellInfo (score, share, unicorn) for each filled cell so the
+// score badges have something to show — the model only fills cellInfo via a
+// real guess round-trip, which this dev-only state-seeding skips. The second
+// cell gets the unicorn flag so that badge is exercised too.
 function fill(cells, misses = {}) {
-  return `(() => { const make = ${fakeProduct.toString()}; const m = window.__doku; const sel = {}; for (const c of ${JSON.stringify(cells)}) sel[c] = make(c); m.missesByCell = ${JSON.stringify(misses)}; m.selectedProductsByCell = sel; })()`;
+  return `(() => { const make = ${fakeProduct.toString()}; const m = window.__doku; const sel = {}; const info = {}; const scores = [8, 64, 100]; const cells = ${JSON.stringify(cells)}; cells.forEach((c, i) => { sel[c] = make(c); info[c] = { score: scores[i % scores.length], share: 0.12 + i * 0.1, unicorn: i === 1 }; }); m.missesByCell = ${JSON.stringify(misses)}; m.selectedProductsByCell = sel; m.cellInfo = info; })()`;
 }
 
 const STATES = {

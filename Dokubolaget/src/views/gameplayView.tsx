@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { FlatList, Image, Platform, Pressable, ScrollView as RNScrollView, StyleSheet, Text, View, useWindowDimensions, Animated } from "react-native";
+import { ActivityIndicator, FlatList, Image, Platform, Pressable, ScrollView as RNScrollView, StyleSheet, Text, View, useWindowDimensions, Animated } from "react-native";
 import { makeAppStyles } from "../AppStyles"
 import { useTheme, useThemedStyles } from "../theme/ThemeProvider";
 import { ThemeLogo } from "../theme/ThemeLogo";
@@ -41,12 +41,18 @@ type GameViewProps = {
   tutorialOpen: boolean;
   openTutorialACB: () => void;
   closeTutorialACB: () => void;
+
+  boardStatus: "loading" | "ready" | "offline";
+  practiceLabel: string | null;
+  cellInfo: Record<number, { score: number | null; unicorn: boolean }>;
+  toast: string | null;
 };
 
 
 type CellContentProps = {
   item: number;
   selectedProduct: any;
+  info: { score: number | null; unicorn: boolean } | undefined;
 };
 
 
@@ -69,6 +75,10 @@ export function GameView(props: Readonly<GameViewProps>) {
     bursts,
     onBurstDone,
     onFilledCellPressed,
+    boardStatus,
+    practiceLabel,
+    cellInfo,
+    toast,
   } = props;
   const { theme } = useTheme();
   const app = useThemedStyles(makeAppStyles);
@@ -261,6 +271,16 @@ export function GameView(props: Readonly<GameViewProps>) {
 
   // console.log(gameCells)
 
+  if (boardStatus === "loading") {
+    return (
+      <View style={{ flex: 1, backgroundColor: colors.page, alignItems: "center", justifyContent: "center", gap: 12 }}>
+        <ThemeBackdrop screen="board" />
+        <ActivityIndicator color={colors.accent} />
+        <Text style={{ fontFamily: fonts.body, color: colors.inkMuted }}>Fetching today's board…</Text>
+      </View>
+    );
+  }
+
   return (
     <View style={{ flex: 1, backgroundColor: colors.page }}>
     <ThemeBackdrop screen="board" />
@@ -269,6 +289,18 @@ export function GameView(props: Readonly<GameViewProps>) {
       contentContainerStyle={[app.body, { height: undefined, flexGrow: 1, backgroundColor: "transparent" }]}
     >
         <ThemeLogo height={logoHeight} />
+
+        {practiceLabel ? (
+          <Text accessibilityRole="text" style={{ alignSelf: "center", fontFamily: fonts.bodyStrong, color: colors.inkMuted, marginBottom: 8, letterSpacing: 1, textTransform: "uppercase", fontSize: 12 }}>
+            {practiceLabel}
+          </Text>
+        ) : null}
+
+        {toast ? (
+          <View accessibilityLiveRegion="polite" style={{ marginHorizontal: 16, marginBottom: 8, padding: 10, borderRadius: radii.card, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.divider }}>
+            <Text style={{ fontFamily: fonts.body, color: colors.ink, textAlign: "center" }}>{toast}</Text>
+          </View>
+        ) : null}
 
       {/* game window */}
       <View style={[{alignSelf: "center", width: boardSize, height: boardSize, position: "relative"}, ruled ? board.ruledBoard : null]}>
@@ -385,11 +417,11 @@ export function GameView(props: Readonly<GameViewProps>) {
             <YStack gap="$4" >
               <AlertDialog.Title style={{fontFamily: fonts.display, color: colors.dialogInk}}>How to play!</AlertDialog.Title>
               <ScrollView key="scroll" style={{maxHeight: 300}} showsVerticalScrollIndicator>
-                <Text style={{fontFamily: fonts.body, color: colors.dialogInk, letterSpacing: -0.2}}>
-                  The goal of this game is to fill in the 3x3 grid with products that match both of the categories on the top and the left side of the board.{"\n\n"}
-                  You only have the 9 guesses total when answering so choose wisely. Only one product may be used per board. The uniqueness score is the sum of the total score on that board and that is the tallied up against other players.{"\n\n"}
+                <Text style={{ fontFamily: fonts.body, color: colors.dialogInk, letterSpacing: -0.2, lineHeight: 21 }}>
+                  <Text style={{ fontFamily: fonts.bodyStrong }}>Fill the grid.</Text> Find a bottle that matches both its row and its column. Only bottles from Systembolaget's regular, local and seasonal ranges count.{"\n\n"}
+                  <Text style={{ fontFamily: fonts.bodyStrong }}>Rarer scores more.</Text> The fewer players who picked your bottle, the more it's worth (up to 100 a cell). Each miss costs 5 points, at most 20 per cell.{"\n\n"}
+                  <Text style={{ fontFamily: fonts.bodyStrong }}>A new board every day at 04:00.</Text>
                 </Text>
-                <Text style={{fontFamily: fonts.body, color: colors.dialogInk, fontSize: 12}}>New gameboards are genereated at 2 AM GST +1 </Text>
               </ScrollView>
 
             <XStack justifyContent="flex-end" gap="$2">
@@ -462,6 +494,7 @@ export function GameView(props: Readonly<GameViewProps>) {
   function cellRenderCB(renderInfo: { item: number }) {
     const item = renderInfo.item;
     const selectedProduct = selectedProductsByCell[item];
+    const info = cellInfo[item];
 
     function onCellPressedACB() {
       haptics.play("tap")
@@ -489,10 +522,12 @@ export function GameView(props: Readonly<GameViewProps>) {
         index={item - 1}
         onPress={onCellPressedACB}
         accessibilityLabel={`${formatTagLabel(sideCategories[Math.floor((item - 1) / 3)])} and ${formatTagLabel(topCategories[(item - 1) % 3])}, ${
-          selectedProduct ? `filled with ${selectedProduct.name}. Opens its info sheet.` : "empty. Opens search."
+          selectedProduct
+            ? `filled with ${selectedProduct.name}, ${info?.score ?? "score pending"} points${info?.unicorn ? ", unicorn" : ""}. Opens its info sheet.`
+            : "empty. Opens search."
         }`}
       >
-        <CellContent item={item} selectedProduct={selectedProduct} />
+        <CellContent item={item} selectedProduct={selectedProduct} info={info} />
       </AnimatedCellSlot>
     );
   }
@@ -500,6 +535,7 @@ export function GameView(props: Readonly<GameViewProps>) {
 function CellContent({
   item,
   selectedProduct,
+  info,
 }: Readonly<CellContentProps>) {
   const [imageFailed, setImageFailed] = useState(false);
 
@@ -509,59 +545,76 @@ function CellContent({
 
   const shouldShowImage = Boolean(selectedProduct?.image) && !imageFailed;
 
-  if (selectedProduct && theme.flags.productNumberCells) {
-    return (
-      <View style={board.numberCell}>
-        {shouldShowImage ? (
-          <Image source={{ uri: selectedProduct.image }} style={board.numberCellThumb} onError={() => setImageFailed(true)} />
-        ) : null}
-        <Text style={board.numberCellNr}>NR {selectedProduct.raw?.productNumber}</Text>
-        <Text numberOfLines={3} style={board.numberCellName}>{selectedProduct.name}</Text>
-        <Text style={board.numberCellPrice}>{formatKronor(selectedProduct.raw?.price)}:-</Text>
-      </View>
-    );
-  }
+  const content = (() => {
+    if (selectedProduct && theme.flags.productNumberCells) {
+      return (
+        <View style={board.numberCell}>
+          {shouldShowImage ? (
+            <Image source={{ uri: selectedProduct.image }} style={board.numberCellThumb} onError={() => setImageFailed(true)} />
+          ) : null}
+          <Text style={board.numberCellNr}>NR {selectedProduct.raw?.productNumber}</Text>
+          <Text numberOfLines={3} style={board.numberCellName}>{selectedProduct.name}</Text>
+          <Text style={board.numberCellPrice}>{formatKronor(selectedProduct.raw?.price)}:-</Text>
+        </View>
+      );
+    }
 
-  if (shouldShowImage) {
-    return (
-      <Image
-        source={{ uri: selectedProduct.image }}
-        style={app.cellImage}
-        onError={() => setImageFailed(true)}
-      />
-    );
-  }
+    if (shouldShowImage) {
+      return (
+        <Image
+          source={{ uri: selectedProduct.image }}
+          style={app.cellImage}
+          onError={() => setImageFailed(true)}
+        />
+      );
+    }
 
-  if (selectedProduct && deco) {
+    if (selectedProduct && deco) {
+      return (
+        <View style={[board.cellLabelWrap, { flex: 1, justifyContent: "flex-end" }]}>
+          {decoFrame}
+          <Text style={{ position: "absolute", top: 4, left: 6, fontSize: 14 }}>🥃</Text>
+          <Text numberOfLines={2} style={[board.cellLabel, { fontFamily: fonts.display, fontSize: Math.max(10, cellSize * 0.12), color: colors.inkStrong }]}>
+            {selectedProduct.name}
+          </Text>
+          <Text style={{ fontFamily: fonts.bodyStrong, fontSize: 11, letterSpacing: 1, color: colors.accent }}>
+            {formatKronor(selectedProduct.raw?.price)} KR
+          </Text>
+        </View>
+      );
+    }
+
+    if (!selectedProduct && stitched) {
+      return (
+        <View style={[board.cellLabelWrap, { flex: 1 }]}>
+          <Text style={{ fontSize: 22, color: colors.cellBorder }}>✿</Text>
+        </View>
+      );
+    }
+
     return (
-      <View style={[board.cellLabelWrap, { flex: 1, justifyContent: "flex-end" }]}>
-        {decoFrame}
-        <Text style={{ position: "absolute", top: 4, right: 6, fontSize: 14 }}>🥃</Text>
-        <Text numberOfLines={2} style={[board.cellLabel, { fontFamily: fonts.display, fontSize: Math.max(10, cellSize * 0.12), color: colors.inkStrong }]}>
-          {selectedProduct.name}
+      <View style={board.cellLabelWrap}>
+        <Text numberOfLines={2} style={board.cellLabel}>
+          {/* {selectedProduct?.name || "Cell " + item} */}
+          {selectedProduct?.name || ""}
         </Text>
-        <Text style={{ fontFamily: fonts.bodyStrong, fontSize: 11, letterSpacing: 1, color: colors.accent }}>
-          {formatKronor(selectedProduct.raw?.price)} KR
-        </Text>
       </View>
     );
-  }
+  })();
 
-  if (!selectedProduct && stitched) {
-    return (
-      <View style={[board.cellLabelWrap, { flex: 1 }]}>
-        <Text style={{ fontSize: 22, color: colors.cellBorder }}>✿</Text>
-      </View>
-    );
-  }
+  if (!selectedProduct) return content;
 
   return (
-    <View style={board.cellLabelWrap}>
-      <Text numberOfLines={2} style={board.cellLabel}>
-        {/* {selectedProduct?.name || "Cell " + item} */}
-        {selectedProduct?.name || ""}
-      </Text>
-    </View>
+    <>
+      {content}
+      {info ? (
+        <View pointerEvents="none" style={{ position: "absolute", top: 3, right: 3, backgroundColor: colors.accent, borderRadius: radii.pill, paddingHorizontal: 5, paddingVertical: 1 }}>
+          <Text style={{ fontFamily: fonts.bodyStrong, fontSize: 11, color: colors.accentInk }}>
+            {info.unicorn ? "🦄 " : ""}{info.score ?? "…"}
+          </Text>
+        </View>
+      ) : null}
+    </>
   );
 }
 

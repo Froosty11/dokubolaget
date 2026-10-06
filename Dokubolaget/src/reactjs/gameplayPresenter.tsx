@@ -9,16 +9,16 @@ import type { ThemeId } from "../theme/types"
 import type { HeaderRevealState } from "../views/boardAnimations"
 import { Dossier, redactionKeysForTags } from "../components/Dossier"
 import { router } from "expo-router"
-import { BoardTag, GuessFeedback } from "../dokuModel"
+import { BoardTag, CellInfo, GuessFeedback } from "../dokuModel"
 import { useEffect, useState, useRef } from "react"
 import { haptics } from "../theme/haptics";
 import { useTheme } from "../theme/ThemeProvider"
 import { composeFeedbackText } from "../theme/feedbackText"
 import { receiptLines } from "../searchHelpers"
-
-let tutorialShownForSession = false;
+import { formatShortDay } from "../gameDay"
 
 const LAST_REVEAL_KEY = "dokubolaget.lastHeaderReveal";
+const TUTORIAL_KEY = "dokubolaget.tutorialSeen";
 
 function todayKey() {
   return new Date().toISOString().slice(0, 10);
@@ -39,6 +39,12 @@ type GameplayProps = {
     justRestored: boolean
     supportUrl: string | null
     shiftPendingUnlock: (source?: "board" | "streak") => ThemeId | null
+    boardStatus: "loading" | "ready" | "offline"
+    playMode: "daily" | "archive" | "test"
+    practiceDay: string | null
+    cellInfo: Record<number, CellInfo>
+    rolloverNotice: { score: number } | null
+    syncNotice: string | null
   }
 }
 
@@ -148,11 +154,35 @@ const Gameplay = observer(function GameRender({ model }: GameplayProps) {
     const [tutorialOpen, setTutorialOpen] = useState(false);
 
     useEffect(() => {
-      if (!tutorialShownForSession) {
-        setTutorialOpen(true);
-        tutorialShownForSession = true;
-      }
-    }, [])
+      AsyncStorage.getItem(TUTORIAL_KEY)
+        .then((seen) => {
+          if (!seen) {
+            setTutorialOpen(true);
+            AsyncStorage.setItem(TUTORIAL_KEY, "1").catch(() => {});
+          }
+        })
+        .catch(() => {});
+    }, []);
+
+    const [toast, setToast] = useState<string | null>(null);
+    useEffect(() => {
+      const notice = model.rolloverNotice
+        ? `New board! Yesterday's ended at ${model.rolloverNotice.score} points.`
+        : model.syncNotice;
+      if (!notice) return;
+      setToast(notice);
+      model.rolloverNotice = null;
+      model.syncNotice = null;
+      const timer = setTimeout(() => setToast(null), 4500);
+      return () => clearTimeout(timer);
+    }, [model.rolloverNotice, model.syncNotice]);
+
+    const practiceLabel =
+      model.boardStatus === "offline"
+        ? "Practice (offline) · scores need a connection"
+        : model.playMode === "archive"
+          ? `Practice · ${formatShortDay(model.practiceDay as string)} · doesn't count`
+          : null;
 
     // First visit of the day: headers drop in one by one once the tutorial
     // is out of the way. Later visits show them immediately.
@@ -217,6 +247,11 @@ const Gameplay = observer(function GameRender({ model }: GameplayProps) {
           selectedProductsByCell={model.selectedProductsByCell}
           feedback={feedback}
           feedbackFadeAnim={fadeAnim}
+
+          boardStatus={model.boardStatus}
+          practiceLabel={practiceLabel}
+          cellInfo={model.cellInfo}
+          toast={toast}
 
           tutorialOpen={tutorialOpen}
           openTutorialACB={openTutorialACB}
