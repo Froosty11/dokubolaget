@@ -389,8 +389,10 @@ const api = createApi({
   // localhost port. Never on in a deployed container.
   devOrigins: process.env.API_DEV_CORS === "true",
   publicUrl: process.env.PUBLIC_URL,
-  supportUrl: process.env.SUPPORT_URL,
-  contactEmail: process.env.CONTACT_EMAIL,
+  // Default to the project's own Ko-fi and contact so the "Support" link and
+  // "Want your club here?" show without extra config; override via env.
+  supportUrl: process.env.SUPPORT_URL || "https://ko-fi.com/dokubolaget",
+  contactEmail: process.env.CONTACT_EMAIL || "e@dokubolaget.se",
 });
 
 async function serveApi(req, res, requestUrl) {
