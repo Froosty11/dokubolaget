@@ -320,11 +320,11 @@ export function SearchView(props: Readonly<SearchViewProps>) {
 		setPeek({ result, pinned })
 	}
 
-	function cellTagsForGrouping() {
-		return selectedCell != null && selectedCell >= 1 && selectedCell <= 9
-			? [sideCategories[Math.floor((selectedCell - 1) / 3)], topCategories[(selectedCell - 1) % 3]]
-			: []
-	}
+	// Redact every property used anywhere on the board, not only this cell's two
+	// categories. Otherwise you could open search for another square and read an
+	// unredacted property there to check whether a product fits that cell.
+	const boardTags = [...sideCategories, ...topCategories]
+	const redactKeys = redactionKeysForTags(boardTags)
 
 	function searchResultRowRenderCB ({item}: { item: SearchResultItem | GroupHeader }) {
 		if ("kind" in item && item.kind === "header") {
@@ -337,7 +337,7 @@ export function SearchView(props: Readonly<SearchViewProps>) {
 	const shownResults = results.slice(0, 20)
 	// Grouping by type would give the answer away when the cell asks about type.
 	const listData =
-		theme.flags.groupResultsByType && !redactionKeysForTags(cellTagsForGrouping()).has("style")
+		theme.flags.groupResultsByType && !redactKeys.has("style")
 			? groupResultsByType(shownResults)
 			: shownResults
 
@@ -355,11 +355,6 @@ export function SearchView(props: Readonly<SearchViewProps>) {
 
 	const categoryLabels = getCategoryLabels()
 
-	const cellTags =
-		selectedCell != null && selectedCell >= 1 && selectedCell <= 9
-			? [sideCategories[Math.floor((selectedCell - 1) / 3)], topCategories[(selectedCell - 1) % 3]]
-			: []
-	const redactKeys = redactionKeysForTags(cellTags)
 	const peekHint = Platform.OS === "web" && sideBySide
 		? "Hover a result to open its case file"
 		: "Long-press a result to open its case file"
