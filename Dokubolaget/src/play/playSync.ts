@@ -19,6 +19,7 @@ type PlayModel = {
 };
 
 export const DROPPED_NOTICE = "A few guesses from the last board couldn't be sent before 04:00.";
+export const GUESS_LOST_NOTICE = "That guess couldn't be saved, so it wasn't counted. Check your connection and try again.";
 
 // Worth sending again later: offline, rate limited, or the server (or the
 // catalogue behind it) briefly unavailable. Anything else is final.
@@ -47,7 +48,12 @@ export function createPlaySync(deps: { api: PlayApi; outbox: Outbox; model: Play
       return "done" as const;
     } catch (error) {
       if (error instanceof ApiRequestError && RETRY.has(error.status)) return "retry" as const;
-      // A 400 such as day_over: the server changed nothing, so drop it.
+      // A 400 such as day_over means the server deliberately rejected the guess
+      // without changing anything, so drop it quietly. Any other final error —
+      // a 401 from a lapsed session, a 403 from a misconfigured origin — means
+      // the guess was lost unexpectedly; tell the player rather than eat it.
+      const benign = error instanceof ApiRequestError && error.status === 400;
+      if (!benign) model.syncNotice = GUESS_LOST_NOTICE;
       return "drop" as const;
     }
   }

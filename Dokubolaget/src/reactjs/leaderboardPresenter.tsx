@@ -3,7 +3,7 @@ import type { Theme } from "../theme/types";
 import { useEffect, useState } from "react";
 import { StyleSheet, View } from "react-native";
 import { api } from "../api";
-import { LeaderBoardFormView } from "../views/leaderboardFormView";
+import { LeaderBoardFormView, type LeaderboardPeriod } from "../views/leaderboardFormView";
 import { LeaderBoardResultView } from "../views/leaderboardResultView";
 
 type LeaderboardEntry = {
@@ -13,110 +13,56 @@ type LeaderboardEntry = {
   detail?: string;
 };
 
-type LeaderboardSection = {
-  title: string;
-  subtitle: string;
-  rows: LeaderboardEntry[];
-};
-
 type leaderboardProps = {
   limit?: number;
 };
 
-type TimeFilter = "TODAY" | "WEEK" | "MONTH" | "ALL_TIME";
-type CategoryFilter =
-  | "TOTAL_SCORE"
-  | "STREAK"
-  | "LARGEST_STREAK"
-  | "UNIQUENESS";
-
-type FilterMetadata = {
-  timeField: string;
-  categoryField: string;
-  displayValue: (data: any) => string | number;
-  sectionTitle: string;
-  sectionSubtitle: string;
+const PERIOD_COPY: Record<LeaderboardPeriod, { title: string; subtitle: string; empty: string }> = {
+  today: { title: "Today", subtitle: "Ranked by today's score", empty: "No scores yet today — be the first to finish the board." },
+  week: { title: "This Week", subtitle: "Ranked by this week's score", empty: "No scores yet this week." },
+  all: { title: "All Time", subtitle: "Ranked by total score", empty: "No scores recorded yet." },
+  streak: { title: "Streak", subtitle: "Ranked by current streak", empty: "No streaks going yet." },
 };
 
-function getFilterMetadataACB(
-  time: TimeFilter,
-  category: CategoryFilter,
-): FilterMetadata {
-  const timeLabels: Record<TimeFilter, string> = {
-    TODAY: "Today",
-    WEEK: "This Week",
-    MONTH: "This Month",
-    ALL_TIME: "All Time",
-  };
-
-  const categoryLabels: Record<CategoryFilter, string> = {
-    TOTAL_SCORE: "Total Score",
-    STREAK: "Current Streak",
-    LARGEST_STREAK: "Largest Streak",
-    UNIQUENESS: "Uniqueness",
-  };
-
-  let timeField = "dailyScore";
-  if (time === "WEEK") timeField = "weeklyScore";
-  if (time === "MONTH") timeField = "monthlyScore";
-  if (time === "ALL_TIME") timeField = "totalScore";
-
-  let categoryField = "totalScore";
-  if (category === "STREAK") categoryField = "currentStreak";
-  if (category === "LARGEST_STREAK") categoryField = "longestStreak";
-  if (category === "UNIQUENESS") categoryField = "uniquenessPercent";
-  if (category === "TOTAL_SCORE") categoryField = timeField;
-
-  let displayValue: (data: any) => string | number = (data) => "--";
-  if (category === "UNIQUENESS") {
-    displayValue = (data) => {
-      const uniq = Number(data.uniquenessPercent);
-      return Number.isFinite(uniq) ? uniq.toFixed(2) + "%" : "--";
-    };
-  } else {
-    displayValue = (data) => Number(data[categoryField] || 0);
-  }
-
-  const timeLabel = timeLabels[time];
-  const categoryLabel = categoryLabels[category];
-
-  //u4@test.se
-  return {
-    timeField,
-    categoryField,
-    displayValue,
-    sectionTitle: `${categoryLabel} - ${timeLabel}`,
-    sectionSubtitle: `Users ranked by ${categoryLabel.toLowerCase()}`,
-  };
-}
-
-function Leaderboard({limit = 20 }: leaderboardProps) {
+function Leaderboard(_props: leaderboardProps) {
   const style = useThemedStyles(makeStyle);
-  const [timeFilter, setTimeFilter] = useState<TimeFilter>("TODAY");
-  const [categoryFilter, setCategoryFilter] =
-    useState<CategoryFilter>("TOTAL_SCORE");
-  const [topUsers, setTopUsers] = useState<LeaderboardEntry[]>([]);
+  const [period, setPeriod] = useState<LeaderboardPeriod>("today");
+  const [rows, setRows] = useState<LeaderboardEntry[]>([]);
   const [loading, setLoading] = useState(true);
-
-  const filterMeta = getFilterMetadataACB(timeFilter, categoryFilter);
 
   useEffect(
     function loadLeaderboardACB() {
       let isMounted = true;
       setLoading(true);
 
-      // Scores arrive with the scoring update; until then the list is empty.
       api
-        .leaderboard("today")
-        .then(function toTopUsersACB(result) {
-          const rows = result.rows.map(function toRowACB(row, index) {
-            return { key: `${row.nickname}-${index}`, label: row.nickname, value: row.value };
+        .leaderboard(period)
+        .then(function toRowsACB(result) {
+          const meNickname = result.me?.nickname;
+          const entries: LeaderboardEntry[] = result.rows.map(function toRowACB(row) {
+            const isMe = row.nickname === meNickname;
+            return {
+              key: `${period}-${row.rank}-${row.nickname}`,
+              label: `${row.rank}. ${row.nickname}`,
+              value: row.value,
+              detail: isMe ? "You" : undefined,
+            };
           });
-          if (isMounted) setTopUsers(rows);
+          // The server always returns the caller's own row, even beyond the top
+          // list or at zero. Pin it to the bottom when it isn't already shown.
+          if (result.me && meNickname && !result.rows.some((r) => r.nickname === meNickname)) {
+            entries.push({
+              key: `${period}-me`,
+              label: `${result.me.rank}. ${result.me.nickname}`,
+              value: result.me.value,
+              detail: "You",
+            });
+          }
+          if (isMounted) setRows(entries);
         })
         .catch(function leaderboardErrorACB(error) {
           console.log("Failed to load leaderboard:", error?.message || error);
-          if (isMounted) setTopUsers([]);
+          if (isMounted) setRows([]);
         })
         .finally(function leaderboardFinallyACB() {
           if (isMounted) setLoading(false);
@@ -126,37 +72,23 @@ function Leaderboard({limit = 20 }: leaderboardProps) {
         isMounted = false;
       };
     },
-    [timeFilter, categoryFilter],
+    [period],
   );
 
-  const section: LeaderboardSection = {
-    title: filterMeta.sectionTitle,
-    subtitle: filterMeta.sectionSubtitle,
-    rows: loading
-      ? [{ label: "Loading...", value: "", detail: "Fetching users" }]
-      : topUsers.length
-        ? topUsers
-        : [
-            {
-              label: "Scores are coming soon",
-              value: "",
-              detail: "Rarity scores and streaks arrive with the next update.",
-            },
-          ],
-  };
+  const copy = PERIOD_COPY[period];
+  const displayRows: LeaderboardEntry[] = loading
+    ? [{ label: "Loading…", value: "", detail: "Fetching the leaderboard" }]
+    : rows.length
+      ? rows
+      : [{ label: "Nobody here yet", value: "", detail: copy.empty }];
 
   return (
     <View style={style.page}>
-      <LeaderBoardFormView
-        timeFilter={timeFilter}
-        onTimeFilterChange={setTimeFilter}
-        categoryFilter={categoryFilter}
-        onCategoryFilterChange={setCategoryFilter}
-      />
+      <LeaderBoardFormView period={period} onPeriodChange={setPeriod} />
       <LeaderBoardResultView
-        title={section.title}
-        subtitle={section.subtitle}
-        rows={section.rows}
+        title={copy.title}
+        subtitle={copy.subtitle}
+        rows={displayRows}
       />
     </View>
   );

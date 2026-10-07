@@ -2,99 +2,45 @@ import React from "react";
 import { useTheme, useThemedStyles } from "../theme/ThemeProvider";
 import type { Theme } from "../theme/types";
 import { Pressable, StyleSheet, Text, View } from "react-native";
-import { Label, XStack, YStack } from "tamagui";
 import { haptics } from "../theme/haptics";
 
-export type TimeFilter = "TODAY" | "WEEK" | "MONTH" | "ALL_TIME";
-export type CategoryFilter =
-  | "TOTAL_SCORE"
-  | "STREAK"
-  | "LARGEST_STREAK"
-  | "UNIQUENESS";
-
-type SelectItemLike = {
-  label: string;
-  value: TimeFilter | CategoryFilter;
-};
+// The four leaderboards the server actually serves (server/stats.ts Period,
+// minus "yesterday" which the UI doesn't expose). The values are passed to
+// api.leaderboard() unchanged.
+export type LeaderboardPeriod = "today" | "week" | "all" | "streak";
 
 type LeaderBoardFormViewProps = {
-  timeFilter: TimeFilter;
-  onTimeFilterChange: (time: TimeFilter) => void;
-  categoryFilter: CategoryFilter;
-  onCategoryFilterChange: (category: CategoryFilter) => void;
+  period: LeaderboardPeriod;
+  onPeriodChange: (period: LeaderboardPeriod) => void;
 };
 
-const timeOptions: { label: string; value: TimeFilter }[] = [
-  { label: "Today", value: "TODAY" },
-  { label: "This Week", value: "WEEK" },
-  { label: "This Month", value: "MONTH" },
-  { label: "All Time", value: "ALL_TIME" },
-];
-
-const categoryOptions: { label: string; value: CategoryFilter }[] = [
-  { label: "Total Score", value: "TOTAL_SCORE" },
-  { label: "Current Streak", value: "STREAK" },
-  { label: "Largest Streak", value: "LARGEST_STREAK" },
-  { label: "Uniqueness", value: "UNIQUENESS" },
+const periodOptions: { label: string; value: LeaderboardPeriod }[] = [
+  { label: "Today", value: "today" },
+  { label: "This Week", value: "week" },
+  { label: "All Time", value: "all" },
+  { label: "Streak", value: "streak" },
 ];
 
 export function LeaderBoardFormView({
-  timeFilter,
-  onTimeFilterChange,
-  categoryFilter,
-  onCategoryFilterChange,
+  period,
+  onPeriodChange,
 }: LeaderBoardFormViewProps) {
   const style = useThemedStyles(makeStyle);
-  const { theme } = useTheme();
-  const labelStyle = { color: theme.colors.ink, fontFamily: theme.fonts.bodyStrong };
   return (
     <View style={style.formContainer}>
-        <Text style={style.title}>Leaderboards</Text>
-        <Text style={style.subtitle}>See how you rank</Text>
+      <Text style={style.title}>Leaderboards</Text>
+      <Text style={style.subtitle}>See how you rank</Text>
 
-    <View style={style.formContainer}>
-      <XStack gap="$3" marginBottom="$3">
-        <YStack flex={1}>
-          <Label
-            size="$2"
-            htmlFor="time-select"
-            fontWeight="600"
-            marginBottom="$1"
-            style={labelStyle}
-          >
-            Time
-          </Label>
-          <LeaderboardSelect
-            id="time-select"
-            value={timeFilter}
-            onValueChange={(value) => onTimeFilterChange(value as TimeFilter)}
-            items={timeOptions}
-            placeholder="Select time"
-          />
-        </YStack>
-
-        <YStack flex={1}>
-          <Label
-            size="$2"
-            htmlFor="category-select"
-            fontWeight="600"
-            marginBottom="$1"
-            style={labelStyle}
-          >
-            Category
-          </Label>
-          <LeaderboardSelect
-            id="category-select"
-            value={categoryFilter}
-            onValueChange={(value) =>
-              onCategoryFilterChange(value as CategoryFilter)
-            }
-            items={categoryOptions}
-            placeholder="Select category"
-          />
-        </YStack>
-      </XStack>
-    </View>
+      <View style={style.formContainer}>
+        <Text style={style.fieldLabel}>Leaderboard</Text>
+        <LeaderboardSelect
+          id="period-select"
+          value={period}
+          onValueChange={(value) => onPeriodChange(value as LeaderboardPeriod)}
+          items={periodOptions}
+          placeholder="Select leaderboard"
+        />
+      </View>
     </View>
   );
 }
@@ -107,9 +53,9 @@ function LeaderboardSelect({
   placeholder,
 }: {
   id: string;
-  value: TimeFilter | CategoryFilter;
+  value: LeaderboardPeriod;
   onValueChange: (value: string) => void;
-  items: SelectItemLike[];
+  items: { label: string; value: LeaderboardPeriod }[];
   placeholder: string;
 }) {
   const style = useThemedStyles(makeStyle);
@@ -124,7 +70,6 @@ function LeaderboardSelect({
   }
 
   return (
-    
       <View style={style.selectWrapper}>
         <Pressable
           accessibilityRole="button"
@@ -181,6 +126,13 @@ const makeStyle = (theme: Theme) => ({
     fontSize: 14,
     color: theme.colors.inkMuted,
     marginBottom: 16,
+  },
+  fieldLabel: {
+    fontFamily: theme.fonts.bodyStrong,
+    fontSize: 13,
+    fontWeight: "600" as const,
+    color: theme.colors.ink,
+    marginBottom: 6,
   },
   selectWrapper: {
     position: "relative" as const,
@@ -241,24 +193,5 @@ const makeStyle = (theme: Theme) => ({
     fontSize: 14,
     fontWeight: "700" as const,
     color: theme.colors.inkStrong,
-  },
-  friendsTag: {
-    minWidth: 68,
-    height: 40,
-    borderWidth: 1,
-    borderColor: theme.colors.divider,
-    borderRadius: 12,
-    backgroundColor: theme.colors.surfaceAlt,
-    justifyContent: "center" as const,
-    alignItems: "center" as const,
-    alignSelf: "flex-end" as const,
-    opacity: 0.5,
-    paddingHorizontal: 8,
-  },
-  friendsTagText: {
-    fontFamily: theme.fonts.bodyStrong,
-    fontSize: 12,
-    fontWeight: "600" as const,
-    color: theme.colors.inkFaint,
   },
 });
