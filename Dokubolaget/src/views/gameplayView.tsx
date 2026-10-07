@@ -124,6 +124,11 @@ export function GameView(props: Readonly<GameViewProps>) {
     Math.min(availableWidth, 720, windowHeight - TAB_BAR_AND_PADDING - logoHeight),
   );
   const cellSize = boardSize / 4;
+  // Prislista's solved-cell bottle thumbnail, sized from the cell so it isn't a
+  // tiny stamp on larger boards. The text column pads right to clear it.
+  const thumbW = Math.max(22, Math.round(cellSize * 0.24));
+  const thumbH = Math.max(52, Math.round(cellSize * 0.56));
+  const thumbPad = thumbW + 8;
 
   // Gameboard stylesheet
   const board = StyleSheet.create({
@@ -162,13 +167,14 @@ export function GameView(props: Readonly<GameViewProps>) {
       fontFamily: fonts.mono,
       fontSize: Math.max(9, cellSize * 0.1),
       color: colors.accent,
+      paddingRight: thumbPad,
     },
     numberCellName: {
       fontFamily: fonts.display,
       fontSize: Math.max(10, cellSize * 0.11),
       lineHeight: Math.max(12, cellSize * 0.14),
       color: colors.ink,
-      paddingRight: 14,
+      paddingRight: thumbPad,
     },
     numberCellPrice: {
       fontFamily: fonts.mono,
@@ -179,10 +185,10 @@ export function GameView(props: Readonly<GameViewProps>) {
       position: "absolute",
       top: 2,
       right: 2,
-      width: 14,
-      height: 34,
+      width: thumbW,
+      height: thumbH,
       resizeMode: "contain",
-      opacity: 0.9,
+      opacity: 0.95,
     },
     slip: {
       alignSelf: "center",
