@@ -29,6 +29,14 @@ jobs:
         with:
           node-version: 22
 
+      - uses: oven-sh/setup-bun@v2
+
+      # eas-cli needs node_modules to resolve the app config plugins
+      # (expo-router et al.) before it can start the build.
+      - name: Install dependencies
+        working-directory: Dokubolaget
+        run: bun install --frozen-lockfile
+
       # Installs eas-cli and authenticates with EXPO_TOKEN.
       - uses: expo/expo-github-action@v8
         with:
