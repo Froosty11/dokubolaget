@@ -21,8 +21,12 @@ COPY Dokubolaget/ ./
 # Web build points its proxy and API at the same origin.
 # Local testing only: "true" offers every theme without unlocking it.
 ARG EXPO_PUBLIC_UNLOCK_ALL_THEMES=
+# Canonical site URL baked into the Open Graph tags (link previews). Only the
+# social meta needs the real domain; override it if the site isn't on dokubolaget.se.
+ARG EXPO_PUBLIC_SITE_URL=https://dokubolaget.se
 ENV EXPO_PUBLIC_CORS_PROXY=/proxy?url= \
     EXPO_PUBLIC_UNLOCK_ALL_THEMES=$EXPO_PUBLIC_UNLOCK_ALL_THEMES \
+    EXPO_PUBLIC_SITE_URL=$EXPO_PUBLIC_SITE_URL \
     CI=1
 
 RUN bun run build:web

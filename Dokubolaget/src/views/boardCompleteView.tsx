@@ -7,6 +7,7 @@ import { useTheme, useThemedStyles } from "../theme/ThemeProvider";
 import type { Theme } from "../theme/types";
 import { ThemeCelebrationArt } from "../theme/decorations/ThemeBackdrop";
 import { SupportLink } from "../components/SupportLink";
+import { InstallNudge } from "../components/InstallNudge";
 
 type BoardCompleteViewProps = {
   filledCount: number;
@@ -117,6 +118,7 @@ export function BoardCompleteView(props: Readonly<BoardCompleteViewProps>) {
         <View style={{ marginTop: 14 }}>
           <SupportLink url={props.supportUrl} color={theme.colors.inkMuted} />
         </View>
+        <InstallNudge />
       </Animated.View>
     </View>
   );
