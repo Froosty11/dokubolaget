@@ -1,5 +1,6 @@
 import { Pressable, ScrollView, Text, View, Switch } from "react-native";
 import { useTheme, useThemedStyles } from "../theme/ThemeProvider";
+import { useWideLayout } from "../useWideLayout";
 import { ThemeSwatch } from "../theme/ThemeSwatch";
 import { UI_LANG } from "../theme/registry";
 import type { Theme, ThemeId } from "../theme/types";
@@ -23,6 +24,7 @@ export function ThemePickerView({
 }: Readonly<ThemePickerViewProps>) {
   const { theme } = useTheme();
   const styles = useThemedStyles(makeStyles);
+  const wide = useWideLayout();
 
   function renderCard({ theme: item, card }: { theme: Theme; card: ThemeCardState }) {
     const copy = item.copy[UI_LANG];
@@ -76,9 +78,12 @@ export function ThemePickerView({
     <View style={styles.page}>
       <View style={styles.header}>
         <Text accessibilityRole="header" style={styles.title}>Themes</Text>
-        <Pressable onPress={onClose} accessibilityRole="button" accessibilityLabel="Close themes" hitSlop={12} style={styles.close}>
-          <Text style={styles.closeText}>✕</Text>
-        </Pressable>
+        {/* On wide screens this is a page beside the sidebar, not a sheet to close. */}
+        {wide ? null : (
+          <Pressable onPress={onClose} accessibilityRole="button" accessibilityLabel="Close themes" hitSlop={12} style={styles.close}>
+            <Text style={styles.closeText}>✕</Text>
+          </Pressable>
+        )}
       </View>
       {streakLine ? <Text style={styles.streak}>{streakLine}</Text> : null}
       <ScrollView contentContainerStyle={styles.list}>

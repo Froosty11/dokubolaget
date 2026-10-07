@@ -3,6 +3,7 @@ import { ClubLogo } from "../components/ClubLogo";
 import type { Stamp } from "../stamps";
 import { clubTheme } from "../theme/registry";
 import { useTheme, useThemedStyles } from "../theme/ThemeProvider";
+import { useWideLayout } from "../useWideLayout";
 import type { Theme } from "../theme/types";
 
 type Props = {
@@ -19,13 +20,17 @@ type Props = {
 export function StampsView({ stamps, collectedCount, offline, contactEmail, onWear, onClose }: Readonly<Props>) {
   const { theme } = useTheme();
   const styles = useThemedStyles(makeStyles);
+  const wide = useWideLayout();
   return (
     <View style={styles.page}>
       <View style={styles.header}>
         <Text accessibilityRole="header" style={styles.title}>Pub stamps</Text>
-        <Pressable onPress={onClose} accessibilityRole="button" accessibilityLabel="Close pub stamps" hitSlop={12} style={styles.close}>
-          <Text style={styles.closeText}>✕</Text>
-        </Pressable>
+        {/* On wide screens this is a page beside the sidebar, not a sheet to close. */}
+        {wide ? null : (
+          <Pressable onPress={onClose} accessibilityRole="button" accessibilityLabel="Close pub stamps" hitSlop={12} style={styles.close}>
+            <Text style={styles.closeText}>✕</Text>
+          </Pressable>
+        )}
       </View>
       <ScrollView contentContainerStyle={styles.body}>
         <Text style={styles.lead}>

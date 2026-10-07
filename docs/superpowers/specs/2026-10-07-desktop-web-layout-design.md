@@ -26,7 +26,7 @@ Mockups are in `.superpowers/brainstorm/` (not committed).
 
 ### `useWideLayout()`
 
-The hook lives in `src/layout.ts`. It is built on a pure `isWideLayout(os, width)` so the rule can be unit tested. `WIDE_MIN_WIDTH = 1024`. Every wide-only branch in the app goes through this hook.
+The rule is a pure `isWideLayout(os, width)` in `src/layout.ts`, alongside `WIDE_MIN_WIDTH = 1024` and the sidebar and rail widths. Keeping it free of React Native means `bun test` can run it. The hook in `src/useWideLayout.ts` wraps it. Every wide-only branch in the app goes through this hook.
 
 ### The sidebar wraps the navigator
 
@@ -50,7 +50,7 @@ Two alternatives were rejected:
 - **Bottom, logged out:** "Log in / Sign up" opens `AuthDialog`.
 - **Bottom, logged in:** the nickname, then "Log out" (`handleLogoutACB`) and a "Delete account" link.
 - **Colours:** it uses the theme's `surface`, `divider`, `accent` and `ink`, so every theme recolours it.
-- **Rail mode** is used on `/gameplay`. It is about 64px wide, shows only the icons and a small logo, and the labels become hover tooltips (`title` on web) and accessibility labels.
+- **Rail mode** is used on `/gameplay`, and on `/search`, which opens over the board. It is 64px wide and shows only the icons and a small logo. The labels appear as a hover label beside the icon and stay as accessibility labels.
 
 ## Pages on wide screens
 
@@ -81,7 +81,8 @@ The tutorial dialog and its text move out of `gameplayView.tsx` into `src/compon
 - **"You" card**, on the right:
   - **Rank and value for the selected period**, from the leaderboard response's `me`.
   - **Current streak, longest streak, boards finished and unicorns**, from `/me` stats.
-  - **Logged out**, it shows "Log in to see your rank" and a login button.
+  - **Logged out**, it shows "Log in to see your rank, your streak and the unicorns you've found." and a login button.
+- **Refetching.** The leaderboard refetches when the player logs in or out, so their own row follows the account.
 - **Getting the stats.** `/me` stats reach the page through `setStats` on the model. `serverSync` already calls `model.setStats?.()`, so the model only needs a `stats` field and the setter.
 
 ### Themes and Pub stamps
@@ -103,7 +104,7 @@ Login, board complete, theme unlock and the product dossier are already width-ca
 
 - **Unit (`bun test`):**
   - `isWideLayout` at 1023 and 1024px, on web and on native.
-  - `model.setStats` stores the stats and clears them on logout.
+  - `/me` stats reach `model.setStats`, and are cleared when logged out (`serverSync.test.ts`).
 - **Visual:** Puppeteer screenshots of Home, Play, Leaderboard, Themes and Stamps.
   - **Sizes:** 1440×900, 1024×768 and 390×844.
   - **Themes:** Prislista and Cyberwave.

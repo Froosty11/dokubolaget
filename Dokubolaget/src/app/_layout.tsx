@@ -12,8 +12,10 @@ import { reactiveModel } from "../mobxReactiveModel";
 import { useFonts } from "expo-font";
 import * as SplashScreen from "expo-splash-screen";
 import { useEffect } from "react";
-import { Platform } from "react-native";
+import { Platform, View } from "react-native";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
+import { Sidebar } from "../components/Sidebar";
+import { useWideLayout } from "../useWideLayout";
 
 // On native, keep the splash screen up until the base fonts are registered;
 // text laid out before then keeps the stand-in font's size on Android.
@@ -29,6 +31,10 @@ export default function RootLayout() {
     // InterVariableItalic: require("../../assets/interVariableItalic.ttf"),
   });
   const fontsSettled = fontsLoaded || fontError != null;
+  // Wide browser windows get the sidebar, and Themes and Pub stamps open as
+  // pages beside it instead of modals over everything.
+  const wide = useWideLayout();
+  const sheet = wide ? "card" : "modal";
 
   useEffect(() => {
     if (fontsSettled && Platform.OS !== "web") SplashScreen.hideAsync().catch(() => {});
@@ -40,22 +46,29 @@ export default function RootLayout() {
     <TamaguiProvider config={tamaguiConfig} defaultTheme="light">
       <ThemeProvider model={reactiveModel}>
         <NavThemeProvider value={DefaultTheme}>
-          <Stack>
-            <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-            <Stack.Screen
-              name="search"
-              options={{
-                headerShown: false,
-                presentation: "transparentModal",
-                contentStyle: { backgroundColor: "transparent" },
-              }}
-            />
-            <Stack.Screen name="themes" options={{ headerShown: false, presentation: "modal" }} />
-            <Stack.Screen name="stamps" options={{ headerShown: false, presentation: "modal" }} />
-            <Stack.Screen name="reset-password" options={{ headerShown: false }} />
-            <Stack.Screen name="delete-account" options={{ headerShown: false }} />
-            <Stack.Screen name="scan/[code]" options={{ headerShown: false }} />
-          </Stack>
+          {/* Same tree at every width, so crossing the breakpoint doesn't
+              remount the navigator and lose where the player is. */}
+          <View style={{ flex: 1, flexDirection: "row" }}>
+            {wide ? <Sidebar /> : null}
+            <View style={{ flex: 1 }}>
+              <Stack>
+                <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+                <Stack.Screen
+                  name="search"
+                  options={{
+                    headerShown: false,
+                    presentation: "transparentModal",
+                    contentStyle: { backgroundColor: "transparent" },
+                  }}
+                />
+                <Stack.Screen name="themes" options={{ headerShown: false, presentation: sheet }} />
+                <Stack.Screen name="stamps" options={{ headerShown: false, presentation: sheet }} />
+                <Stack.Screen name="reset-password" options={{ headerShown: false }} />
+                <Stack.Screen name="delete-account" options={{ headerShown: false }} />
+                <Stack.Screen name="scan/[code]" options={{ headerShown: false }} />
+              </Stack>
+            </View>
+          </View>
         </NavThemeProvider>
       </ThemeProvider>
     </TamaguiProvider>

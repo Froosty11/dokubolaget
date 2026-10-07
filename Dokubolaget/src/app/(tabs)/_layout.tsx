@@ -8,10 +8,13 @@ import Drinks from "../../../assets/drinks.svg";
 import LeaderboardIcon from "../../../assets/leaderboard.svg";
 import { haptics } from "../../theme/haptics";
 import { useTheme } from "../../theme/ThemeProvider";
+import { useWideLayout } from "../../useWideLayout";
 
 export default observer(function TabsLayout() {
 
   const { theme, copy } = useTheme();
+  // Wide browser windows navigate from the sidebar (src/components/Sidebar.tsx).
+  const wide = useWideLayout();
 
   function TabIcon({ Icon, color }: { Icon: FC<SvgProps>; color: string }) {
     return <Icon width={24} height={24} color={color} />;
@@ -29,7 +32,9 @@ export default observer(function TabsLayout() {
         tabBarLabelStyle: { fontFamily: theme.fonts.body },
         tabBarActiveTintColor: theme.colors.accent,
         tabBarInactiveTintColor: theme.colors.inkFaint,
-        tabBarStyle: { backgroundColor: theme.colors.surface, borderTopColor: theme.colors.divider },
+        tabBarStyle: wide
+          ? { display: "none" }
+          : { backgroundColor: theme.colors.surface, borderTopColor: theme.colors.divider },
         // tabBarPosition: "top",
       }}
     >

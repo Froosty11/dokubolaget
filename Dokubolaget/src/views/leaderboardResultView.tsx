@@ -2,6 +2,7 @@ import React from "react";
 import { useThemedStyles } from "../theme/ThemeProvider";
 import type { Theme } from "../theme/types";
 import { FlatList, StyleSheet, Text, View } from "react-native";
+import { useWideLayout } from "../useWideLayout";
 
 type LeaderboardEntry = {
   key?: string;
@@ -22,13 +23,15 @@ export function LeaderBoardResultView({
   rows,
 }: LeaderboardResultViewProps) {
   const style = useThemedStyles(makeStyle);
+  // On wide screens the page sets the margins, and the player's row stands out.
+  const wide = useWideLayout();
   function keyExtractorACB(item: LeaderboardEntry, index: number) {
     return String(item.key || item.label || index);
   }
 
   function renderItemACB({ item }: { item: LeaderboardEntry }) {
     return (
-      <View style={style.row}>
+      <View style={[style.row, wide && item.detail === "You" ? style.rowMe : null]}>
         <View>
           <Text style={style.rowLabel}>{item.label}</Text>
           {item.detail ? <Text style={style.rowDetail}>{item.detail}</Text> : null}
@@ -39,12 +42,12 @@ export function LeaderBoardResultView({
   }
 
   return (
-    <View style={style.resultsRoot}>
+    <View style={[style.resultsRoot, wide ? style.resultsRootWide : null]}>
       <FlatList
         data={rows}
         keyExtractor={keyExtractorACB}
         renderItem={renderItemACB}
-        style={style.list}
+        style={[style.list, wide ? style.listWide : null]}
         contentContainerStyle={style.listContent}
         ListHeaderComponent={
           <View style={style.sectionHeader}>
@@ -67,6 +70,20 @@ const makeStyle = (theme: Theme) => ({
     borderRadius: 12,
     backgroundColor: theme.colors.surfaceAlt,
     zIndex: 1,
+  },
+  resultsRootWide: {
+    flex: 0,
+    flexShrink: 1,
+    marginHorizontal: 0,
+    marginBottom: 0,
+  },
+  listWide: {
+    flexGrow: 0,
+  },
+  rowMe: {
+    backgroundColor: theme.colors.surface,
+    borderLeftWidth: 3,
+    borderLeftColor: theme.colors.accent,
   },
   sectionHeader: {
     padding: 12,

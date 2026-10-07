@@ -7,12 +7,14 @@ import { ThemeBackdrop } from "../theme/decorations/ThemeBackdrop";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { haptics } from "../theme/haptics";
 import { formatTagLabel, getTagIconName, getTagImageUrl } from "../tagDisplay";
-import { AlertDialog, ScrollView, XStack, YStack } from "tamagui";
 import InfoIcon from "../../assets/info.svg";
 import { Confetti } from "../components/Confetti";
 import { AnimatedCellSlot, AnimatedHeader, type HeaderRevealState } from "./boardAnimations";
 import type { GuessFeedback } from "../dokuModel";
 import { formatKronor } from "../searchHelpers";
+import { HowToPlayDialog } from "../components/HowToPlayDialog";
+import { RAIL_WIDTH } from "../layout";
+import { useWideLayout } from "../useWideLayout";
 
 type BoardTag = {
   id: string;
@@ -108,14 +110,18 @@ export function GameView(props: Readonly<GameViewProps>) {
   const ruled = theme.flags.ruledTable;
   const slipFeedback = theme.flags.feedbackPlacement === "slip";
   const { width: windowWidth, height: windowHeight } = useWindowDimensions();
+  // Wide browser windows have the sidebar's icon rail instead of a tab bar,
+  // and the logo sits in the rail, so the board gets that room.
+  const wide = useWideLayout();
   // Fit the board to whichever dimension is tighter. Laptops are wide but
   // short, so sizing from width alone pushed the bottom row off-screen.
   // Themes that show feedback as a slip under the board need room for it.
-  const TAB_BAR_AND_PADDING = 56 + 32 + 10 + (slipFeedback ? 56 : 0);
-  const logoHeight = Math.round(Math.min(110, Math.max(56, windowHeight * 0.12)));
+  const TAB_BAR_AND_PADDING = (wide ? 0 : 56) + 32 + 10 + (slipFeedback ? 56 : 0);
+  const logoHeight = wide ? 0 : Math.round(Math.min(110, Math.max(56, windowHeight * 0.12)));
+  const availableWidth = windowWidth - (wide ? RAIL_WIDTH + 32 : 16);
   const boardSize = Math.max(
     280,
-    Math.min(windowWidth - 16, 720, windowHeight - TAB_BAR_AND_PADDING - logoHeight),
+    Math.min(availableWidth, 720, windowHeight - TAB_BAR_AND_PADDING - logoHeight),
   );
   const cellSize = boardSize / 4;
 
@@ -241,13 +247,6 @@ export function GameView(props: Readonly<GameViewProps>) {
       textAlign: "center",
       ...(glowText ?? {}),
     },
-    tutorialCloseButton: {
-      fontFamily: fonts.body,
-      color: colors.dialogButtonInk,
-      backgroundColor: colors.dialogButton,
-      padding: 5,
-      borderRadius: 5
-    },
     feedbackOverlay: {
       position: "absolute",
       top: "50%",
@@ -288,7 +287,7 @@ export function GameView(props: Readonly<GameViewProps>) {
       style={{ flex: 1 }}
       contentContainerStyle={[app.body, { height: undefined, flexGrow: 1, backgroundColor: "transparent" }]}
     >
-        <ThemeLogo height={logoHeight} />
+        {wide ? null : <ThemeLogo height={logoHeight} />}
 
         {practiceLabel ? (
           <Text accessibilityRole="text" style={{ alignSelf: "center", fontFamily: fonts.bodyStrong, color: colors.inkMuted, marginBottom: 8, letterSpacing: 1, textTransform: "uppercase", fontSize: 12 }}>
@@ -396,45 +395,17 @@ export function GameView(props: Readonly<GameViewProps>) {
   // Tutorial
   function tutorialPopup() {
     return (
-      <AlertDialog open={tutorialOpen} onOpenChange={(open)=>{if(!open) closeTutorialACB()}}>
-        <AlertDialog.Trigger asChild>
-          <Pressable onPress={openTutorialACB} accessibilityRole="button" accessibilityLabel="How to play">
-            {deco ? (
-              <View style={{ width: 34, height: 34, borderWidth: 1.5, borderColor: colors.accent, transform: [{ rotate: "45deg" }], alignItems: "center", justifyContent: "center" }}>
-                <Text style={{ transform: [{ rotate: "-45deg" }], fontFamily: fonts.logo, fontSize: 18, color: colors.accent }}>?</Text>
-              </View>
-            ) : (
-              <InfoIcon width={24} height={24} color={colors.icon} />
-            )}
-          </Pressable>
-        </AlertDialog.Trigger>
-        <AlertDialog.Portal>
-          <AlertDialog.Overlay key="overlay" opacity={0.5} /*style={Style.tutorialOverlay}*//>
-            <AlertDialog.Content
-              bordered
-              elevate
-              style={{ backgroundColor: colors.dialogSurface, borderColor: colors.divider }}>
-            <YStack gap="$4" >
-              <AlertDialog.Title style={{fontFamily: fonts.display, color: colors.dialogInk}}>How to play!</AlertDialog.Title>
-              <ScrollView key="scroll" style={{maxHeight: 300}} showsVerticalScrollIndicator>
-                <Text style={{ fontFamily: fonts.body, color: colors.dialogInk, letterSpacing: -0.2, lineHeight: 21 }}>
-                  <Text style={{ fontFamily: fonts.bodyStrong }}>Fill the grid.</Text> Find a bottle that matches both its row and its column. Only bottles from Systembolaget's regular, local and seasonal ranges count.{"\n\n"}
-                  <Text style={{ fontFamily: fonts.bodyStrong }}>Rarer scores more.</Text> The fewer players who picked your bottle, the more it's worth (up to 100 a cell). Each miss costs 5 points, at most 20 per cell.{"\n\n"}
-                  <Text style={{ fontFamily: fonts.bodyStrong }}>A new board every day at 04:00.</Text>
-                </Text>
-              </ScrollView>
-
-            <XStack justifyContent="flex-end" gap="$2">
-              <AlertDialog.Action asChild>
-                <Pressable onPress={closeTutorialACB} /*style={Style.tutorialCloseButton}*/>
-                  <Text style={board.tutorialCloseButton}>Ok, let's play!</Text>
-                </Pressable>
-              </AlertDialog.Action>
-            </XStack>
-          </YStack>
-        </AlertDialog.Content>
-      </AlertDialog.Portal>
-    </AlertDialog>
+      <HowToPlayDialog open={tutorialOpen} onClose={closeTutorialACB}>
+        <Pressable onPress={openTutorialACB} accessibilityRole="button" accessibilityLabel="How to play">
+          {deco ? (
+            <View style={{ width: 34, height: 34, borderWidth: 1.5, borderColor: colors.accent, transform: [{ rotate: "45deg" }], alignItems: "center", justifyContent: "center" }}>
+              <Text style={{ transform: [{ rotate: "-45deg" }], fontFamily: fonts.logo, fontSize: 18, color: colors.accent }}>?</Text>
+            </View>
+          ) : (
+            <InfoIcon width={24} height={24} color={colors.icon} />
+          )}
+        </Pressable>
+      </HowToPlayDialog>
     )
   }
 

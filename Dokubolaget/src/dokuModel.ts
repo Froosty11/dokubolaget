@@ -22,7 +22,7 @@ import {
 import { boardKey, type BoardProgress } from "./progress";
 import { gameDay } from "./gameDay";
 import { buildShareText as composeShareText } from "./shareText";
-import type { BoardResult, GuessResponse } from "./play/types";
+import type { BoardResult, GuessResponse, UserStats } from "./play/types";
 import { reconcileBoard, serverPick, type CellInfo } from "./play/reconcile";
 
 export type BoardTag = {
@@ -253,6 +253,12 @@ const modelBody = {
   account: null as Account | null,
   setAccount(account: Account | null) {
     this.account = account;
+  },
+
+  // The logged-in player's streaks and totals from the server, or null.
+  stats: null as UserStats | null,
+  setStats(stats: UserStats | null) {
+    this.stats = stats;
   },
 
   // The game day this board belongs to; the app rolls over when it changes.

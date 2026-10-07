@@ -3,6 +3,7 @@ import { useTheme, useThemedStyles } from "../theme/ThemeProvider";
 import type { Theme } from "../theme/types";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { haptics } from "../theme/haptics";
+import { useWideLayout } from "../useWideLayout";
 
 // The four leaderboards the server actually serves (server/stats.ts Period,
 // minus "yesterday" which the UI doesn't expose). The values are passed to
@@ -26,6 +27,17 @@ export function LeaderBoardFormView({
   onPeriodChange,
 }: LeaderBoardFormViewProps) {
   const style = useThemedStyles(makeStyle);
+  // Wide browser windows have room for all four boards as tabs.
+  const wide = useWideLayout();
+  if (wide) {
+    return (
+      <View style={style.wideContainer}>
+        <Text accessibilityRole="header" style={[style.title, { paddingTop: 0 }]}>Leaderboards</Text>
+        <Text style={style.subtitle}>See how you rank</Text>
+        <PeriodTabs value={period} onValueChange={onPeriodChange} items={periodOptions} />
+      </View>
+    );
+  }
   return (
     <View style={style.formContainer}>
       <Text style={style.title}>Leaderboards</Text>
@@ -41,6 +53,39 @@ export function LeaderBoardFormView({
           placeholder="Select leaderboard"
         />
       </View>
+    </View>
+  );
+}
+
+function PeriodTabs({
+  value,
+  onValueChange,
+  items,
+}: {
+  value: LeaderboardPeriod;
+  onValueChange: (value: LeaderboardPeriod) => void;
+  items: { label: string; value: LeaderboardPeriod }[];
+}) {
+  const style = useThemedStyles(makeStyle);
+  return (
+    <View accessibilityRole="tablist" style={style.tabs}>
+      {items.map((item, index) => {
+        const selected = item.value === value;
+        return (
+          <Pressable
+            key={item.value}
+            accessibilityRole="tab"
+            accessibilityState={{ selected }}
+            onPress={() => {
+              haptics.play("tap");
+              onValueChange(item.value);
+            }}
+            style={[style.tab, index > 0 ? style.tabDivider : null, selected ? style.tabSelected : null]}
+          >
+            <Text style={[style.tabText, selected ? style.tabTextSelected : null]}>{item.label}</Text>
+          </Pressable>
+        );
+      })}
     </View>
   );
 }
@@ -106,6 +151,38 @@ function LeaderboardSelect({
 }
 
 const makeStyle = (theme: Theme) => ({
+  wideContainer: {
+    paddingBottom: 20,
+  },
+  tabs: {
+    flexDirection: "row" as const,
+    alignSelf: "flex-start" as const,
+    borderWidth: 1.5,
+    borderColor: theme.colors.ink,
+    borderRadius: theme.radii.button,
+    overflow: "hidden" as const,
+  },
+  tab: {
+    paddingVertical: 9,
+    paddingHorizontal: 18,
+    backgroundColor: theme.colors.surface,
+  },
+  tabDivider: {
+    borderLeftWidth: 1,
+    borderLeftColor: theme.colors.divider,
+  },
+  tabSelected: {
+    backgroundColor: theme.colors.accent,
+  },
+  tabText: {
+    fontFamily: theme.fonts.body,
+    fontSize: 14,
+    color: theme.colors.ink,
+  },
+  tabTextSelected: {
+    fontFamily: theme.fonts.bodyStrong,
+    color: theme.colors.accentInk,
+  },
   formContainer: {
     padding: 16,
     paddingBottom: 8,

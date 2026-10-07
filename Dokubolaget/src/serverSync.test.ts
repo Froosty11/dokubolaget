@@ -39,6 +39,20 @@ test("the account's streak comes from the server's stats", async () => {
   expect(model.unlockedThemes).toContain("modern");
 });
 
+test("the player's stats reach the model for the leaderboard", async () => {
+  const model = makeModel();
+  model.stats = null;
+  model.setStats = function (stats: any) { this.stats = stats; };
+  stubServer([], 4);
+  const sync = connectToServer(model, { announced: { read: async () => [], write: async () => {} } });
+  await sync.refresh();
+  expect(model.stats).toEqual({ currentStreak: 4, longestStreak: 4, finishedCount: 4, unicorns: 0 });
+
+  globalThis.fetch = (async () => new Response(JSON.stringify({ user: null, prefs: null, progress: null, stats: null }))) as any;
+  await sync.refresh();
+  expect(model.stats).toBeNull();
+});
+
 test("earned themes the device hasn't announced are queued once", async () => {
   const model = makeModel();
   stubServer(["cyberwave", "modern"], 7);

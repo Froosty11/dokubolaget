@@ -20,6 +20,9 @@ import Chevron from "../../assets/chevron.svg";
 import Drinks from "../../assets/drinks.svg";
 import Smakprofil from "../../assets/smakprofil.svg";
 import Lista from "../../assets/lista.svg";
+import { HowToPlayDialog } from "../components/HowToPlayDialog";
+import { formatShortDay, gameDay } from "../gameDay";
+import { useWideLayout } from "../useWideLayout";
 
 
 /* === INDEX OPTIONS === */
@@ -85,7 +88,72 @@ type IndexViewProps = {
   supportUrl: string | null;
 };
 
-export function IndexView({ ageGate, account, supportUrl }: IndexViewProps) {
+export function IndexView(props: IndexViewProps) {
+  // Wide browser windows have the menu and the account in the sidebar.
+  const wide = useWideLayout();
+  return wide ? <WideIndexView {...props} /> : <PhoneIndexView {...props} />;
+}
+
+// Wordle-style: the name, one button to play, and nothing else to choose.
+function WideIndexView({ ageGate, supportUrl }: IndexViewProps) {
+  const [showHowTo, setShowHowTo] = useState(false);
+  const { theme } = useTheme();
+  const { colors, fonts, radii } = theme;
+
+  function playACB() {
+    haptics.play("tap");
+    router.navigate("/gameplay");
+  }
+
+  function howToACB() {
+    haptics.play("tap");
+    setShowHowTo(true);
+  }
+
+  const button = { paddingVertical: 14, paddingHorizontal: 30, borderRadius: radii.button, borderWidth: 2, borderColor: colors.accent };
+
+  return (
+    <View style={{ flex: 1, backgroundColor: colors.page, alignItems: "center", justifyContent: "center", padding: 32 }}>
+      <ThemeBackdrop screen="home" />
+
+      <View style={{ alignItems: "center", gap: 14, maxWidth: 520 }}>
+        <ThemeLogo height={130} />
+        <Text accessibilityRole="header" style={{ fontFamily: fonts.display, fontSize: 52, color: colors.inkStrong, marginTop: 8 }}>Dokubolaget</Text>
+        <Text style={{ fontFamily: fonts.body, fontSize: 17, color: colors.inkMuted, textAlign: "center" }}>
+          Get nine bottles in the grid. A new board every day at 04:00.
+        </Text>
+
+        <View style={{ flexDirection: "row", gap: 12, marginTop: 14 }}>
+          <Pressable accessibilityRole="button" onPress={playACB} style={{ ...button, backgroundColor: colors.accent }}>
+            <Text style={{ fontFamily: fonts.bodyStrong, fontSize: 17, color: colors.accentInk }}>Play</Text>
+          </Pressable>
+          <Pressable accessibilityRole="button" onPress={howToACB} style={button}>
+            <Text style={{ fontFamily: fonts.bodyStrong, fontSize: 17, color: colors.accent }}>How to play</Text>
+          </Pressable>
+        </View>
+
+        <Text style={{ fontFamily: fonts.condensed, fontSize: 14, letterSpacing: 1.5, textTransform: "uppercase", color: colors.inkMuted }}>
+          Today's board · {formatShortDay(gameDay())}
+        </Text>
+      </View>
+
+      <View style={{ position: "absolute", bottom: 28, alignItems: "center", gap: 14 }}>
+        <SupportLink url={supportUrl} />
+        <ResponsibleNote />
+      </View>
+
+      <HowToPlayDialog open={showHowTo} onClose={() => setShowHowTo(false)} />
+
+      <AgeGate
+        isOpen={ageGate.isOpen}
+        onAccept={ageGate.acceptAgeACB}
+        onReject={ageGate.rejectAgeACB}
+      />
+    </View>
+  );
+}
+
+function PhoneIndexView({ ageGate, account, supportUrl }: IndexViewProps) {
   const [showLogin, setShowLogin] = useState(false);
   const [showLeaderboard, setShowLeaderboard] = useState(false);
   const { theme } = useTheme();
