@@ -15,6 +15,7 @@ import { useEffect } from "react";
 import { Platform, View } from "react-native";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { Sidebar } from "../components/Sidebar";
+import { DocumentTitle } from "../components/DocumentTitle";
 import { useWideLayout } from "../useWideLayout";
 
 // On native, keep the splash screen up until the base fonts are registered;
@@ -69,6 +70,7 @@ export default function RootLayout() {
               </Stack>
             </View>
           </View>
+          <DocumentTitle />
         </NavThemeProvider>
       </ThemeProvider>
     </TamaguiProvider>
