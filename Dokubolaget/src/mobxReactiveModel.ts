@@ -7,7 +7,8 @@ import { createDeviceId } from "./deviceId"
 import { createOutbox } from "./play/outbox"
 import { createPlaySync } from "./play/playSync"
 import { gameDay } from "./gameDay"
-import { loadDeviceThemePrefs, saveDeviceThemePrefs } from "./theme/themeStorage"
+import { loadDeviceLang, loadDeviceThemePrefs, saveDeviceLang, saveDeviceThemePrefs } from "./theme/themeStorage"
+import { detectDeviceLang } from "./i18n"
 import { UNLOCK_ALL_FROM_BUILD } from "./theme/themeState"
 import { loadHapticsSetting } from "./theme/haptics"
 import { createClubThemes } from "./theme/clubThemes"
@@ -83,6 +84,17 @@ reaction(
     () => {
         if (themePrefsLoaded) saveDeviceThemePrefs(reactiveModel.themeId, reactiveModel.unlockedThemes);
     },
+);
+
+// UI language: the player's saved choice, or the device language on first run.
+let langLoaded = false;
+loadDeviceLang()
+    .then((saved) => reactiveModel.setLang(saved ?? detectDeviceLang()))
+    .catch(() => reactiveModel.setLang(detectDeviceLang()))
+    .finally(() => { langLoaded = true; });
+reaction(
+    () => reactiveModel.lang,
+    (lang) => { if (langLoaded) saveDeviceLang(lang); },
 );
 
 // Today's board progress survives reloads and app switches (a device cache of

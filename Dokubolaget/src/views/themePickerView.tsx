@@ -2,7 +2,6 @@ import { Pressable, ScrollView, Text, View, Switch } from "react-native";
 import { useTheme, useThemedStyles } from "../theme/ThemeProvider";
 import { useWideLayout } from "../useWideLayout";
 import { ThemeSwatch } from "../theme/ThemeSwatch";
-import { UI_LANG } from "../theme/registry";
 import type { Theme, ThemeId } from "../theme/types";
 import type { ThemeCardState } from "../theme/unlocks";
 
@@ -22,12 +21,12 @@ type ThemePickerViewProps = {
 export function ThemePickerView({
   cards, streakLine, onPick, onClose, hapticsOn, onToggleHaptics, clubCards, downloading, onOpenStamps,
 }: Readonly<ThemePickerViewProps>) {
-  const { theme } = useTheme();
+  const { theme, lang, setLang, t } = useTheme();
   const styles = useThemedStyles(makeStyles);
   const wide = useWideLayout();
 
   function renderCard({ theme: item, card }: { theme: Theme; card: ThemeCardState }) {
-    const copy = item.copy[UI_LANG];
+    const copy = item.copy[lang];
     const locked = card.state === "locked";
     const active = card.state === "active";
     return (
@@ -115,6 +114,29 @@ export function ThemePickerView({
             {...({ activeThumbColor: theme.colors.surface } as object)}
           />
         </View>
+        <View style={styles.setting}>
+          <View style={styles.cardText}>
+            <Text style={styles.name}>{t("settings.language")}</Text>
+          </View>
+          <View style={styles.langToggle}>
+            {(["en", "sv"] as const).map((code) => {
+              const on = lang === code;
+              return (
+                <Pressable
+                  key={code}
+                  onPress={() => setLang(code)}
+                  accessibilityRole="button"
+                  accessibilityState={{ selected: on }}
+                  style={[styles.langOption, on ? styles.langOptionActive : null]}
+                >
+                  <Text style={[styles.langOptionText, on ? styles.langOptionTextActive : null]}>
+                    {t(code === "en" ? "lang.en" : "lang.sv")}
+                  </Text>
+                </Pressable>
+              );
+            })}
+          </View>
+        </View>
       </ScrollView>
     </View>
   );
@@ -154,4 +176,15 @@ const makeStyles = (theme: Theme) => ({
     borderTopWidth: 1, borderTopColor: theme.colors.divider,
   },
   badgeText: { fontFamily: theme.fonts.bodyStrong, fontSize: 10, letterSpacing: 1, color: theme.colors.accentInk },
+  langToggle: {
+    flexDirection: "row" as const,
+    borderWidth: 1.5,
+    borderColor: theme.colors.divider,
+    borderRadius: theme.radii.button,
+    overflow: "hidden" as const,
+  },
+  langOption: { paddingVertical: 7, paddingHorizontal: 14, backgroundColor: theme.colors.surface },
+  langOptionActive: { backgroundColor: theme.colors.accent },
+  langOptionText: { fontFamily: theme.fonts.body, fontSize: 13, color: theme.colors.ink },
+  langOptionTextActive: { fontFamily: theme.fonts.bodyStrong, color: theme.colors.accentInk },
 });

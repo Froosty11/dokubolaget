@@ -1,5 +1,5 @@
 import { Pressable, StyleSheet, Text, View } from "react-native";
-import { UI_LANG, getTheme } from "../theme/registry";
+import { getTheme } from "../theme/registry";
 import { useTheme } from "../theme/ThemeProvider";
 import { ThemeSwatch } from "../theme/ThemeSwatch";
 import type { ThemeId } from "../theme/types";
@@ -13,9 +13,9 @@ type ThemeUnlockViewProps = {
 // "New theme unlocked" card, shown after the celebration. The swatch uses the
 // unlocked theme's own colours; the card itself uses the current theme.
 export function ThemeUnlockView({ themeId, onTry, onLater }: Readonly<ThemeUnlockViewProps>) {
-  const { theme } = useTheme();
+  const { theme, lang } = useTheme();
   const unlocked = getTheme(themeId);
-  const copy = unlocked.copy[UI_LANG];
+  const copy = unlocked.copy[lang];
   const { colors, fonts, radii } = theme;
   return (
     <View style={[StyleSheet.absoluteFill, { backgroundColor: colors.celebrationOverlay, alignItems: "center", justifyContent: "center", padding: 24, zIndex: 60 }]}>

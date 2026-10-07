@@ -1,10 +1,28 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Platform } from "react-native";
-import type { ThemeId } from "./types";
+import type { Lang, ThemeId } from "./types";
 import { parseThemeId, parseUnlocked } from "./unlocks";
 
 export const THEME_KEY = "dokubolaget.theme";
 export const UNLOCKS_KEY = "dokubolaget.unlockedThemes";
+export const LANG_KEY = "dokubolaget.lang";
+
+// The player's saved UI language, or null if they haven't chosen one (then the
+// detected device language is used). Kept separate from theme prefs.
+export async function loadDeviceLang(): Promise<Lang | null> {
+  if (Platform.OS === "web" && typeof window === "undefined") return null;
+  try {
+    const raw = await AsyncStorage.getItem(LANG_KEY);
+    return raw === "sv" || raw === "en" ? raw : null;
+  } catch (error) {
+    console.warn("Lang read failed:", error);
+    return null;
+  }
+}
+
+export function saveDeviceLang(lang: Lang) {
+  AsyncStorage.setItem(LANG_KEY, lang).catch((error) => console.warn("Lang write failed:", error));
+}
 
 export async function loadDeviceThemePrefs(): Promise<{ themeId: ThemeId | null; unlocked: ThemeId[] }> {
   // The static web export renders once in Node, where there is no storage.

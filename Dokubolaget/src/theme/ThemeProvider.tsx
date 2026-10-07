@@ -4,13 +4,19 @@ import { AccessibilityInfo, Platform, StyleSheet } from "react-native";
 import { useThemeFonts } from "./fonts";
 import { themeWithFonts } from "./fontKits";
 import { setActiveHapticPattern } from "./haptics";
-import { UI_LANG, getTheme } from "./registry";
-import type { Theme, ThemeCopy, ThemeId } from "./types";
+import { getTheme } from "./registry";
+import type { Lang, Theme, ThemeCopy, ThemeId } from "./types";
+import { translations } from "../i18n";
+import { translate, type TParams } from "../i18n/translate";
 
 type ThemeContextValue = {
   theme: Theme;
   id: ThemeId;
   copy: ThemeCopy;
+  lang: Lang;
+  setLang: (lang: Lang) => void;
+  // Translates a catalog key for the active language (see src/i18n).
+  t: (key: string, params?: TParams) => string;
   available: ThemeId[];
   unlocked: ThemeId[];
   setId: (id: ThemeId) => boolean;
@@ -20,6 +26,8 @@ const ThemeContext = createContext<ThemeContextValue | null>(null);
 
 type ThemeModel = {
   activeThemeId: ThemeId;
+  lang: Lang;
+  setLang: (lang: Lang) => void;
   availableThemeIds: ThemeId[];
   unlockedThemes: ThemeId[];
   setThemeId: (id: ThemeId) => boolean;
@@ -43,16 +51,20 @@ export const ThemeProvider = observer(function ThemeProvider({
 
   const available = model.availableThemeIds;
   const unlocked = model.unlockedThemes;
+  const lang = model.lang;
   const value = useMemo<ThemeContextValue>(
     () => ({
       theme,
       id,
-      copy: theme.copy[UI_LANG],
+      copy: theme.copy[lang],
+      lang,
+      setLang: (next) => model.setLang(next),
+      t: (key, params) => translate(translations, lang, key, params),
       available,
       unlocked,
       setId: (next) => model.setThemeId(next),
     }),
-    [theme, id, available.join(), unlocked.join()],
+    [theme, id, lang, available.join(), unlocked.join()],
   );
   return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>;
 });

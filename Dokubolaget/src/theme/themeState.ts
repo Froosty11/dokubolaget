@@ -1,5 +1,5 @@
 import { DEFAULT_THEME_ID, THEMES, clubTheme, isBuiltInThemeId, registeredClubThemeIds } from "./registry";
-import type { ThemeId } from "./types";
+import type { Lang, ThemeId } from "./types";
 
 // Where an unlock was earned decides where it is announced: board unlocks
 // after the celebration on Play, streak unlocks on Home.
@@ -19,6 +19,13 @@ export const UNLOCK_ALL_FROM_BUILD = process.env.EXPO_PUBLIC_UNLOCK_ALL_THEMES =
 export function createThemeState({ unlockAll = UNLOCK_ALL_FROM_BUILD }: { unlockAll?: boolean } = {}) {
   return {
     themeId: DEFAULT_THEME_ID as ThemeId,
+    // UI language. Defaults to English; the device's detected or saved choice
+    // is applied at boot (see mobxReactiveModel). Drives every translated
+    // string via the theme context.
+    lang: "en" as Lang,
+    setLang(lang: Lang) {
+      this.lang = lang;
+    },
     unlockedThemes: [] as ThemeId[],
     loggedIn: false,
     longestStreak: 0,

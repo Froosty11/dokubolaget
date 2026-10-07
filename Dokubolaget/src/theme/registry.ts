@@ -12,9 +12,6 @@ export const THEMES: Theme[] = [prislista, midsommar, cyberwave, speakeasy, mode
 
 export const DEFAULT_THEME_ID: ThemeId = "prislista";
 
-// Replaced by the Swedish/English work; every theme already ships both.
-export const UI_LANG: Lang = "en";
-
 export function isBuiltInThemeId(value: unknown): value is BuiltInThemeId {
   return typeof value === "string" && (BUILT_IN_THEME_IDS as readonly string[]).includes(value);
 }

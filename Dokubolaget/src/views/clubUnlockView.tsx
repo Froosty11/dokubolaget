@@ -3,10 +3,9 @@ import { Animated, Easing, Pressable, StyleSheet, Text, useWindowDimensions, Vie
 import { USE_NATIVE_DRIVER } from "../animation";
 import { ClubLogo } from "../components/ClubLogo";
 import { Confetti } from "../components/Confetti";
-import { useReducedMotion } from "../theme/ThemeProvider";
+import { useReducedMotion, useTheme } from "../theme/ThemeProvider";
 import { useThemeFonts } from "../theme/fonts";
 import { themeWithFonts } from "../theme/fontKits";
-import { UI_LANG } from "../theme/registry";
 import type { ClubInfo } from "../theme/packSchema";
 import type { Theme } from "../theme/types";
 
@@ -24,6 +23,7 @@ type Props = {
 export function ClubUnlockView({ theme: clubTheme, club, logoUrl, onWear, onLater }: Props) {
   // The club's fonts aren't loaded yet (its theme isn't active), so load them here.
   const theme = themeWithFonts(clubTheme, useThemeFonts(clubTheme));
+  const { lang } = useTheme();
   const { width } = useWindowDimensions();
   const reducedMotion = useReducedMotion();
   const stamp = useRef(new Animated.Value(reducedMotion ? 1 : 0)).current;
@@ -61,7 +61,7 @@ export function ClubUnlockView({ theme: clubTheme, club, logoUrl, onWear, onLate
           {club.pubNight} at {club.venue}
         </Text>
         <Text style={{ fontFamily: fonts.body, fontSize: 14, lineHeight: 20, color: colors.inkMuted, textAlign: "center" }}>
-          “{theme.copy[UI_LANG].name}”: {theme.copy[UI_LANG].description}
+          “{theme.copy[lang].name}”: {theme.copy[lang].description}
         </Text>
         <Pressable
           onPress={onWear}
