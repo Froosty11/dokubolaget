@@ -361,6 +361,7 @@ const { loadThemePacks } = require("./server/themePacks.ts");
 const { createCatalog, systembolagetLookup } = require("./server/catalog.ts");
 const { createPlay } = require("./server/play.ts");
 const { catchUpFreeze } = require("./server/stats.ts");
+const { computeDifficultyStats } = require("./server/difficulty.ts");
 const { gameDay, nextRollover, addDays } = require("./src/gameDay.ts");
 
 const DB_PATH = process.env.DB_PATH || path.join(APP_ROOT, "data", "local.sqlite");
@@ -500,7 +501,8 @@ async function runSeedPipeline(startDate, days) {
     await downloadCatalog();
     catalog.reload();
     await runStep("find tags", "bun", ["run", "scripts/findTags.ts", "--min-cell", "4"]);
-    await runStep("generate boards", "bun", [
+
+    const generateArgs = [
       "run",
       "scripts/generateBoard.ts",
       // Not the bundled pool (data/generated-boards.json), which stays the
@@ -513,7 +515,22 @@ async function runSeedPipeline(startDate, days) {
       String(days),
       "--attempts",
       attempts,
-    ]);
+    ];
+
+    // Roll up real play into an observed-difficulty snapshot and let the
+    // generator steer toward a consistent solve-rate band. Never fatal: on any
+    // failure (or a fresh server with no play) generation falls back to the
+    // structural estimate alone.
+    try {
+      const stats = computeDifficultyStats(db, { today: gameDay() });
+      fs.writeFileSync(path.join(APP_ROOT, "data", "difficulty-stats.json"), JSON.stringify(stats));
+      generateArgs.push("--difficulty", "data/difficulty-stats.json");
+      log("seed", `Difficulty snapshot: ${Object.keys(stats.tags).length} tags, ${Object.keys(stats.pairs).length} pairs`);
+    } catch (error) {
+      log("seed", `Difficulty snapshot skipped: ${error && error.message ? error.message : error}`);
+    }
+
+    await runStep("generate boards", "bun", generateArgs);
     const generated = JSON.parse(fs.readFileSync(path.join(APP_ROOT, "data", "nightly-boards.json"), "utf8"));
     seedBoards(db, generated.boards, start, days, gameDay());
     seedState.lastResult = `ok: ${days} board(s) from ${start}`;

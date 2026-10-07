@@ -3,6 +3,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { buildCandidateTags } from "../src/boardTags";
 import { isPlayable } from "../src/playable";
+import { boardBandScore, type DifficultyStats } from "../server/difficultyModel";
 
 /*
 Approximate generation prompt used for this script family:
@@ -52,6 +53,10 @@ type Args = {
   attempts: number;
   boards: number;
   outFile?: string;
+  // Observed difficulty from real play (server/difficulty.ts). Absent on a
+  // fresh server or when the snapshot is missing/unreadable, in which case
+  // generation falls back to the structural estimate alone.
+  difficulty?: DifficultyStats | null;
 };
 
 const scriptDir = path.dirname(fileURLToPath(import.meta.url));
@@ -95,10 +100,32 @@ function parseArgs(): Args {
     } else if (arg === "--out" && next) {
       defaults.outFile = path.resolve(projectRoot, next);
       index += 1;
+    } else if (arg === "--difficulty" && next) {
+      defaults.difficulty = loadDifficulty(path.resolve(projectRoot, next));
+      index += 1;
     }
   }
 
   return defaults;
+}
+
+// Observed difficulty is an optimization, never a requirement: a missing,
+// empty or malformed snapshot must not stop board generation, so any problem
+// is logged and generation proceeds on the structural estimate alone.
+function loadDifficulty(file: string): DifficultyStats | null {
+  try {
+    const parsed = JSON.parse(fs.readFileSync(file, "utf8")) as DifficultyStats;
+    if (!parsed || typeof parsed !== "object" || !parsed.tags || !parsed.pairs) {
+      console.log(`Difficulty snapshot at ${file} is malformed; using structural estimate only.`);
+      return null;
+    }
+    const tagCount = Object.keys(parsed.tags).length;
+    console.log(`Loaded difficulty snapshot: ${tagCount} tags, ${Object.keys(parsed.pairs).length} pairs.`);
+    return parsed;
+  } catch (error) {
+    console.log(`No usable difficulty snapshot at ${file} (${(error as Error).message}); using structural estimate only.`);
+    return null;
+  }
 }
 
 function loadProducts(): Product[] {
@@ -431,6 +458,13 @@ function tagDifficulty(tag: Tag) {
   return FAMILY_DIFFICULTY[tag.family] ?? 3;
 }
 
+// The structural hardness guess for a tag, on the same 0..1 scale the observed
+// signal uses: family difficulty 1 (easy) → 0, 4 (taste clock) → 1. Used as the
+// fallback that the observed solve rate blends with and eventually replaces.
+function structuralHardness(tag: Tag) {
+  return (tagDifficulty(tag) - 1) / 3;
+}
+
 function boardDifficulty(tags: Tag[]) {
   let total = 0;
   for (const tag of tags) {
@@ -460,7 +494,7 @@ function cellCredit(count: number, targetHigh: number) {
   return credit;
 }
 
-function scoreBoard(
+export function scoreBoard(
   counts: number[][],
   rows: Tag[],
   cols: Tag[],
@@ -516,6 +550,18 @@ function scoreBoard(
   if (tasteCount === 1) {
     score += 8;
   }
+
+  // 8. Observed-difficulty band: when real play tells us how solvable this
+  //    board's cells are, steer the hardest cell into the target solve-rate
+  //    band. Contributes nothing on a board with no observed signal, so a
+  //    fresh server ranks boards exactly as before.
+  const bandCells = rows.flatMap((row) =>
+    cols.map((col) => ({
+      a: { id: row.id, structural: structuralHardness(row) },
+      b: { id: col.id, structural: structuralHardness(col) },
+    })),
+  );
+  score += boardBandScore(bandCells, args.difficulty ?? null);
 
   return Math.round(score);
 }
@@ -784,6 +830,9 @@ function boardToJson(board: Board) {
   };
 }
 
+// CLI entry point. Guarded so importing this module (e.g. tests that exercise
+// scoreBoard) does not run the whole generation pipeline.
+if (import.meta.main) {
 const args = parseArgs();
 const products = loadProducts();
 
@@ -845,3 +894,4 @@ if (args.outFile) {
   );
   console.log(`\nSaved boards file: ${args.outFile}`);
 }
+} // end if (import.meta.main)
