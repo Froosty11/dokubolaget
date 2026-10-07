@@ -82,7 +82,7 @@ export function GameView(props: Readonly<GameViewProps>) {
     cellInfo,
     toast,
   } = props;
-  const { theme } = useTheme();
+  const { theme, t } = useTheme();
   const app = useThemedStyles(makeAppStyles);
   const { colors, fonts, radii, borders } = theme;
   const FEEDBACK_COLORS: Record<GuessFeedback["kind"], { background: string; text: string }> = {
@@ -281,7 +281,7 @@ export function GameView(props: Readonly<GameViewProps>) {
       <View style={{ flex: 1, backgroundColor: colors.page, alignItems: "center", justifyContent: "center", gap: 12 }}>
         <ThemeBackdrop screen="board" />
         <ActivityIndicator color={colors.accent} />
-        <Text style={{ fontFamily: fonts.body, color: colors.inkMuted }}>Fetching today's board…</Text>
+        <Text style={{ fontFamily: fonts.body, color: colors.inkMuted }}>{t("gameplay.loadingBoard")}</Text>
       </View>
     );
   }
@@ -402,7 +402,7 @@ export function GameView(props: Readonly<GameViewProps>) {
   function tutorialPopup() {
     return (
       <HowToPlayDialog open={tutorialOpen} onClose={closeTutorialACB}>
-        <Pressable onPress={openTutorialACB} accessibilityRole="button" accessibilityLabel="How to play">
+        <Pressable onPress={openTutorialACB} accessibilityRole="button" accessibilityLabel={t("gameplay.howToPlayA11y")}>
           {deco ? (
             <View style={{ width: 34, height: 34, borderWidth: 1.5, borderColor: colors.accent, transform: [{ rotate: "45deg" }], alignItems: "center", justifyContent: "center" }}>
               <Text style={{ transform: [{ rotate: "-45deg" }], fontFamily: fonts.logo, fontSize: 18, color: colors.accent }}>?</Text>
@@ -498,11 +498,16 @@ export function GameView(props: Readonly<GameViewProps>) {
         radius={radii.cell}
         index={item - 1}
         onPress={onCellPressedACB}
-        accessibilityLabel={`${formatTagLabel(sideCategories[Math.floor((item - 1) / 3)])} and ${formatTagLabel(topCategories[(item - 1) % 3])}, ${
-          selectedProduct
-            ? `filled with ${selectedProduct.name}, ${info?.score ?? "score pending"} points${info?.unicorn ? ", unicorn" : ""}. Opens its info sheet.`
-            : "empty. Opens search."
-        }`}
+        accessibilityLabel={t("gameplay.cellAccessibility", {
+          side: formatTagLabel(sideCategories[Math.floor((item - 1) / 3)]),
+          top: formatTagLabel(topCategories[(item - 1) % 3]),
+          detail: selectedProduct
+            ? t(info?.unicorn ? "gameplay.cellFilledUnicorn" : "gameplay.cellFilled", {
+                name: selectedProduct.name,
+                score: info?.score ?? t("gameplay.scorePending"),
+              })
+            : t("gameplay.cellEmpty"),
+        })}
       >
         <CellContent item={item} selectedProduct={selectedProduct} info={info} />
       </AnimatedCellSlot>

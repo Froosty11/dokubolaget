@@ -12,7 +12,7 @@ const ANDROID_URL =
 type Props = { color?: string };
 
 export function AndroidAppLink({ color }: Props) {
-  const { theme } = useTheme();
+  const { theme, t } = useTheme();
   if (Platform.OS !== "web" || isIOS()) return null;
   const ink = color ?? theme.colors.inkMuted;
   return (
@@ -25,7 +25,7 @@ export function AndroidAppLink({ color }: Props) {
     >
       <MaterialCommunityIcons name="android" size={16} color={ink} />
       <Text style={{ fontFamily: theme.fonts.body, fontSize: 13, color: ink, textDecorationLine: "underline" }}>
-        Get the Android app
+        {t("android.get")}
       </Text>
     </Pressable>
   );

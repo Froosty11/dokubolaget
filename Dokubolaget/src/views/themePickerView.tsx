@@ -41,8 +41,8 @@ export function ThemePickerView({
         accessibilityState={{ selected: active }}
         accessibilityLabel={[
           `${copy.name}:`,
-          locked ? `locked. ${copy.unlockHint}` : active ? "active." : "available.",
-          card.progress ? `${card.progress.current} of ${card.progress.target} days.` : null,
+          locked ? t("themes.cardLocked", { hint: copy.unlockHint }) : active ? t("themes.cardActive") : t("themes.cardAvailable"),
+          card.progress ? t("themes.progressA11y", { current: card.progress.current, target: card.progress.target }) : null,
         ].filter(Boolean).join(" ")}
         style={[styles.card, active ? styles.cardActive : null]}
       >
@@ -59,14 +59,14 @@ export function ThemePickerView({
                 <View style={[styles.progressFill, { width: `${(card.progress.current / card.progress.target) * 100}%` }]} />
               </View>
               <Text style={styles.progressText}>
-                {card.progress.current} of {card.progress.target} days
+                {t("themes.progressDays", { current: card.progress.current, target: card.progress.target })}
               </Text>
             </View>
           ) : null}
         </View>
         {active ? (
           <View style={styles.badge}>
-            <Text style={styles.badgeText}>ACTIVE</Text>
+            <Text style={styles.badgeText}>{t("themes.active")}</Text>
           </View>
         ) : null}
       </Pressable>
@@ -76,10 +76,10 @@ export function ThemePickerView({
   return (
     <View style={styles.page}>
       <View style={styles.header}>
-        <Text accessibilityRole="header" style={styles.title}>Themes</Text>
+        <Text accessibilityRole="header" style={styles.title}>{t("themes.title")}</Text>
         {/* On wide screens this is a page beside the sidebar, not a sheet to close. */}
         {wide ? null : (
-          <Pressable onPress={onClose} accessibilityRole="button" accessibilityLabel="Close themes" hitSlop={12} style={styles.close}>
+          <Pressable onPress={onClose} accessibilityRole="button" accessibilityLabel={t("themes.close")} hitSlop={12} style={styles.close}>
             <Text style={styles.closeText}>✕</Text>
           </Pressable>
         )}
@@ -88,27 +88,27 @@ export function ThemePickerView({
       <ScrollView contentContainerStyle={styles.list}>
         {cards.map(renderCard)}
         <View style={styles.sectionRow}>
-          <Text style={styles.section}>PUB THEMES</Text>
+          <Text style={styles.section}>{t("themes.pubThemes")}</Text>
           <Pressable onPress={onOpenStamps} accessibilityRole="link" hitSlop={8}>
-            <Text style={[styles.section, styles.sectionLink]}>Pub stamps ›</Text>
+            <Text style={[styles.section, styles.sectionLink]}>{t("themes.pubStamps")}</Text>
           </Pressable>
         </View>
         {clubCards.length === 0 && downloading.length === 0 ? (
-          <Text style={styles.description}>Scan the code at a club's pub to collect its theme.</Text>
+          <Text style={styles.description}>{t("themes.clubHint")}</Text>
         ) : null}
         {clubCards.map(renderCard)}
         {downloading.map((name) => (
-          <Text key={name} style={styles.description}>{name}: downloading…</Text>
+          <Text key={name} style={styles.description}>{t("themes.downloading", { name })}</Text>
         ))}
         <View style={styles.setting}>
           <View style={styles.cardText}>
-            <Text style={styles.name}>Vibration</Text>
-            <Text style={styles.description}>Each theme buzzes its own way.</Text>
+            <Text style={styles.name}>{t("themes.vibration")}</Text>
+            <Text style={styles.description}>{t("themes.vibrationHint")}</Text>
           </View>
           <Switch
             value={hapticsOn}
             onValueChange={onToggleHaptics}
-            accessibilityLabel="Vibration"
+            accessibilityLabel={t("themes.vibration")}
             trackColor={{ false: theme.colors.divider, true: theme.colors.accent }}
             thumbColor={theme.colors.surface}
             {...({ activeThumbColor: theme.colors.surface } as object)}

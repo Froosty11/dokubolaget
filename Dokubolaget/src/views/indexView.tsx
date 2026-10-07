@@ -98,7 +98,7 @@ export function IndexView(props: IndexViewProps) {
 // Wordle-style: the name, one button to play, and nothing else to choose.
 function WideIndexView({ ageGate, supportUrl }: IndexViewProps) {
   const [showHowTo, setShowHowTo] = useState(false);
-  const { theme } = useTheme();
+  const { theme, t } = useTheme();
   const { colors, fonts, radii } = theme;
 
   function playACB() {
@@ -121,20 +121,20 @@ function WideIndexView({ ageGate, supportUrl }: IndexViewProps) {
         <ThemeLogo height={130} />
         <Text accessibilityRole="header" style={{ fontFamily: fonts.display, fontSize: 52, color: colors.inkStrong, marginTop: 8 }}>Dokubolaget</Text>
         <Text style={{ fontFamily: fonts.body, fontSize: 17, color: colors.inkMuted, textAlign: "center" }}>
-          Get nine bottles in the grid. A new board every day at 04:00.
+          {t("home.tagline")}
         </Text>
 
         <View style={{ flexDirection: "row", gap: 12, marginTop: 14 }}>
           <Pressable accessibilityRole="button" onPress={playACB} style={{ ...button, backgroundColor: colors.accent }}>
-            <Text style={{ fontFamily: fonts.bodyStrong, fontSize: 17, color: colors.accentInk }}>Play</Text>
+            <Text style={{ fontFamily: fonts.bodyStrong, fontSize: 17, color: colors.accentInk }}>{t("home.play")}</Text>
           </Pressable>
           <Pressable accessibilityRole="button" onPress={howToACB} style={button}>
-            <Text style={{ fontFamily: fonts.bodyStrong, fontSize: 17, color: colors.accent }}>How to play</Text>
+            <Text style={{ fontFamily: fonts.bodyStrong, fontSize: 17, color: colors.accent }}>{t("home.howToPlay")}</Text>
           </Pressable>
         </View>
 
         <Text style={{ fontFamily: fonts.condensed, fontSize: 14, letterSpacing: 1.5, textTransform: "uppercase", color: colors.inkMuted }}>
-          Today's board · {formatShortDay(gameDay())}
+          {t("home.todaysBoard", { day: formatShortDay(gameDay()) })}
         </Text>
       </View>
 
@@ -158,7 +158,7 @@ function WideIndexView({ ageGate, supportUrl }: IndexViewProps) {
 function PhoneIndexView({ ageGate, account, supportUrl }: IndexViewProps) {
   const [showLogin, setShowLogin] = useState(false);
   const [showLeaderboard, setShowLeaderboard] = useState(false);
-  const { theme } = useTheme();
+  const { theme, t } = useTheme();
   const app = useThemedStyles(makeAppStyles);
 
   function dailyPlayACB() {
@@ -197,7 +197,7 @@ function PhoneIndexView({ ageGate, account, supportUrl }: IndexViewProps) {
         <View style={{marginVertical: 20, width: "40%", aspectRatio: 1, alignItems: "center", justifyContent: "center"}}>
           <ThemeLogo height={110} fill />
         </View>
-        <Text style={{fontFamily: theme.fonts.condensed, fontSize: 20, color: theme.colors.ink}}>Welcome to</Text>
+        <Text style={{fontFamily: theme.fonts.condensed, fontSize: 20, color: theme.colors.ink}}>{t("home.welcomeTo")}</Text>
         <Text style={{fontFamily: theme.fonts.display, fontSize: 40, color: theme.colors.ink}}>Dokubolaget</Text>
       </View>
 
@@ -205,19 +205,19 @@ function PhoneIndexView({ ageGate, account, supportUrl }: IndexViewProps) {
       <View style={{width: "100%", gap: 10, marginBottom: 16}}>
         <IndexOption
           Icon={Drinks}
-          text="Daily play!"
+          text={t("home.dailyPlay")}
           onPress={dailyPlayACB}
         />
 
         <IndexOption
           Icon={Lista}
-          text="Themes"
+          text={t("home.themes")}
           onPress={themesACB}
         />
 
         <IndexOption
           Icon={Drinks}
-          text="Pub stamps"
+          text={t("home.pubStamps")}
           onPress={stampsACB}
         />
 
@@ -225,19 +225,19 @@ function PhoneIndexView({ ageGate, account, supportUrl }: IndexViewProps) {
         {!isLoggedIn ? (
           <IndexOption
             Icon={Smakprofil}
-            text="Login / Sign up"
+            text={t("home.loginSignup")}
             onPress={loginACB}
           />
         ) : (
           <View style={{gap: 5}}>
-            <Text style={{fontFamily: theme.fonts.body, color: theme.colors.ink}}>Logged in as {account?.nickname}</Text>
+            <Text style={{fontFamily: theme.fonts.body, color: theme.colors.ink}}>{t("home.loggedInAs", { name: account?.nickname ?? "" })}</Text>
             <IndexOption
               Icon={Smakprofil}
-              text="Logout"
+              text={t("home.logout")}
               onPress={handleLogoutACB}
             />
             <Pressable accessibilityRole="link" onPress={() => router.push("/delete-account")}>
-              <Text style={{fontFamily: theme.fonts.body, color: theme.colors.inkMuted, textDecorationLine: "underline"}}>Delete account</Text>
+              <Text style={{fontFamily: theme.fonts.body, color: theme.colors.inkMuted, textDecorationLine: "underline"}}>{t("home.deleteAccount")}</Text>
             </Pressable>
           </View>
         )}

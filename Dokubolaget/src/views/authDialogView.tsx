@@ -12,11 +12,18 @@ type Props = {
 
 type Mode = "login" | "signup" | "forgot";
 
-const TITLES: Record<Mode, string> = { login: "Login", signup: "Sign Up", forgot: "Forgot password" };
-const ACTIONS: Record<Mode, string> = { login: "Login", signup: "Sign Up", forgot: "Send reset link" };
-
 export default function AuthDialog({ open, onOpenChange }: Props) {
-  const { theme } = useTheme();
+  const { theme, t } = useTheme();
+  const TITLES: Record<Mode, string> = {
+    login: t("dialogs.auth.title.login"),
+    signup: t("dialogs.auth.title.signup"),
+    forgot: t("dialogs.auth.title.forgot"),
+  };
+  const ACTIONS: Record<Mode, string> = {
+    login: t("dialogs.auth.action.login"),
+    signup: t("dialogs.auth.action.signup"),
+    forgot: t("dialogs.auth.action.forgot"),
+  };
   const text = { color: theme.colors.dialogInk, fontFamily: theme.fonts.body };
   const link = { ...text, textDecorationLine: "underline" as const };
   const inputColors = {
@@ -48,7 +55,7 @@ export default function AuthDialog({ open, onOpenChange }: Props) {
       if (mode === "forgot") {
         await handleResetRequestACB(email);
         // Same message whether or not the account exists.
-        setNotice("If there's an account for that email, a reset link is on its way. It works for one hour.");
+        setNotice(t("dialogs.auth.resetNotice"));
         return;
       }
       await handleLoginACB(email, password, mode === "signup", nickname);
@@ -86,7 +93,7 @@ export default function AuthDialog({ open, onOpenChange }: Props) {
             {mode === "signup" && (
               <Input
                 style={inputColors}
-                placeholder="Nickname (shown on the leaderboard)"
+                placeholder={t("dialogs.auth.nicknamePlaceholder")}
                 value={nickname}
                 onChangeText={setNickname}
                 autoCapitalize="none"
@@ -97,7 +104,7 @@ export default function AuthDialog({ open, onOpenChange }: Props) {
 
             <Input
               style={inputColors}
-              placeholder="Email"
+              placeholder={t("dialogs.auth.emailPlaceholder")}
               value={email}
               onChangeText={setEmail}
               autoCapitalize="none"
@@ -110,7 +117,7 @@ export default function AuthDialog({ open, onOpenChange }: Props) {
             {mode !== "forgot" && (
               <Input
                 style={inputColors}
-                placeholder="Password"
+                placeholder={t("dialogs.auth.passwordPlaceholder")}
                 type="password"
                 value={password}
                 onChangeText={setPassword}
@@ -135,24 +142,24 @@ export default function AuthDialog({ open, onOpenChange }: Props) {
               }}
             >
               <Text style={{ ...text, color: theme.colors.dialogButtonInk, fontFamily: theme.fonts.bodyStrong, fontWeight: "600" }}>
-                {loading ? "Loading..." : ACTIONS[mode]}
+                {loading ? t("dialogs.auth.loading") : ACTIONS[mode]}
               </Text>
             </Pressable>
 
             {mode === "login" && (
               <Pressable onPress={() => switchMode("forgot")} accessibilityRole="button">
-                <Text style={link}>Forgot password?</Text>
+                <Text style={link}>{t("dialogs.auth.forgotLink")}</Text>
               </Pressable>
             )}
 
             <Pressable onPress={() => switchMode(mode === "signup" ? "login" : mode === "forgot" ? "login" : "signup")} accessibilityRole="button">
               <Text style={link}>
-                {mode === "signup" ? "Already have an account? Login" : mode === "forgot" ? "Back to login" : "Need an account? Sign Up"}
+                {mode === "signup" ? t("dialogs.auth.switchToLogin") : mode === "forgot" ? t("dialogs.auth.backToLogin") : t("dialogs.auth.switchToSignup")}
               </Text>
             </Pressable>
 
             <Pressable onPress={() => onOpenChange(false)} accessibilityRole="button">
-              <Text style={link}>Close</Text>
+              <Text style={link}>{t("dialogs.auth.close")}</Text>
             </Pressable>
           </YStack>
         </Dialog.Content>

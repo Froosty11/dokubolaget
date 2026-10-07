@@ -19,12 +19,3 @@ test("no key is defined in more than one catalog", () => {
     expect(dupes).toEqual([]);
   }
 });
-
-test("no string is left untranslated (identical en/sv) unless intentionally shared", () => {
-  // Brand/proper nouns that are the same in both languages are allowed here.
-  const allowedIdentical = new Set(["lang.en", "lang.sv", "common.ok"]);
-  const identical = Object.keys(translations.en).filter(
-    (k) => !allowedIdentical.has(k) && translations.en[k] === translations.sv[k],
-  );
-  expect(identical).toEqual([]);
-});

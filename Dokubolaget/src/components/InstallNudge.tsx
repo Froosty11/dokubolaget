@@ -17,7 +17,7 @@ declare global {
 }
 
 export function InstallNudge() {
-  const { theme } = useTheme();
+  const { theme, t } = useTheme();
   const styles = useThemedStyles(makeStyles);
   const [mode, setMode] = useState<Mode>("none");
 
@@ -63,21 +63,19 @@ export function InstallNudge() {
     <View style={styles.card}>
       <View style={styles.row}>
         <MaterialCommunityIcons name="cellphone-arrow-down" size={20} color={theme.colors.accent} />
-        <Text style={styles.title}>Add Dokubolaget to your phone</Text>
+        <Text style={styles.title}>{t("install.title")}</Text>
       </View>
       <Text style={styles.body}>
-        {mode === "ios"
-          ? "Tap the Share button, then “Add to Home Screen” — for a full-screen app and a one-tap icon."
-          : "Install it for a full-screen app and a one-tap icon on your home screen."}
+        {mode === "ios" ? t("install.bodyIos") : t("install.bodyOther")}
       </Text>
       <View style={styles.actions}>
         {mode === "prompt" ? (
           <Pressable accessibilityRole="button" style={styles.installButton} onPress={onInstall}>
-            <Text style={styles.installText}>Add to home screen</Text>
+            <Text style={styles.installText}>{t("install.add")}</Text>
           </Pressable>
         ) : null}
         <Pressable accessibilityRole="button" onPress={remember} hitSlop={8}>
-          <Text style={styles.dismiss}>Not now</Text>
+          <Text style={styles.dismiss}>{t("install.notNow")}</Text>
         </Pressable>
       </View>
     </View>

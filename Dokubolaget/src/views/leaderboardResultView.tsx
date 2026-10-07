@@ -1,5 +1,5 @@
 import React from "react";
-import { useThemedStyles } from "../theme/ThemeProvider";
+import { useTheme, useThemedStyles } from "../theme/ThemeProvider";
 import type { Theme } from "../theme/types";
 import { FlatList, StyleSheet, Text, View } from "react-native";
 import { useWideLayout } from "../useWideLayout";
@@ -23,6 +23,7 @@ export function LeaderBoardResultView({
   rows,
 }: LeaderboardResultViewProps) {
   const style = useThemedStyles(makeStyle);
+  const { t } = useTheme();
   // On wide screens the page sets the margins, and the player's row stands out.
   const wide = useWideLayout();
   function keyExtractorACB(item: LeaderboardEntry, index: number) {
@@ -31,7 +32,7 @@ export function LeaderBoardResultView({
 
   function renderItemACB({ item }: { item: LeaderboardEntry }) {
     return (
-      <View style={[style.row, wide && item.detail === "You" ? style.rowMe : null]}>
+      <View style={[style.row, wide && item.detail === t("leaderboard.you") ? style.rowMe : null]}>
         <View>
           <Text style={style.rowLabel}>{item.label}</Text>
           {item.detail ? <Text style={style.rowDetail}>{item.detail}</Text> : null}

@@ -51,7 +51,7 @@ export function AgeGate({
   onReject,
 }: AgeGateProps) {
   const age = useThemedStyles(makeAgeStyles);
-  const { theme } = useTheme();
+  const { theme, t } = useTheme();
   if (!isOpen) return null;
 
   return (
@@ -61,17 +61,11 @@ export function AgeGate({
         <Dialog.Content style={age.content}>
           <DokubolagetLogo width={72} height={42}/>
           <Text style={age.title}>
-            Hello, can we ask for ID?
+            {t("dialogs.ageGate.title")}
           </Text>
           <View style={age.divider}/>
           <Text style={age.bodyText}>
-            In the eyes of many, we are very age-obsessed.
-            And we can only agree. Asking for ID is part of
-            our work to protect young people from alcohol.
-            {"\n\n"}
-            This website contains information about alcohol.
-            To visit it or shop, you must be 20 years of
-            age or older.
+            {t("dialogs.ageGate.body")}
           </Text>
           <View style={age.buttonRow}>
             <Pressable
@@ -81,9 +75,9 @@ export function AgeGate({
               ]}
               onPress={onReject}
               accessibilityRole="button"
-              accessibilityLabel="I am under 20"
+              accessibilityLabel={t("dialogs.ageGate.under20")}
             >
-              <Text style={age.buttonText}>I am under 20</Text>
+              <Text style={age.buttonText}>{t("dialogs.ageGate.under20")}</Text>
             </Pressable>
             <Pressable
               style={({ pressed }) => [
@@ -92,9 +86,9 @@ export function AgeGate({
               ]}
               onPress={onAccept}
               accessibilityRole="button"
-              accessibilityLabel="I have turned 20"
+              accessibilityLabel={t("dialogs.ageGate.over20")}
             >
-              <Text style={age.buttonText}>I have turned 20</Text>
+              <Text style={age.buttonText}>{t("dialogs.ageGate.over20")}</Text>
             </Pressable>
           </View>
           <ResponsibleNote color={theme.colors.dialogInk} />

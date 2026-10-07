@@ -55,7 +55,7 @@ type SearchResultRowProps = {
 
 function SearchResultRow(props: Readonly<SearchResultRowProps>) {
 	const { result, tried, redact, onPress, onPeek } = props
-	const { theme } = useTheme()
+	const { theme, t } = useTheme()
 	const row = useThemedStyles(makeRowStyles)
 	const [imageUri, setImageUri] = useState(result.image || SEARCH_PLACEHOLDER_IMAGE)
 
@@ -74,12 +74,12 @@ function SearchResultRow(props: Readonly<SearchResultRowProps>) {
 	const masked = (field: RowField | undefined, style: any, suffix = "") =>
 		field ? (
 			field.hidden ? (
-				<Text style={[style, row.bar]} accessibilityLabel="hidden">{"x".repeat(Math.max(3, Math.min(field.length, 12)))}</Text>
+				<Text style={[style, row.bar]} accessibilityLabel={t("search.a11y.hidden")}>{"x".repeat(Math.max(3, Math.min(field.length, 12)))}</Text>
 			) : (
 				<Text style={style}>{field.text}{suffix}</Text>
 			)
 		) : null
-	const triedLabel = theme.id === "prislista" ? "REDAN PRÖVAD" : "TRIED"
+	const triedLabel = t("search.triedStamp")
 
 	return (
 		<Pressable
@@ -96,7 +96,7 @@ function SearchResultRow(props: Readonly<SearchResultRowProps>) {
 			}}
 			delayLongPress={380}
 			accessibilityRole="button"
-			accessibilityLabel={`${result.raw?.productNameBold ?? result.name}${tried ? ", already tried" : ""}`}
+			accessibilityLabel={`${result.raw?.productNameBold ?? result.name}${tried ? t("search.a11y.alreadyTried") : ""}`}
 		>
 			{theme.flags.dottedLeaderPrices ? (
 				<View style={row.resultTextWrap}>
@@ -301,7 +301,7 @@ export function SearchView(props: Readonly<SearchViewProps>) {
 		rejectedIds,
 		feedback,
 	} = props
-	const { theme, copy } = useTheme()
+	const { theme, copy, t } = useTheme()
 	const search = useThemedStyles(makeSearchStyles)
 
 	function keyExtractorCB(item: any) { return item.id }
@@ -356,8 +356,8 @@ export function SearchView(props: Readonly<SearchViewProps>) {
 	const categoryLabels = getCategoryLabels()
 
 	const peekHint = Platform.OS === "web" && sideBySide
-		? "Hover a result to open its case file"
-		: "Long-press a result to open its case file"
+		? t("search.peekHintHover")
+		: t("search.peekHintLongPress")
 
 	return (
 		<View style={search.overlay}>
@@ -384,11 +384,11 @@ export function SearchView(props: Readonly<SearchViewProps>) {
 							style={search.input}
 							value={query}
 							onChangeText={onQueryChange}
-							placeholder="What are you looking for?"
+							placeholder={t("search.placeholder")}
 							autoFocus
 						/>
 					</View>
-					<Pressable style={search.closeButton} onPress={onClose} accessibilityRole="button" accessibilityLabel="Close search">
+					<Pressable style={search.closeButton} onPress={onClose} accessibilityRole="button" accessibilityLabel={t("search.a11y.close")}>
 						<Svg width={18} height={18} viewBox="0 0 24 24">
 							<Path
 								d="M6.4 19L5 17.6L10.6 12L5 6.4L6.4 5L12 10.6L17.6 5L19 6.4L13.4 12L19 17.6L17.6 19L12 13.4L6.4 19Z"
@@ -415,8 +415,8 @@ export function SearchView(props: Readonly<SearchViewProps>) {
 						</Text>
 					</View>
 				) : null}
-				{isLoading ? <Text style={search.status}>Searching...</Text> : null}
-				{!isLoading && results.length == 0 ? <Text style={search.status}>No results</Text> : null}
+				{isLoading ? <Text style={search.status}>{t("search.searching")}</Text> : null}
+				{!isLoading && results.length == 0 ? <Text style={search.status}>{t("search.noResults")}</Text> : null}
 				{errorMessage ? <Text style={search.status}>{errorMessage}</Text> : null}
 				{results.length > 0 ? <Text style={search.hint}>{peekHint}</Text> : null}
 				{results.length > 0 ? (
@@ -434,7 +434,7 @@ export function SearchView(props: Readonly<SearchViewProps>) {
 				{peek && !sideBySide ? (
 					<Pressable style={search.peekBackdrop} onPress={() => setPeek(null)}>
 						<Dossier product={peek.result.raw} redact={redactKeys} width={Math.min(320, windowWidth - 48)} />
-						<Text style={search.peekDismiss}>Tap anywhere to close</Text>
+						<Text style={search.peekDismiss}>{t("search.peekDismiss")}</Text>
 					</Pressable>
 				) : null}
 			</View>

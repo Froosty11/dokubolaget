@@ -18,26 +18,26 @@ type Props = {
 // Every club theme as a stamp: collected ones in colour with "Wear it",
 // missing ones greyed out with where and when to scan.
 export function StampsView({ stamps, collectedCount, offline, contactEmail, onWear, onClose }: Readonly<Props>) {
-  const { theme } = useTheme();
+  const { theme, t } = useTheme();
   const styles = useThemedStyles(makeStyles);
   const wide = useWideLayout();
   return (
     <View style={styles.page}>
       <View style={styles.header}>
-        <Text accessibilityRole="header" style={styles.title}>Pub stamps</Text>
+        <Text accessibilityRole="header" style={styles.title}>{t("stamps.title")}</Text>
         {/* On wide screens this is a page beside the sidebar, not a sheet to close. */}
         {wide ? null : (
-          <Pressable onPress={onClose} accessibilityRole="button" accessibilityLabel="Close pub stamps" hitSlop={12} style={styles.close}>
+          <Pressable onPress={onClose} accessibilityRole="button" accessibilityLabel={t("stamps.close")} hitSlop={12} style={styles.close}>
             <Text style={styles.closeText}>✕</Text>
           </Pressable>
         )}
       </View>
       <ScrollView contentContainerStyle={styles.body}>
         <Text style={styles.lead}>
-          Scan the poster at a club's pub to collect its stamp and theme.
-          {stamps.length ? ` ${collectedCount} of ${stamps.length} collected.` : ""}
+          {t("stamps.lead")}
+          {stamps.length ? ` ${t("stamps.collectedCount", { count: collectedCount, total: stamps.length })}` : ""}
         </Text>
-        {offline ? <Text style={styles.lead}>You're offline – showing the stamps saved on this device.</Text> : null}
+        {offline ? <Text style={styles.lead}>{t("stamps.offline")}</Text> : null}
         <View style={styles.grid}>
           {stamps.map((stamp) => {
             const { summary } = stamp;
@@ -46,14 +46,14 @@ export function StampsView({ stamps, collectedCount, offline, contactEmail, onWe
             return (
               <View
                 key={summary.id}
-                accessibilityLabel={`${summary.club.name}: ${stamp.collected ? "collected" : `not collected. Scan the code at ${summary.club.venue}, ${summary.club.pubNight}`}`}
+                accessibilityLabel={`${summary.club.name}: ${stamp.collected ? t("stamps.collectedA11y") : t("stamps.notCollectedScan", { venue: summary.club.venue, pubNight: summary.club.pubNight })}`}
                 style={[styles.stamp, stamp.collected ? null : styles.stampMissing]}
               >
-                {stamp.collected ? <Text style={styles.got}>SAMLAD</Text> : null}
+                {stamp.collected ? <Text style={styles.got}>{t("stamps.collectedBadge")}</Text> : null}
                 <ClubLogo club={summary.club} logoUrl={stamp.logoUrl} theme={own} size={72} dimmed={!stamp.collected} />
                 <Text style={styles.name}>{summary.club.name}</Text>
                 <Text style={styles.hint}>
-                  {stamp.collected ? `${summary.club.pubNight} · ${summary.club.venue}` : `Scan the code at ${summary.club.venue}, ${summary.club.pubNight}`}
+                  {stamp.collected ? `${summary.club.pubNight} · ${summary.club.venue}` : t("stamps.scanAt", { venue: summary.club.venue, pubNight: summary.club.pubNight })}
                 </Text>
                 {stamp.collected ? (
                   <Pressable
@@ -63,7 +63,7 @@ export function StampsView({ stamps, collectedCount, offline, contactEmail, onWe
                     style={[styles.wear, stamp.wearing ? styles.wearing : null]}
                   >
                     <Text style={[styles.wearText, stamp.wearing ? styles.wearingText : null]}>
-                      {stamp.wearing ? "WEARING" : stamp.available ? "WEAR IT" : "DOWNLOADING…"}
+                      {stamp.wearing ? t("stamps.wearing") : stamp.available ? t("stamps.wearIt") : t("stamps.downloading")}
                     </Text>
                   </Pressable>
                 ) : null}
@@ -71,11 +71,11 @@ export function StampsView({ stamps, collectedCount, offline, contactEmail, onWe
             );
           })}
         </View>
-        {stamps.length === 0 && !offline ? <Text style={styles.lead}>No clubs yet.</Text> : null}
+        {stamps.length === 0 && !offline ? <Text style={styles.lead}>{t("stamps.noClubs")}</Text> : null}
         {contactEmail ? (
           <Pressable onPress={() => Linking.openURL(`mailto:${contactEmail}`)} accessibilityRole="link" style={styles.collab}>
             <Text style={styles.lead}>
-              Want your club here? <Text style={styles.link}>{contactEmail}</Text>
+              {t("stamps.wantClub")}<Text style={styles.link}>{contactEmail}</Text>
             </Text>
           </Pressable>
         ) : null}

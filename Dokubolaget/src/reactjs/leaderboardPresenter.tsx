@@ -1,4 +1,4 @@
-import { useThemedStyles } from "../theme/ThemeProvider";
+import { useTheme, useThemedStyles } from "../theme/ThemeProvider";
 import type { Theme } from "../theme/types";
 import { observer } from "mobx-react-lite";
 import { useEffect, useState } from "react";
@@ -23,15 +23,17 @@ type leaderboardProps = {
   limit?: number;
 };
 
-const PERIOD_COPY: Record<LeaderboardPeriod, { title: string; subtitle: string; empty: string; unit: string }> = {
-  today: { title: "Today", subtitle: "Ranked by today's score", empty: "No scores yet today — be the first to finish the board.", unit: "points today" },
-  week: { title: "This Week", subtitle: "Ranked by this week's score", empty: "No scores yet this week.", unit: "points this week" },
-  all: { title: "All Time", subtitle: "Ranked by total score", empty: "No scores recorded yet.", unit: "points in total" },
-  streak: { title: "Streak", subtitle: "Ranked by current streak", empty: "No streaks going yet.", unit: "days in a row" },
-};
-
 const Leaderboard = observer(function Leaderboard(_props: leaderboardProps) {
   const style = useThemedStyles(makeStyle);
+  const { t } = useTheme();
+  // Per-period copy, resolved for the active language. Keys live in the
+  // "leaderboard.*" catalog, e.g. "leaderboard.today.title".
+  const PERIOD_COPY: Record<LeaderboardPeriod, { title: string; subtitle: string; empty: string; unit: string }> = {
+    today: { title: t("leaderboard.today.title"), subtitle: t("leaderboard.today.subtitle"), empty: t("leaderboard.today.empty"), unit: t("leaderboard.today.unit") },
+    week: { title: t("leaderboard.week.title"), subtitle: t("leaderboard.week.subtitle"), empty: t("leaderboard.week.empty"), unit: t("leaderboard.week.unit") },
+    all: { title: t("leaderboard.all.title"), subtitle: t("leaderboard.all.subtitle"), empty: t("leaderboard.all.empty"), unit: t("leaderboard.all.unit") },
+    streak: { title: t("leaderboard.streak.title"), subtitle: t("leaderboard.streak.subtitle"), empty: t("leaderboard.streak.empty"), unit: t("leaderboard.streak.unit") },
+  };
   const wide = useWideLayout();
   const [period, setPeriod] = useState<LeaderboardPeriod>("today");
   const [rows, setRows] = useState<LeaderboardEntry[]>([]);
@@ -56,7 +58,7 @@ const Leaderboard = observer(function Leaderboard(_props: leaderboardProps) {
               key: `${period}-${row.rank}-${row.nickname}`,
               label: `${row.rank}. ${row.nickname}`,
               value: row.value,
-              detail: isMe ? "You" : undefined,
+              detail: isMe ? t("leaderboard.you") : undefined,
             };
           });
           // The server always returns the caller's own row, even beyond the top
@@ -66,7 +68,7 @@ const Leaderboard = observer(function Leaderboard(_props: leaderboardProps) {
               key: `${period}-me`,
               label: `${result.me.rank}. ${result.me.nickname}`,
               value: result.me.value,
-              detail: "You",
+              detail: t("leaderboard.you"),
             });
           }
           if (isMounted) {
@@ -94,10 +96,10 @@ const Leaderboard = observer(function Leaderboard(_props: leaderboardProps) {
 
   const copy = PERIOD_COPY[period];
   const displayRows: LeaderboardEntry[] = loading
-    ? [{ label: "Loading…", value: "", detail: "Fetching the leaderboard" }]
+    ? [{ label: t("leaderboard.loading"), value: "", detail: t("leaderboard.loadingDetail") }]
     : rows.length
       ? rows
-      : [{ label: "Nobody here yet", value: "", detail: copy.empty }];
+      : [{ label: t("leaderboard.nobodyYet"), value: "", detail: copy.empty }];
 
   if (wide) {
     return (

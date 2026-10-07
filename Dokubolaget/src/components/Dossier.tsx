@@ -90,33 +90,33 @@ type DossierStyles = ReturnType<typeof makeStyles>;
 const StylesContext = createContext<DossierStyles | null>(null);
 const useStyles = () => useContext(StylesContext)!;
 
-function buildLines(raw: any): Line[] {
+function buildLines(raw: any, t: (key: string) => string): Line[] {
   const grapes = Array.isArray(raw?.grapes) ? raw.grapes.join(", ") : "";
   const style = [raw?.categoryLevel2, raw?.categoryLevel3].filter(Boolean).join(" / ");
   const lines: Line[] = [
-    { key: null, label: "PRODUCER", value: raw?.producerName || raw?.supplierName || "" },
-    { key: "country", label: "ORIGIN", value: raw?.country || "" },
-    { key: "region", label: "REGION", value: raw?.originLevel1 || "" },
-    { key: "style", label: "TYPE", value: style },
-    { key: "grapes", label: "GRAPES", value: grapes },
+    { key: null, label: t("search.field.producer"), value: raw?.producerName || raw?.supplierName || "" },
+    { key: "country", label: t("search.field.origin"), value: raw?.country || "" },
+    { key: "region", label: t("search.field.region"), value: raw?.originLevel1 || "" },
+    { key: "style", label: t("search.field.type"), value: style },
+    { key: "grapes", label: t("search.field.grapes"), value: grapes },
     {
       key: "strength",
-      label: "STRENGTH",
+      label: t("search.field.strength"),
       value: raw?.alcoholPercentage != null ? `${raw.alcoholPercentage} %` : "",
     },
-    { key: "volume", label: "VOLUME", value: raw?.volumeText || "" },
-    { key: "price", label: "PRICE", value: formatPrice(raw?.price) },
-    { key: "packaging", label: "PACKAGING", value: raw?.packagingLevel1 || raw?.bottleText || "" },
-    { key: "closure", label: "CLOSURE", value: raw?.seal || "" },
+    { key: "volume", label: t("search.field.volume"), value: raw?.volumeText || "" },
+    { key: "price", label: t("search.field.price"), value: formatPrice(raw?.price) },
+    { key: "packaging", label: t("search.field.packaging"), value: raw?.packagingLevel1 || raw?.bottleText || "" },
+    { key: "closure", label: t("search.field.closure"), value: raw?.seal || "" },
     {
       key: "organic",
-      label: "ORGANIC",
-      value: raw?.isOrganic === true ? "Yes" : raw?.isOrganic === false ? "No" : "",
+      label: t("search.field.organic"),
+      value: raw?.isOrganic === true ? t("search.field.yes") : raw?.isOrganic === false ? t("search.field.no") : "",
     },
-    { key: "assortment", label: "SHELF", value: raw?.assortmentText || "" },
+    { key: "assortment", label: t("search.field.shelf"), value: raw?.assortmentText || "" },
     {
       key: null,
-      label: "ON FILE SINCE",
+      label: t("search.field.onFileSince"),
       value: typeof raw?.productLaunchDate === "string" ? raw.productLaunchDate.slice(0, 4) : "",
     },
   ];
@@ -211,11 +211,11 @@ type DossierProps = {
 };
 
 export function Dossier({ product, redact, revealed = false, width = 300 }: DossierProps) {
-  const { theme, copy } = useTheme();
+  const { theme, copy, t } = useTheme();
   const look = theme.dossier;
   const font = look.font && Font.isLoaded(look.font) ? look.font : MONO;
   const styles = useMemo(() => StyleSheet.create(makeStyles(look, font)), [look, font]);
-  const lines = buildLines(product);
+  const lines = buildLines(product, t);
   const productNumber = String(product?.productNumber || product?.productId || "0000");
   const seed = Number(productNumber.replace(/\D/g, "").slice(-8)) || 7;
   const name = [product?.productNameBold, product?.productNameThin].filter(Boolean).join(" ");
@@ -270,7 +270,7 @@ export function Dossier({ product, redact, revealed = false, width = 300 }: Doss
         const delay = redacted ? 250 + peelIndex++ * 180 : 0;
         return (
           <View key={line.label} style={styles.line}>
-            <Text style={styles.label}>{line.label}</Text>
+            <Text style={styles.label}>{line.label.toUpperCase()}</Text>
             <Value text={line.value} redacted={redacted} revealed={revealed} delay={delay} />
           </View>
         );

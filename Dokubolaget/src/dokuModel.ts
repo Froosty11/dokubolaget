@@ -9,6 +9,7 @@ import { doesProductMatchTagId } from "./boardTags";
 import { formatTagLabel } from "./tagDisplay";
 import { api, type Account } from "./api";
 import { createThemeState } from "./theme/themeState";
+import type { Lang } from "./theme/types";
 import { THEMES } from "./theme/registry";
 import { unlocksForBoard } from "./theme/unlocks";
 import {
@@ -526,13 +527,16 @@ const modelBody = {
       score: this.cellInfo[cell]?.score ?? null,
       unicorn: this.cellInfo[cell]?.unicorn ?? false,
     }));
-    return composeShareText({
-      day: this.practiceDay ?? this.boardDate,
-      score: this.boardScore,
-      misses: this.boardMisses,
-      cells,
-      url: origin,
-    });
+    return composeShareText(
+      {
+        day: this.practiceDay ?? this.boardDate,
+        score: this.boardScore,
+        misses: this.boardMisses,
+        cells,
+        url: origin,
+      },
+      (this as unknown as { lang?: Lang }).lang ?? "en",
+    );
   },
 
   clearLastFeedback() {

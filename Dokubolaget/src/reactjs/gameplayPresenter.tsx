@@ -74,7 +74,7 @@ async function shareTextACB(text: string): Promise<"shared" | "copied" | "failed
 }
 
 const Gameplay = observer(function GameRender({ model }: GameplayProps) {
-    const { copy, setId } = useTheme();
+    const { copy, setId, t } = useTheme();
     const [unlockCard, setUnlockCard] = useState<ThemeId | null>(null);
     const [feedback, setFeedback] = useState<GuessFeedback | null>(null);
     const fadeAnim = useRef(new Animated.Value(1)).current;
@@ -167,7 +167,7 @@ const Gameplay = observer(function GameRender({ model }: GameplayProps) {
     const [toast, setToast] = useState<string | null>(null);
     useEffect(() => {
       const notice = model.rolloverNotice
-        ? `New board! Yesterday's ended at ${model.rolloverNotice.score} points.`
+        ? t("gameplay.rolloverNotice", { score: model.rolloverNotice.score })
         : model.syncNotice;
       if (!notice) return;
       setToast(notice);
@@ -179,9 +179,9 @@ const Gameplay = observer(function GameRender({ model }: GameplayProps) {
 
     const practiceLabel =
       model.boardStatus === "offline"
-        ? "Practice (offline) · scores need a connection"
+        ? t("gameplay.practiceOffline")
         : model.playMode === "archive"
-          ? `Practice · ${formatShortDay(model.practiceDay as string)} · doesn't count`
+          ? t("gameplay.practiceArchive", { day: formatShortDay(model.practiceDay as string) })
           : null;
 
     // First visit of the day: headers drop in one by one once the tutorial

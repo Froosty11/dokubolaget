@@ -18,7 +18,7 @@ type ThemePickerModel = {
 };
 
 export const ThemePicker = observer(function ThemePicker({ model }: { model: ThemePickerModel }) {
-  const { id, setId, available } = useTheme();
+  const { id, setId, available, t } = useTheme();
   const ctx = { unlocked: model.unlockedThemes, longestStreak: model.longestStreak, loggedIn: model.loggedIn };
   const cards = THEMES.map((theme) => ({ theme, card: themeCardState(theme, ctx, id, available) }));
   // Unlocked club themes after the built-in ones; any not downloaded yet are
@@ -34,7 +34,9 @@ export const ThemePicker = observer(function ThemePicker({ model }: { model: The
   const downloading = clubIds
     .filter((clubId) => !clubTheme(clubId))
     .map((clubId) => model.clubSummaries.find((s) => s.id === clubId)?.name ?? clubId);
-  const streakLine = model.loggedIn ? `Best streak: ${model.longestStreak} days` : "Log in to earn streak rewards";
+  const streakLine = model.loggedIn
+    ? t("themes.bestStreak", { days: model.longestStreak })
+    : t("themes.loginForStreaks");
 
   function onPick(next: ThemeId) {
     if (setId(next)) haptics.play("tap");

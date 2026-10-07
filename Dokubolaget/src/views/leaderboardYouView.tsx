@@ -1,6 +1,6 @@
 import { Pressable, Text, View } from "react-native";
 import type { LeaderRow, UserStats } from "../play/types";
-import { useThemedStyles } from "../theme/ThemeProvider";
+import { useTheme, useThemedStyles } from "../theme/ThemeProvider";
 import type { Theme } from "../theme/types";
 
 type Props = {
@@ -17,31 +17,32 @@ type Props = {
 // The player's own numbers beside the leaderboard on wide screens.
 export function LeaderboardYouView({ nickname, periodTitle, unit, me, stats, onLogin }: Readonly<Props>) {
   const style = useThemedStyles(makeStyle);
+  const { t } = useTheme();
 
   if (!nickname) {
     return (
       <View style={style.card}>
-        <Text style={style.label}>You</Text>
-        <Text style={style.lead}>Log in to see your rank, your streak and the unicorns you've found.</Text>
+        <Text style={style.label}>{t("leaderboard.you")}</Text>
+        <Text style={style.lead}>{t("leaderboard.you.lead")}</Text>
         <Pressable accessibilityRole="button" onPress={onLogin} style={style.button}>
-          <Text style={style.buttonText}>Log in / Sign up</Text>
+          <Text style={style.buttonText}>{t("leaderboard.you.login")}</Text>
         </Pressable>
       </View>
     );
   }
 
   const tiles: Array<{ value: string; label: string }> = [
-    { value: me && me.value > 0 ? `#${me.rank}` : "–", label: `rank, ${periodTitle.toLowerCase()}` },
+    { value: me && me.value > 0 ? `#${me.rank}` : "–", label: t("leaderboard.you.rankTile", { period: periodTitle.toLowerCase() }) },
     { value: String(me?.value ?? 0), label: unit },
-    { value: String(stats?.currentStreak ?? 0), label: "day streak" },
-    { value: String(stats?.longestStreak ?? 0), label: "longest streak" },
-    { value: String(stats?.finishedCount ?? 0), label: "boards finished" },
-    { value: String(stats?.unicorns ?? 0), label: "unicorns 🦄" },
+    { value: String(stats?.currentStreak ?? 0), label: t("leaderboard.you.dayStreak") },
+    { value: String(stats?.longestStreak ?? 0), label: t("leaderboard.you.longestStreak") },
+    { value: String(stats?.finishedCount ?? 0), label: t("leaderboard.you.boardsFinished") },
+    { value: String(stats?.unicorns ?? 0), label: t("leaderboard.you.unicorns") },
   ];
 
   return (
     <View style={style.card}>
-      <Text style={style.label}>You</Text>
+      <Text style={style.label}>{t("leaderboard.you")}</Text>
       <Text numberOfLines={1} style={style.name}>{nickname}</Text>
       <View style={style.tiles}>
         {tiles.map((tile) => (

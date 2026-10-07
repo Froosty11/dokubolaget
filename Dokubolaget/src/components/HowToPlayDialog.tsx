@@ -13,7 +13,7 @@ type Props = {
 
 // The rules, shown on the board and from Home on wide screens.
 export function HowToPlayDialog({ open, onClose, children }: Props) {
-  const { theme } = useTheme();
+  const { theme, t } = useTheme();
   const { colors, fonts } = theme;
   const wide = useWideLayout();
   return (
@@ -26,12 +26,12 @@ export function HowToPlayDialog({ open, onClose, children }: Props) {
           elevate
           style={{ backgroundColor: colors.dialogSurface, borderColor: colors.divider, ...(wide ? { maxWidth: 480 } : null) }}>
           <YStack gap="$4" >
-            <AlertDialog.Title style={{fontFamily: fonts.display, color: colors.dialogInk}}>How to play!</AlertDialog.Title>
+            <AlertDialog.Title style={{fontFamily: fonts.display, color: colors.dialogInk}}>{t("gameplay.howToPlayTitle")}</AlertDialog.Title>
             <ScrollView key="scroll" style={{maxHeight: 300}} showsVerticalScrollIndicator>
               <Text style={{ fontFamily: fonts.body, color: colors.dialogInk, letterSpacing: -0.2, lineHeight: 21 }}>
-                <Text style={{ fontFamily: fonts.bodyStrong }}>Fill the grid.</Text> Find a bottle that matches both its row and its column. Only bottles from Systembolaget's regular, local and seasonal ranges count.{"\n\n"}
-                <Text style={{ fontFamily: fonts.bodyStrong }}>Rarer scores more.</Text> The fewer players who picked your bottle, the more it's worth (up to 100 a cell). Each miss costs 5 points, at most 20 per cell.{"\n\n"}
-                <Text style={{ fontFamily: fonts.bodyStrong }}>A new board every day at 04:00.</Text>
+                <Text style={{ fontFamily: fonts.bodyStrong }}>{t("gameplay.howToFillTitle")}</Text>{t("gameplay.howToFillBody")}{"\n\n"}
+                <Text style={{ fontFamily: fonts.bodyStrong }}>{t("gameplay.howToRarerTitle")}</Text>{t("gameplay.howToRarerBody")}{"\n\n"}
+                <Text style={{ fontFamily: fonts.bodyStrong }}>{t("gameplay.howToNewBoard")}</Text>
               </Text>
             </ScrollView>
 
@@ -39,7 +39,7 @@ export function HowToPlayDialog({ open, onClose, children }: Props) {
               <AlertDialog.Action asChild>
                 <Pressable onPress={onClose}>
                   <Text style={{ fontFamily: fonts.body, color: colors.dialogButtonInk, backgroundColor: colors.dialogButton, padding: 5, borderRadius: 5 }}>
-                    Ok, let's play!
+                    {t("gameplay.howToPlayAction")}
                   </Text>
                 </Pressable>
               </AlertDialog.Action>

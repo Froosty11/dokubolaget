@@ -9,7 +9,7 @@ import { deleteAccountACB } from "../utilities";
 // own on the website (dokubolaget.se/delete-account) for players without the
 // app, which Google Play asks for.
 export default function DeleteAccountPage() {
-  const { theme } = useTheme();
+  const { theme, t } = useTheme();
   const { colors, fonts, radii } = theme;
   const [email, setEmail] = useState(() => reactiveModel.account?.email ?? "");
   const [password, setPassword] = useState("");
@@ -56,50 +56,49 @@ export default function DeleteAccountPage() {
     <View style={{ flex: 1, backgroundColor: colors.page, alignItems: "center", justifyContent: "center", padding: 24 }}>
       <View style={{ width: "100%", maxWidth: 380, gap: 14, backgroundColor: colors.surface, borderRadius: radii.card, padding: 24, borderWidth: 1, borderColor: colors.divider }}>
         <Text accessibilityRole="header" style={{ fontFamily: fonts.display, fontSize: 26, color: colors.inkStrong }}>
-          Delete account
+          {t("dialogs.delete.title")}
         </Text>
         {status === "done" ? (
           <>
             <Text accessibilityRole="alert" style={text}>
-              Your account is deleted, along with your nickname, saved progress and themes. You can keep playing logged out.
+              {t("dialogs.delete.done")}
             </Text>
             <Pressable accessibilityRole="button" onPress={() => router.replace("/")} style={{ ...button, backgroundColor: colors.accent }}>
-              <Text style={{ fontFamily: fonts.bodyStrong, color: colors.accentInk }}>Go to Home</Text>
+              <Text style={{ fontFamily: fonts.bodyStrong, color: colors.accentInk }}>{t("dialogs.goHome")}</Text>
             </Pressable>
           </>
         ) : (
           <>
             <Text style={text}>
-              This deletes your Dokubolaget account for good: your email, nickname, password, unlocked themes and saved
-              progress. It's removed right away, and from our backups within 7 days.
+              {t("dialogs.delete.intro")}
             </Text>
             <TextInput
               value={email}
               onChangeText={setEmail}
-              placeholder="Email"
+              placeholder={t("dialogs.delete.emailPlaceholder")}
               placeholderTextColor={colors.inkFaint}
               autoCapitalize="none"
               autoComplete="email"
               keyboardType="email-address"
               inputMode="email"
-              accessibilityLabel="Email"
+              accessibilityLabel={t("dialogs.delete.emailLabel")}
               style={input}
             />
             <TextInput
               value={password}
               onChangeText={setPassword}
               secureTextEntry
-              placeholder="Password"
+              placeholder={t("dialogs.delete.passwordPlaceholder")}
               placeholderTextColor={colors.inkFaint}
               autoComplete="current-password"
-              accessibilityLabel="Password"
+              accessibilityLabel={t("dialogs.delete.passwordLabel")}
               onSubmitEditing={submit}
               style={input}
             />
             {!!error && <Text accessibilityRole="alert" style={{ fontFamily: fonts.body, color: colors.miss }}>{error}</Text>}
             {status === "confirm" && (
               <Text accessibilityRole="alert" style={{ fontFamily: fonts.bodyStrong, color: colors.miss }}>
-                This can't be undone. Press again to delete your account.
+                {t("dialogs.delete.confirmWarning")}
               </Text>
             )}
             <Pressable
@@ -109,14 +108,14 @@ export default function DeleteAccountPage() {
               style={{ ...button, backgroundColor: colors.miss, opacity: email && password ? 1 : 0.5 }}
             >
               <Text style={{ fontFamily: fonts.bodyStrong, color: colors.surface }}>
-                {status === "deleting" ? "Deleting..." : status === "confirm" ? "Yes, delete my account" : "Delete my account"}
+                {status === "deleting" ? t("dialogs.delete.deleting") : status === "confirm" ? t("dialogs.delete.confirmButton") : t("dialogs.delete.button")}
               </Text>
             </Pressable>
             <Text style={{ fontFamily: fonts.body, color: colors.inkMuted }}>
-              Forgot your password? Use "Forgot password?" in the login box first, then come back here.
+              {t("dialogs.delete.forgotHint")}
             </Text>
             <Pressable accessibilityRole="button" onPress={goHome}>
-              <Text style={{ ...text, textDecorationLine: "underline" }}>Cancel</Text>
+              <Text style={{ ...text, textDecorationLine: "underline" }}>{t("dialogs.delete.cancel")}</Text>
             </Pressable>
           </>
         )}

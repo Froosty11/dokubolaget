@@ -15,42 +15,43 @@ type LeaderBoardFormViewProps = {
   onPeriodChange: (period: LeaderboardPeriod) => void;
 };
 
-const periodOptions: { label: string; value: LeaderboardPeriod }[] = [
-  { label: "Today", value: "today" },
-  { label: "This Week", value: "week" },
-  { label: "All Time", value: "all" },
-  { label: "Streak", value: "streak" },
-];
-
 export function LeaderBoardFormView({
   period,
   onPeriodChange,
 }: LeaderBoardFormViewProps) {
   const style = useThemedStyles(makeStyle);
+  const { t } = useTheme();
+  // Period labels reuse each board's catalog title, e.g. "leaderboard.today.title".
+  const periodOptions: { label: string; value: LeaderboardPeriod }[] = [
+    { label: t("leaderboard.today.title"), value: "today" },
+    { label: t("leaderboard.week.title"), value: "week" },
+    { label: t("leaderboard.all.title"), value: "all" },
+    { label: t("leaderboard.streak.title"), value: "streak" },
+  ];
   // Wide browser windows have room for all four boards as tabs.
   const wide = useWideLayout();
   if (wide) {
     return (
       <View style={style.wideContainer}>
-        <Text accessibilityRole="header" style={[style.title, { paddingTop: 0 }]}>Leaderboards</Text>
-        <Text style={style.subtitle}>See how you rank</Text>
+        <Text accessibilityRole="header" style={[style.title, { paddingTop: 0 }]}>{t("leaderboard.heading")}</Text>
+        <Text style={style.subtitle}>{t("leaderboard.tagline")}</Text>
         <PeriodTabs value={period} onValueChange={onPeriodChange} items={periodOptions} />
       </View>
     );
   }
   return (
     <View style={style.formContainer}>
-      <Text style={style.title}>Leaderboards</Text>
-      <Text style={style.subtitle}>See how you rank</Text>
+      <Text style={style.title}>{t("leaderboard.heading")}</Text>
+      <Text style={style.subtitle}>{t("leaderboard.tagline")}</Text>
 
       <View style={style.formContainer}>
-        <Text style={style.fieldLabel}>Leaderboard</Text>
+        <Text style={style.fieldLabel}>{t("leaderboard.fieldLabel")}</Text>
         <LeaderboardSelect
           id="period-select"
           value={period}
           onValueChange={(value) => onPeriodChange(value as LeaderboardPeriod)}
           items={periodOptions}
-          placeholder="Select leaderboard"
+          placeholder={t("leaderboard.selectPlaceholder")}
         />
       </View>
     </View>

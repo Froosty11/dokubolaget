@@ -7,7 +7,7 @@ type Props = { url: string | null; color?: string };
 // "Support Dokubolaget" link to the Ko-fi page. Renders nothing until the
 // server has a page configured (SUPPORT_URL).
 export function SupportLink({ url, color }: Props) {
-  const { theme } = useTheme();
+  const { theme, t } = useTheme();
   if (!url) return null;
   const ink = color ?? theme.colors.inkMuted;
   return (
@@ -20,7 +20,7 @@ export function SupportLink({ url, color }: Props) {
     >
       <MaterialCommunityIcons name="beer-outline" size={16} color={ink} />
       <Text style={{ fontFamily: theme.fonts.body, fontSize: 13, color: ink, textDecorationLine: "underline" }}>
-        Enjoying Dokubolaget? Buy me a beer
+        {t("support.buyBeer")}
       </Text>
     </Pressable>
   );

@@ -23,7 +23,7 @@ type BoardCompleteViewProps = {
 
 export function BoardCompleteView(props: Readonly<BoardCompleteViewProps>) {
   const { width, height } = useWindowDimensions();
-  const { theme, copy } = useTheme();
+  const { theme, copy, t } = useTheme();
   const styles = useThemedStyles(makeStyles);
   const card = useRef(new Animated.Value(0)).current;
   const count = useRef(new Animated.Value(0)).current;
@@ -50,12 +50,12 @@ export function BoardCompleteView(props: Readonly<BoardCompleteViewProps>) {
 
   const shareLabel =
     props.shareStatus === "copied"
-      ? "Copied!"
+      ? t("boardComplete.copied")
       : props.shareStatus === "shared"
-        ? "Shared!"
+        ? t("boardComplete.shared")
         : props.shareStatus === "failed"
-          ? "Couldn't share"
-          : "Share result";
+          ? t("boardComplete.shareFailed")
+          : t("boardComplete.shareResult");
 
   return (
     <View style={styles.backdrop}>
@@ -92,13 +92,13 @@ export function BoardCompleteView(props: Readonly<BoardCompleteViewProps>) {
           />
         ) : (
           <>
-          <Text style={styles.kicker}>DAGENS BRÄDE</Text>
+          <Text style={styles.kicker}>{t("boardComplete.kicker")}</Text>
           <Text style={styles.title}>{copy.completeTitle}</Text>
           <Text style={styles.count}>
             {shownCount}
             <Text style={styles.countOf}>/9</Text>
           </Text>
-          <Text style={styles.subtitle}>cells filled</Text>
+          <Text style={styles.subtitle}>{t("boardComplete.cellsFilled")}</Text>
           <View style={styles.grid}>
             {props.shareGrid.map((line, index) => (
               <Text key={index} style={styles.gridLine}>
@@ -111,7 +111,7 @@ export function BoardCompleteView(props: Readonly<BoardCompleteViewProps>) {
             <Text style={styles.shareText}>{shareLabel}</Text>
           </Pressable>
             <Pressable onPress={props.onClose} hitSlop={10}>
-              <Text style={styles.close}>Back to the board</Text>
+              <Text style={styles.close}>{t("boardComplete.back")}</Text>
             </Pressable>
           </>
         )}
@@ -135,12 +135,13 @@ function Receipt(props: {
   onClose: () => void;
 }) {
   const r = useThemedStyles(makeReceiptStyles);
+  const { t } = useTheme();
   const now = new Date();
   const stamp = `${String(now.getDate()).padStart(2, "0")}.${String(now.getMonth() + 1).padStart(2, "0")} · ${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`;
   return (
     <View style={r.wrap}>
       <Text style={r.center}>DOKUBOLAGET</Text>
-      <Text style={r.center}>BUTIK 0273 · KASSA 01</Text>
+      <Text style={r.center}>{t("boardComplete.receiptStore")}</Text>
       <Text style={r.center}>{stamp}</Text>
       <View style={r.rule} />
       <Text style={r.center}>{props.title.toUpperCase()}</Text>
@@ -153,7 +154,7 @@ function Receipt(props: {
       ))}
       <View style={r.rule} />
       <View style={r.line}>
-        <Text style={r.total}>SUMMA</Text>
+        <Text style={r.total}>{t("boardComplete.receiptTotal")}</Text>
         <View style={r.dots} />
         <Text style={r.total}>{props.count}/9</Text>
       </View>
@@ -162,16 +163,16 @@ function Receipt(props: {
           <Text key={index} style={r.gridLine}>{row}</Text>
         ))}
       </View>
-      <Text style={r.stampMark}>GODKÄND</Text>
+      <Text style={r.stampMark}>{t("boardComplete.receiptApproved")}</Text>
       <View style={r.buttons}>
         <Pressable style={[r.button, r.primary]} onPress={props.onShare} accessibilityRole="button">
           <Text style={[r.buttonText, r.primaryText]}>{props.shareLabel.toUpperCase()}</Text>
         </Pressable>
         <Pressable style={r.button} onPress={props.onClose} accessibilityRole="button">
-          <Text style={r.buttonText}>TILLBAKA</Text>
+          <Text style={r.buttonText}>{t("boardComplete.receiptBack")}</Text>
         </Pressable>
       </View>
-      <Text style={[r.center, { marginTop: 8 }]}>TACK FÖR BESÖKET · VÄLKOMMEN ÅTER</Text>
+      <Text style={[r.center, { marginTop: 8 }]}>{t("boardComplete.receiptFooter")}</Text>
     </View>
   );
 }

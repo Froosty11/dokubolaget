@@ -18,7 +18,7 @@ const Search = observer(function SearchRender(props: any) {
 	}, [cellParam, model.currentCell])
 
 	const [query, setQuery] = useState(model.searchParams.query ?? "")
-	const { copy } = useTheme()
+	const { copy, t } = useTheme()
 	// Feedback for the last wrong guess, shown inside the search panel so the
 	// player can try again without retyping.
 	const [inlineFeedback, setInlineFeedback] = useState<{ kind: "near" | "miss"; text: string } | null>(null)
@@ -102,7 +102,7 @@ const Search = observer(function SearchRender(props: any) {
 			isLoading={Boolean(model.searchResultsPromiseState.promise) && !model.searchResultsPromiseState.data && !model.searchResultsPromiseState.error}
 			errorMessage={
 				model.searchResultsPromiseState.error
-					? "Could not search right now."
+					? t("search.error")
 					: null
 			}
 			results={model.searchResultsPromiseState.data ?? []}
