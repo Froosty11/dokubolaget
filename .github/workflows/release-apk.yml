@@ -1,0 +1,60 @@
+name: Release Android APK
+
+# Builds the Android APK on EAS and attaches it to a GitHub Release, so the
+# app's "Get the Android app" link (-> /releases/latest) always has a build.
+#
+# Trigger by pushing a version tag (e.g. `git tag v1.0.0 && git push --tags`)
+# or manually from the Actions tab. Requires an EXPO_TOKEN repository secret
+# (Expo account access token: expo.dev -> Account -> Access tokens).
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Release tag to publish (e.g. v1.0.0)"
+        required: true
+
+permissions:
+  contents: write # create/upload the GitHub Release
+
+jobs:
+  build-apk:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      # Installs eas-cli and authenticates with EXPO_TOKEN.
+      - uses: expo/expo-github-action@v8
+        with:
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+
+      # Cloud build on EAS (no Android toolchain needed here). --wait blocks
+      # until it finishes; --json prints the finished build so we can grab the
+      # APK URL. The preview profile already outputs an APK (see eas.json).
+      - name: Build APK on EAS
+        working-directory: Dokubolaget
+        run: eas build --platform android --profile preview --non-interactive --wait --json > "$RUNNER_TEMP/build.json"
+
+      - name: Download the APK
+        run: |
+          APK_URL=$(jq -r '.[0].artifacts.applicationArchiveUrl' "$RUNNER_TEMP/build.json")
+          echo "APK URL: $APK_URL"
+          test -n "$APK_URL" && test "$APK_URL" != "null"
+          curl -fL -o dokubolaget.apk "$APK_URL"
+
+      - name: Publish GitHub Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ github.event.inputs.tag || github.ref_name }}
+        run: |
+          gh release create "$TAG" dokubolaget.apk \
+            --title "Dokubolaget $TAG" \
+            --notes "Android APK. To install: allow 'Install unknown apps' for your browser/files app, then open the APK." \
+          || gh release upload "$TAG" dokubolaget.apk --clobber

@@ -24,9 +24,13 @@ ARG EXPO_PUBLIC_UNLOCK_ALL_THEMES=
 # Canonical site URL baked into the Open Graph tags (link previews). Only the
 # social meta needs the real domain; override it if the site isn't on dokubolaget.se.
 ARG EXPO_PUBLIC_SITE_URL=https://dokubolaget.se
+# Where the "Get the Android app" link points (APK release page). Defaults in
+# code to the repo's GitHub Releases; override to change hosts.
+ARG EXPO_PUBLIC_ANDROID_URL=
 ENV EXPO_PUBLIC_CORS_PROXY=/proxy?url= \
     EXPO_PUBLIC_UNLOCK_ALL_THEMES=$EXPO_PUBLIC_UNLOCK_ALL_THEMES \
     EXPO_PUBLIC_SITE_URL=$EXPO_PUBLIC_SITE_URL \
+    EXPO_PUBLIC_ANDROID_URL=$EXPO_PUBLIC_ANDROID_URL \
     CI=1
 
 RUN bun run build:web

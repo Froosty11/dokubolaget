@@ -14,6 +14,7 @@ import { ThemeBackdrop } from "../theme/decorations/ThemeBackdrop";
 import { ResponsibleNote } from "../components/ResponsibleNote";
 import { AgeGate } from "../components/AgeGate";
 import { SupportLink } from "../components/SupportLink";
+import { AndroidAppLink } from "../components/AndroidAppLink";
 import type { Theme } from "../theme/types";
 import  AuthDialog from "./authDialogView";
 import Chevron from "../../assets/chevron.svg";
@@ -139,6 +140,7 @@ function WideIndexView({ ageGate, supportUrl }: IndexViewProps) {
 
       <View style={{ position: "absolute", bottom: 28, alignItems: "center", gap: 14 }}>
         <SupportLink url={supportUrl} />
+        <AndroidAppLink />
         <ResponsibleNote />
       </View>
 
@@ -243,6 +245,7 @@ function PhoneIndexView({ ageGate, account, supportUrl }: IndexViewProps) {
 
       <View style={{marginBottom: 56, gap: 18}}>
         <SupportLink url={supportUrl} />
+        <AndroidAppLink />
         <ResponsibleNote />
       </View>
 
