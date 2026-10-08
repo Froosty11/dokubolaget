@@ -14,6 +14,7 @@ import { ThemeBackdrop } from "../theme/decorations/ThemeBackdrop";
 import { ResponsibleNote } from "../components/ResponsibleNote";
 import { AgeGate } from "../components/AgeGate";
 import { SupportLink } from "../components/SupportLink";
+import { VersionTag } from "../components/VersionTag";
 import { AndroidAppLink } from "../components/AndroidAppLink";
 import type { Theme } from "../theme/types";
 import  AuthDialog from "./authDialogView";
@@ -151,6 +152,7 @@ function WideIndexView({ ageGate, supportUrl }: IndexViewProps) {
         onAccept={ageGate.acceptAgeACB}
         onReject={ageGate.rejectAgeACB}
       />
+      <VersionTag />
     </View>
   );
 }
@@ -262,6 +264,7 @@ function PhoneIndexView({ ageGate, account, supportUrl }: IndexViewProps) {
         onAccept={ageGate.acceptAgeACB}
         onReject={ageGate.rejectAgeACB}
       />
+      <VersionTag />
     </View>
   );
 }

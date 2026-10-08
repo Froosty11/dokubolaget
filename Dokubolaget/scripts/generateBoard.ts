@@ -836,7 +836,9 @@ if (import.meta.main) {
 const args = parseArgs();
 const products = loadProducts();
 
-const tags: Tag[] = buildCandidateTags(products) as Tag[];
+// Regions (Veneto, Rioja, Champagne, …) are too obscure to be fair board
+// categories, so they're kept out of the candidate pool entirely.
+const tags: Tag[] = (buildCandidateTags(products) as Tag[]).filter((tag) => tag.family !== "region");
 
 const uniqueTagsById = new Map<string, Tag>();
 for (const tag of tags) {

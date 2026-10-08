@@ -1408,62 +1408,6 @@
     {
       "rows": [
         {
-          "id": "Country:Portugal",
-          "label": "Country:Portugal",
-          "family": "geography"
-        },
-        {
-          "id": "Region:Venetien",
-          "label": "Region:Venetien",
-          "family": "region"
-        },
-        {
-          "id": "Region:Kalifornien",
-          "label": "Region:Kalifornien",
-          "family": "region"
-        }
-      ],
-      "cols": [
-        {
-          "id": "Beverage:Rött vin",
-          "label": "Beverage:Rött vin",
-          "family": "beverage"
-        },
-        {
-          "id": "price:premium",
-          "label": "Price: 200-350 SEK",
-          "family": "price"
-        },
-        {
-          "id": "alcohol:veryStrong",
-          "label": "Alcohol: 13-22%",
-          "family": "alcohol"
-        }
-      ],
-      "counts": [
-        [
-          39,
-          11,
-          74
-        ],
-        [
-          56,
-          14,
-          51
-        ],
-        [
-          64,
-          22,
-          75
-        ]
-      ],
-      "score": 506,
-      "difficulty": 11,
-      "difficultyLabel": "hard"
-    },
-    {
-      "rows": [
-        {
           "id": "alcohol:strong",
           "label": "Alcohol: 10-13%",
           "family": "alcohol"
