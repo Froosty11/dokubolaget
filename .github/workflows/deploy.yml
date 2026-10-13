@@ -1,0 +1,63 @@
+name: Deploy prod
+
+on:
+  push:
+    branches: [prod]
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-prod
+  cancel-in-progress: false
+
+env:
+  IMAGE: ghcr.io/froosty11/dokubolaget
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: docker/setup-buildx-action@v3
+
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          tags: |
+            ${{ env.IMAGE }}:prod
+            ${{ env.IMAGE }}:${{ github.sha }}
+          labels: |
+            org.opencontainers.image.revision=${{ github.sha }}
+            org.opencontainers.image.source=https://github.com/${{ github.repository }}
+            se.dokubolaget.branch=prod
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger redeploy webhook
+        run: |
+          # The webhook answers 200 even when the token is rejected, so check the
+          # command output instead of the status code alone.
+          out=$(curl --fail --show-error --silent \
+            --max-time 300 --retry 3 --retry-delay 5 \
+            -X POST \
+            -H "X-Deploy-Token: ${DEPLOY_WEBHOOK_TOKEN}" \
+            "${DEPLOY_WEBHOOK_URL}")
+          echo "$out"
+          case "$out" in *"Hook rules were not satisfied"*) exit 1;; esac
+        env:
+          DEPLOY_WEBHOOK_URL: ${{ secrets.DEPLOY_WEBHOOK_URL }}
+          DEPLOY_WEBHOOK_TOKEN: ${{ secrets.DEPLOY_WEBHOOK_TOKEN }}
